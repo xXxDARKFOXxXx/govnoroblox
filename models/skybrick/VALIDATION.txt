@@ -1,0 +1,33 @@
+SKYBRICK — VALIDATION
+
+PASS — Model generated with Blender 4.3.2 without third-party model assets.
+PASS — FBX round-trip import into a fresh Blender scene.
+PASS — GLB round-trip import into a fresh Blender scene.
+PASS — Both exports contain exactly Body, Lid, WingL, WingR mesh objects.
+PASS — UV coordinates are finite and within [0, 1]; geometry is finite.
+PASS — All material color textures resolve to a readable 1024x1024 atlas.
+PASS — Left and right wing bounds are symmetric in the closed pose.
+PASS — Atlas packed into the native .blend.
+PASS — Native timeline frame 1: closed, symmetric wings, zero rest rotations.
+PASS — Native timeline frame 38: lid is above body and both wings have risen.
+PASS — Native timeline frame 108: all four parts return to the closed pose.
+PASS — Animation .txt syntax parsed with Lua's parser; the script uses
+       Lua-compatible Luau syntax. This is NOT a Roblox engine execution test.
+
+Export triangle counts:
+  Body    12,568
+  Lid      9,652
+  WingL   10,992
+  WingR   10,992
+  Total   44,204
+
+This is a detailed hero prop. For many simultaneous instances or mobile
+scenes, profile it in your game and consider making simpler distant LODs.
+The FBX and GLB are intentionally static; runtime animation is the .txt Script.
+Blender procedural micro-bump does not transfer through FBX; the color atlas
+and modeled surface details do. Exact shading depends on Studio's importer.
+
+NOT RUN — Roblox Studio import and Play mode (Studio unavailable here).
+NOT RUN — Real Roblox particle rendering, prompt interaction and multiplayer.
+See README_RU.txt for the required Studio smoke checks and installation.
+No claim is made that these unrun engine checks passed.

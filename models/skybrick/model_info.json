@@ -1,0 +1,13 @@
+{
+  "mesh_names": [
+    "Body",
+    "Lid",
+    "WingL",
+    "WingR"
+  ],
+  "triangles": 44204,
+  "vertices": 22416,
+  "blender_version": "4.3.2",
+  "wingspan_blender_units": 11.96,
+  "materials": "Single UV color atlas; no external assets or add-ons"
+}
