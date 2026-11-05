@@ -4,12 +4,16 @@
 -- Legacy Wing_L/Wing_R names and separate WingGem_L/WingGem_R are also supported.
 -- See ANIMATION_ADAPTED_RU.md. Do not run both animation scripts together.
 
+local cleanupStartup
+local function start()
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Debris = game:GetService("Debris")
 local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+assert(RunService:IsServer(), "Use a normal Script with RunContext = Server, not a LocalScript/Client Script")
 
 local CONFIG = {
     OpenTime = 3.25,
@@ -30,19 +34,47 @@ assert(CONFIG.OrbitingStars >= 0 and CONFIG.OrbitingStars % 1 == 0, "OrbitingSta
 
 local luckyBlock = script.Parent
 assert(luckyBlock:IsA("Model"), "Place this SERVER Script directly inside the Lucky Block Model")
+luckyBlock:SetAttribute("SkybrickStatus", "Starting")
+print("[Skybrick] Starting: " .. luckyBlock:GetFullName())
 
-local function findGroup(name, alias)
-    return luckyBlock:FindFirstChild(name, true)
-        or (alias and luckyBlock:FindFirstChild(alias, true))
-end
-local groups = {
-    Body = findGroup("Body"),
-    Lid = findGroup("Lid"),
-    WingL = findGroup("WingL", "Wing_L"),
-    WingR = findGroup("WingR", "Wing_R"),
+-- Studio may name MeshParts after mesh data (Body_Mesh) or append .001 etc.
+-- Keep all matching roots, including meshes split by material; never guess by
+-- geometry if the import combined every moving part into one mesh.
+local aliases = {
+    body = "Body", lid = "Lid",
+    wingl = "WingL", wingleft = "WingL",
+    wingr = "WingR", wingright = "WingR",
 }
+local function groupName(object)
+    if not (object:IsA("BasePart") or object:IsA("Model") or object:IsA("Folder")) then return nil end
+    local key = string.lower(object.Name):gsub("[%s_%.%-]", ""):gsub("%d+$", "")
+    if aliases[key] then return aliases[key] end
+    for alias, name in pairs(aliases) do
+        if key:sub(1, #alias + 4) == alias .. "mesh" then return name end
+    end
+    return nil
+end
+local groups = {Body = {}, Lid = {}, WingL = {}, WingR = {}}
+local function discover(parent, inherited)
+    for _, child in ipairs(parent:GetChildren()) do
+        local name = groupName(child)
+        if name and not inherited then table.insert(groups[name], child) end
+        if name and inherited and name ~= inherited then
+            error("Nested animation groups: " .. child:GetFullName() .. ". Body/Lid/WingL/WingR must be separate siblings")
+        end
+        discover(child, inherited or name)
+    end
+end
+discover(luckyBlock, nil)
 for _, name in ipairs({"Body", "Lid", "WingL", "WingR"}) do
-    assert(groups[name], "Missing group '" .. name .. "'; see ANIMATION_ADAPTED_RU.md")
+    if #groups[name] == 0 then
+        local found = {}
+        for _, item in ipairs(luckyBlock:GetDescendants()) do
+            if item:IsA("BasePart") then table.insert(found, item.Name) end
+        end
+        error("Missing group '" .. name .. "'. Imported parts: " .. table.concat(found, ", ")
+            .. ". Keep the four meshes separate on import; see ANIMATION_ADAPTED_RU.md")
+    end
 end
 
 -- A stationary reference prevents accumulated transforms from Model:PivotTo()
@@ -63,6 +95,29 @@ root.CanTouch = false
 root.CanQuery = false
 luckyBlock.PrimaryPart = root
 local originalPivot = root.CFrame
+local controller = root:FindFirstChild("SkybrickController")
+if controller then
+    assert(controller:IsA("ObjectValue"), "SkybrickController must be an ObjectValue")
+    local other = controller.Value
+    assert(not other or other == script or not other.Parent or not other.Enabled,
+        "Another Skybrick Opening Script is active. Stop Play and replace the old Script")
+else
+    controller = Instance.new("ObjectValue")
+    controller.Name = "SkybrickController"
+    controller.Archivable = false
+    controller.Parent = root
+end
+controller.Value = script
+-- Remove serialized leftovers from an earlier session, not live controllers.
+for _, item in ipairs(luckyBlock:GetDescendants()) do
+    if item:IsA("Attachment") and (item.Name == "SkybrickInteraction" or item.Name == "LuckyMagicOrigin") then
+        item:Destroy()
+    end
+end
+local startupHelpers = {controller}
+cleanupStartup = function()
+    for _, item in ipairs(startupHelpers) do item:Destroy() end
+end
 local parts = {}
 local partGroups = {}
 local bodyParts = {}
@@ -94,7 +149,9 @@ local function registerGroup(object, group)
     end
     assert(count > 0, group .. " contains no MeshParts/BaseParts")
 end
-for name, object in pairs(groups) do registerGroup(object, name) end
+for name, objects in pairs(groups) do
+    for _, object in ipairs(objects) do registerGroup(object, name) end
+end
 -- The Skybrick gems are baked into each wing. These aliases also support the
 -- optional separate gem meshes mentioned by the supplied animation.
 for _, info in ipairs({{"WingGem_L", "WingL"}, {"WingGem_R", "WingR"}}) do
@@ -129,12 +186,15 @@ local hinges = {
     Lid = CFrame.new(bodyCenter.X, high.Y, bodyCenter.Z),
 }
 
-assert(not root:FindFirstChild("SkybrickInteraction"),
-    "Another Opening animation is installed. Stop Play, replace the old Script, then start Play again")
 local interaction = Instance.new("Attachment")
 interaction.Name = "SkybrickInteraction"
-interaction.Position = bodyCenter
-interaction.Parent = root
+interaction.Archivable = false
+-- Put the UI on real body geometry, not on the invisible helper root.
+local bodyHost = bodyParts[1]
+interaction.Position = bodyHost.CFrame:ToObjectSpace(originalPivot * CFrame.new(bodyCenter)).Position
+interaction.Parent = bodyHost
+table.insert(startupHelpers, interaction)
+local activationDistance = math.max(CONFIG.PromptDistance, bodySize.Magnitude * 0.5 + 3)
 local prompt = Instance.new("ProximityPrompt")
 prompt.Name = "OpenLuckyBlock"
 prompt.ActionText = "Открыть!"
@@ -142,14 +202,19 @@ prompt.ObjectText = "Крылатый Lucky Block"
 prompt.KeyboardKeyCode = Enum.KeyCode.E
 prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 prompt.HoldDuration = 0.45
-prompt.MaxActivationDistance = CONFIG.PromptDistance
+prompt.MaxActivationDistance = activationDistance
 prompt.RequiresLineOfSight = false
+prompt.Style = Enum.ProximityPromptStyle.Default
+prompt.Exclusivity = Enum.ProximityPromptExclusivity.AlwaysShow
+prompt.Enabled = false -- enabled only after the handler/effects are initialized
 prompt.Parent = interaction
 
 local attachment = Instance.new("Attachment")
 attachment.Name = "LuckyMagicOrigin"
+attachment.Archivable = false
 attachment.Position = bodyCenter + Vector3.new(0, bodySize.Y * 0.15, 0)
 attachment.Parent = root
+table.insert(startupHelpers, attachment)
 
 local function pose(movingPivot, pulse, flap, lidOpen)
     local deltas = {}
@@ -349,7 +414,7 @@ connection = prompt.Triggered:Connect(function(player)
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     if not hrp or not humanoid or humanoid.Health <= 0 then return end
-    if (hrp.Position - interaction.WorldPosition).Magnitude > CONFIG.PromptDistance + 3 then return end
+    if (hrp.Position - interaction.WorldPosition).Magnitude > activationDistance + 3 then return end
     opening = true
     prompt.Enabled = false
     -- Capture the current reference each activation; permits moving/rotating
@@ -504,4 +569,20 @@ script.Destroying:Connect(function()
     if luckyBlock.Parent then restoreParts() end
     interaction:Destroy()
     attachment:Destroy()
+    controller:Destroy()
 end)
+prompt.Enabled = true
+luckyBlock:SetAttribute("SkybrickStatus", "Ready")
+print(string.format("[Skybrick] READY: %s | %d parts | E distance %.1f studs",
+    luckyBlock:GetFullName(), #parts, activationDistance))
+if not ProximityPromptService.Enabled then
+    warn("[Skybrick] ProximityPromptService.Enabled is false: Roblox has hidden ALL prompts. Enable it in Explorer or check the script that disables it")
+end
+end -- start
+
+local ok, message = xpcall(start, debug.traceback)
+if not ok then
+    if cleanupStartup then cleanupStartup() end
+    if script.Parent then script.Parent:SetAttribute("SkybrickStatus", "Error: " .. tostring(message)) end
+    warn("[Skybrick] STARTUP ERROR: " .. tostring(message))
+end

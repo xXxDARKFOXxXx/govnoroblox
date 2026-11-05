@@ -14,6 +14,8 @@
 - [Текстура](models/skybrick/Skybrick_Atlas.png) и [скрипт генерации модели](models/skybrick/build_lucky_block.py).
 - [Адаптированная анимация открытия в TXT](models/skybrick/Roblox_Opening_Animation_Adapted.txt).
 - [Установка и настройки новой анимации](models/skybrick/ANIMATION_ADAPTED_RU.md).
+- [Автоматический установщик для Command Bar](models/skybrick/Studio_Install_CommandBar.txt)
+  — если не появляется кнопка E или непонятно, куда вставлять Script.
 - [Подробная инструкция на русском](models/skybrick/README_RU.txt).
 
 ## Установка
@@ -24,6 +26,11 @@
    содержимое `Roblox_Opening_Animation_Adapted.txt`. Если уже установлен старый
    скрипт, замените его содержимое; оставьте только один скрипт открытия.
 3. Нажмите Play, подойдите к блоку и удержите **E**.
+
+Если E не появилась: остановите Play, выделите всю модель, скопируйте весь
+`Studio_Install_CommandBar.txt` в **Command Bar** и выполните. Затем нажмите
+Play / F5; в Output ожидается `[Skybrick] READY`. Подробнее —
+[раздел диагностики](models/skybrick/ANIMATION_ADAPTED_RU.md#если-кнопка-e-не-появляется).
 
 Новая анимация адаптирована из присланного пользователем `WINGED LUCKY BLOCK`:
 зарядка, дрожание, пульсация, взмахи крыльев, 12 огоньков со шлейфами,
@@ -46,6 +53,6 @@ Roblox Studio здесь не запускался. Проверку импор�
 и работы с несколькими игроками необходимо выполнить в Studio.
 Подробности: [VALIDATION.txt](models/skybrick/VALIDATION.txt).
 
-Адаптированный TXT прошёл компиляцию официальным Luau и 11 поведенческих
-проверок с тестовыми объектами Roblox. Проверки в самом Studio остаются
+Адаптированный TXT и установщик прошли компиляцию официальным Luau;
+21 сценарий логики/запуска проверен с тестовыми объектами Roblox. Проверки в самом Studio остаются
 обязательными; подробнее в [инструкции анимации](models/skybrick/ANIMATION_ADAPTED_RU.md#проверки).

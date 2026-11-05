@@ -46,3 +46,14 @@ LIMIT — The fixture does not implement real tween interpolation, rendering,
         physics, replication or Roblox engine property validation.
 NOT RUN — Adapted animation in Roblox Studio, including multiplayer rendering.
 Install and Studio smoke checks: ANIMATION_ADAPTED_RU.md.
+
+PROMPT STARTUP UPDATE
+PASS — Both final animation and Command Bar installer compile with official Luau.
+PASS — Previous 11 fixture scenarios rerun after startup changes.
+PASS — 7 extra fixture scenarios: imported _Mesh/numeric names, material-split
+       names, missing geometry diagnostics, large-body UI/server range agreement,
+       globally disabled prompt warning, stale Attachment cleanup, rejection of
+       a second live controller without removing the first owner.
+PASS — 3 installer fixture scenarios: creating a server Script and disabling
+       a known legacy controller, refusing empty selection, refusing Play mode.
+TOTAL — 21 fixture scenarios. No Roblox Studio execution is claimed.
