@@ -31,3 +31,18 @@ NOT RUN — Roblox Studio import and Play mode (Studio unavailable here).
 NOT RUN — Real Roblox particle rendering, prompt interaction and multiplayer.
 See README_RU.txt for the required Studio smoke checks and installation.
 No claim is made that these unrun engine checks passed.
+
+ADAPTED ANIMATION (Roblox_Opening_Animation_Adapted.txt)
+PASS — Official luau-compile compiles the final adapted script.
+PASS — 11 scenarios execute in the official Luau CLI with a deterministic
+       Roblox math/Instance fixture: separate/split groups at 0.5/1/2.5 scale,
+       synchronized whole-model pulse, lid pop/wing motion, repeated openings,
+       moving/rotating the model between openings, restoration of all meshes,
+       no duplicate rewards on overlapping triggers, distant trigger rejection,
+       legacy names/gems, Tool reward, animation error recovery, one-time mode,
+       visual-only mode, half particle counts and zero orbiting stars.
+       Final flash/shockwave size goals and orbiting Trail counts checked.
+LIMIT — The fixture does not implement real tween interpolation, rendering,
+        physics, replication or Roblox engine property validation.
+NOT RUN — Adapted animation in Roblox Studio, including multiplayer rendering.
+Install and Studio smoke checks: ANIMATION_ADAPTED_RU.md.

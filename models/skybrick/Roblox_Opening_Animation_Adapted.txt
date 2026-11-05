@@ -1,0 +1,507 @@
+-- SKYBRICK: adaptation of your WINGED LUCKY BLOCK animation.
+-- Normal SERVER Script inside the imported Model. REPLACE the old Opening Script.
+-- Required groups: Body, Lid, WingL, WingR (MeshPart, Model or Folder).
+-- Legacy Wing_L/Wing_R names and separate WingGem_L/WingGem_R are also supported.
+-- See ANIMATION_ADAPTED_RU.md. Do not run both animation scripts together.
+
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local ServerStorage = game:GetService("ServerStorage")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+local CONFIG = {
+    OpenTime = 3.25,
+    RespawnSeconds = 35, -- 0 = one-time block, left hidden after a successful opening
+    CoinsMin = 25,
+    CoinsMax = 150,
+    PromptDistance = 11,
+    OrbitingStars = 12,
+    ParticleMultiplier = 1, -- e.g. 0.5 on mobile
+    WingFlapAmount = 18,
+    RewardsEnabled = true, -- original Tools / LuckyCoins rewards; false = visual only
+    LidLift = 1.55, -- multiplied by the imported body's scale
+}
+assert(CONFIG.OpenTime > 0 and CONFIG.RespawnSeconds >= 0, "Invalid animation duration")
+assert(CONFIG.ParticleMultiplier >= 0, "ParticleMultiplier must be nonnegative")
+assert(CONFIG.CoinsMin <= CONFIG.CoinsMax, "CoinsMin must not exceed CoinsMax")
+assert(CONFIG.OrbitingStars >= 0 and CONFIG.OrbitingStars % 1 == 0, "OrbitingStars must be an integer >= 0")
+
+local luckyBlock = script.Parent
+assert(luckyBlock:IsA("Model"), "Place this SERVER Script directly inside the Lucky Block Model")
+
+local function findGroup(name, alias)
+    return luckyBlock:FindFirstChild(name, true)
+        or (alias and luckyBlock:FindFirstChild(alias, true))
+end
+local groups = {
+    Body = findGroup("Body"),
+    Lid = findGroup("Lid"),
+    WingL = findGroup("WingL", "Wing_L"),
+    WingR = findGroup("WingR", "Wing_R"),
+}
+for _, name in ipairs({"Body", "Lid", "WingL", "WingR"}) do
+    assert(groups[name], "Missing group '" .. name .. "'; see ANIMATION_ADAPTED_RU.md")
+end
+
+-- A stationary reference prevents accumulated transforms from Model:PivotTo()
+-- after wing flaps. Only captured asset meshes are pulsed, faded and restored.
+local root = luckyBlock:FindFirstChild("SkybrickRoot")
+if not root then
+    root = Instance.new("Part")
+    root.Name = "SkybrickRoot"
+    root.Size = Vector3.new(0.1, 0.1, 0.1)
+    root.CFrame = luckyBlock:GetPivot()
+    root.Parent = luckyBlock
+end
+assert(root:IsA("BasePart"), "SkybrickRoot must be a BasePart")
+root.Anchored = true
+root.Transparency = 1
+root.CanCollide = false
+root.CanTouch = false
+root.CanQuery = false
+luckyBlock.PrimaryPart = root
+local originalPivot = root.CFrame
+local parts = {}
+local partGroups = {}
+local bodyParts = {}
+
+local function registerPart(part, group)
+    if part == root then return end
+    assert(not partGroups[part] or partGroups[part] == group, "Animation groups must not overlap")
+    if partGroups[part] then return end
+    partGroups[part] = group
+    part.Anchored = true
+    part.CanCollide = group == "Body"
+    part.CanTouch = false
+    table.insert(parts, {
+        part = part, group = group,
+        relative = originalPivot:ToObjectSpace(part.CFrame),
+        transparency = part.Transparency,
+        size = part.Size,
+        color = part.Color,
+        canCollide = part.CanCollide,
+        canQuery = part.CanQuery,
+    })
+    if group == "Body" then table.insert(bodyParts, part) end
+end
+local function registerGroup(object, group)
+    local count = 0
+    if object:IsA("BasePart") then registerPart(object, group); count = count + 1 end
+    for _, item in ipairs(object:GetDescendants()) do
+        if item:IsA("BasePart") then registerPart(item, group); count = count + 1 end
+    end
+    assert(count > 0, group .. " contains no MeshParts/BaseParts")
+end
+for name, object in pairs(groups) do registerGroup(object, name) end
+-- The Skybrick gems are baked into each wing. These aliases also support the
+-- optional separate gem meshes mentioned by the supplied animation.
+for _, info in ipairs({{"WingGem_L", "WingL"}, {"WingGem_R", "WingR"}}) do
+    local gem = luckyBlock:FindFirstChild(info[1], true)
+    if gem then registerGroup(gem, info[2]) end
+end
+for _, item in ipairs(luckyBlock:GetDescendants()) do
+    if item:IsA("BasePart") and item ~= root and not partGroups[item] then
+        registerPart(item, "Other")
+    end
+end
+
+-- All geometry calculations use the model's reference frame, not the imported
+-- MeshPart center/pivot. This also supports meshes split by material on import.
+local low = Vector3.new(math.huge, math.huge, math.huge)
+local high = Vector3.new(-math.huge, -math.huge, -math.huge)
+for _, part in ipairs(bodyParts) do
+    local relative = originalPivot:ToObjectSpace(part.CFrame)
+    for x = -1, 1, 2 do for y = -1, 1, 2 do for z = -1, 1, 2 do
+        local point = relative * (part.Size * Vector3.new(x, y, z) / 2)
+        low = low:Min(point)
+        high = high:Max(point)
+    end end end
+end
+local bodyCenter = (low + high) / 2
+local bodySize = high - low
+assert(bodySize.Y > 0.001, "Body has invalid bounds")
+local unit = bodySize.Y / 3
+local hinges = {
+    WingL = CFrame.new(low.X, low.Y + bodySize.Y * 0.8, bodyCenter.Z),
+    WingR = CFrame.new(high.X, low.Y + bodySize.Y * 0.8, bodyCenter.Z),
+    Lid = CFrame.new(bodyCenter.X, high.Y, bodyCenter.Z),
+}
+
+assert(not root:FindFirstChild("SkybrickInteraction"),
+    "Another Opening animation is installed. Stop Play, replace the old Script, then start Play again")
+local interaction = Instance.new("Attachment")
+interaction.Name = "SkybrickInteraction"
+interaction.Position = bodyCenter
+interaction.Parent = root
+local prompt = Instance.new("ProximityPrompt")
+prompt.Name = "OpenLuckyBlock"
+prompt.ActionText = "Открыть!"
+prompt.ObjectText = "Крылатый Lucky Block"
+prompt.KeyboardKeyCode = Enum.KeyCode.E
+prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+prompt.HoldDuration = 0.45
+prompt.MaxActivationDistance = CONFIG.PromptDistance
+prompt.RequiresLineOfSight = false
+prompt.Parent = interaction
+
+local attachment = Instance.new("Attachment")
+attachment.Name = "LuckyMagicOrigin"
+attachment.Position = bodyCenter + Vector3.new(0, bodySize.Y * 0.15, 0)
+attachment.Parent = root
+
+local function pose(movingPivot, pulse, flap, lidOpen)
+    local deltas = {}
+    for _, name in ipairs({"WingL", "WingR"}) do
+        local side = name == "WingL" and -1 or 1
+        local hinge = hinges[name]
+        deltas[name] = hinge * CFrame.Angles(0, 0, flap * side) * hinge:Inverse()
+    end
+    local hinge = hinges.Lid
+    deltas.Lid = CFrame.new(0, CONFIG.LidLift * unit * lidOpen, 0) * hinge
+        * CFrame.Angles(math.rad(-12) * lidOpen, math.rad(18) * lidOpen, 0) * hinge:Inverse()
+    for _, data in ipairs(parts) do
+        local relative = (deltas[data.group] or CFrame.identity) * data.relative
+        local position = bodyCenter + (relative.Position - bodyCenter) * pulse
+        data.part.Size = data.size * pulse
+        data.part.CFrame = movingPivot * CFrame.new(position) * relative.Rotation
+    end
+    attachment.CFrame = root.CFrame:ToObjectSpace(movingPivot * CFrame.new(
+        bodyCenter + Vector3.new(0, bodySize.Y * 0.15 * pulse, 0)))
+end
+
+local function particleEmitter(name, colorA, colorB, speed, size, lifetime, accel)
+    local emitter = Instance.new("ParticleEmitter")
+    emitter.Name = name
+    emitter.Enabled = false
+    emitter.Rate = 0
+    emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    emitter.LightEmission = 1
+    emitter.LightInfluence = 0
+    emitter.Color = ColorSequence.new(colorA, colorB)
+    emitter.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, size * unit),
+        NumberSequenceKeypoint.new(0.4, size * unit * 0.8),
+        NumberSequenceKeypoint.new(1, 0),
+    })
+    emitter.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.02),
+        NumberSequenceKeypoint.new(0.65, 0.22),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    emitter.Lifetime = NumberRange.new(lifetime * 0.75, lifetime * 1.25)
+    emitter.Speed = NumberRange.new(speed * unit * 0.55, speed * unit * 1.35)
+    emitter.Drag = 1.6
+    emitter.Acceleration = accel * unit
+    emitter.RotSpeed = NumberRange.new(-170, 170)
+    emitter.SpreadAngle = Vector2.new(180, 180)
+    emitter.EmissionDirection = Enum.NormalId.Top
+    emitter.Shape = Enum.ParticleEmitterShape.Sphere
+    emitter.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+    emitter.Parent = attachment
+    return emitter
+end
+local goldDust = particleEmitter("GoldSparkles", Color3.fromRGB(255,247,103), Color3.fromRGB(255,170,0), 6, 0.25, 1.3, Vector3.new(0,2.7,0))
+local skyDust = particleEmitter("BlueStarDust", Color3.fromRGB(255,255,255), Color3.fromRGB(96,216,255), 7, 0.17, 1.2, Vector3.new(0,3.2,0))
+local burstDust = particleEmitter("Burst", Color3.fromRGB(255,255,206), Color3.fromRGB(255,202,31), 18, 0.36, 1.0, Vector3.new(0,3,0))
+local function emit(emitter, count) emitter:Emit(math.floor(count * CONFIG.ParticleMultiplier)) end
+
+local light = Instance.new("PointLight")
+light.Name = "LuckyChargeGlow"
+light.Color = Color3.fromRGB(255,216,65)
+light.Range = 17 * unit
+light.Brightness = 0
+light.Shadows = false
+light.Parent = attachment
+
+local tweens = {}
+local function scaleTween(object, duration, props, style)
+    local tween = TweenService:Create(object, TweenInfo.new(duration, style or Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out), props)
+    table.insert(tweens, tween)
+    tween:Play()
+    return tween
+end
+local function cancelTweens()
+    for _, tween in ipairs(tweens) do tween:Cancel() end
+    table.clear(tweens)
+end
+
+local activeEffects
+local function sphereEffect(size, color, transparency)
+    local p = Instance.new("Part")
+    p.Name = "LuckyOpeningFX"
+    p.Shape = Enum.PartType.Ball
+    p.Material = Enum.Material.Neon
+    p.Color = color
+    p.Size = Vector3.new(size, size, size) * unit
+    p.Transparency = transparency or 0
+    p.Anchored = true
+    p.CanCollide = false
+    p.CanQuery = false
+    p.CanTouch = false
+    p.CastShadow = false
+    p.Parent = activeEffects
+    return p
+end
+local function shockwave(at, color, duration, finalSize)
+    local p = sphereEffect(0.25, color, 0.64)
+    p.CFrame = CFrame.new(at)
+    scaleTween(p, duration, {Size = Vector3.new(finalSize, finalSize, finalSize) * unit,
+        Transparency = 1}, Enum.EasingStyle.Quart)
+    Debris:AddItem(p, duration + 0.15)
+end
+
+local function notifyReward(message)
+    local gui = Instance.new("BillboardGui")
+    gui.Name = "LuckyRewardPopup"
+    gui.Adornee = root
+    gui.Size = UDim2.fromOffset(340, 78)
+    gui.StudsOffsetWorldSpace = originalPivot:VectorToWorldSpace(bodyCenter)
+        + Vector3.new(0, bodySize.Y * 0.9 + unit, 0)
+    gui.AlwaysOnTop = true
+    gui.MaxDistance = 80
+    gui.Parent = root
+    Debris:AddItem(gui, 1.6)
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.fromScale(1, 1)
+    label.Font = Enum.Font.GothamBlack
+    label.TextScaled = true
+    label.TextStrokeTransparency = 0.2
+    label.TextStrokeColor3 = Color3.fromRGB(87,46,0)
+    label.TextColor3 = Color3.fromRGB(255,245,88)
+    label.Text = message
+    label.Parent = gui
+    scaleTween(gui, 1.4, {StudsOffsetWorldSpace = gui.StudsOffsetWorldSpace + Vector3.new(0,2 * unit,0)})
+    scaleTween(label, 1.4, {TextTransparency = 1, TextStrokeTransparency = 1})
+end
+
+local randomGen = Random.new()
+local function giveReward(player)
+    if not CONFIG.RewardsEnabled or player.Parent ~= Players then return end
+    local rewards = ServerStorage:FindFirstChild("LuckyBlockRewards")
+    if rewards then
+        local tools = {}
+        for _, item in ipairs(rewards:GetChildren()) do
+            if item:IsA("Tool") then table.insert(tools, item) end
+        end
+        if #tools > 0 then
+            local chosen = tools[randomGen:NextInteger(1, #tools)]
+            local backpack = player:FindFirstChildOfClass("Backpack") or player:WaitForChild("Backpack", 4)
+            if player.Parent ~= Players then return end
+            if backpack then
+                chosen:Clone().Parent = backpack
+                notifyReward("🎁 " .. chosen.Name)
+                return
+            end
+        end
+    end
+    local stats = player:FindFirstChild("leaderstats")
+    if not stats then
+        stats = Instance.new("Folder")
+        stats.Name = "leaderstats"
+        stats.Parent = player
+    end
+    local coins = stats:FindFirstChild("LuckyCoins")
+    if not coins then
+        coins = Instance.new("IntValue")
+        coins.Name = "LuckyCoins"
+        coins.Parent = stats
+    end
+    if not (coins:IsA("IntValue") or coins:IsA("NumberValue")) then
+        warn("leaderstats.LuckyCoins should be IntValue or NumberValue")
+        return
+    end
+    local amount = randomGen:NextInteger(CONFIG.CoinsMin, CONFIG.CoinsMax)
+    coins.Value = coins.Value + amount
+    notifyReward("+" .. amount .. " Lucky Coins!")
+end
+
+local function restoreParts()
+    pose(originalPivot, 1, 0, 0)
+    for _, data in ipairs(parts) do
+        data.part.Transparency = data.transparency
+        data.part.Color = data.color
+        data.part.CanCollide = data.canCollide
+        data.part.CanQuery = data.canQuery
+    end
+    light.Brightness = 0
+end
+local function hideParts()
+    for _, data in ipairs(parts) do
+        data.part.Transparency = 1
+        data.part.CanCollide = false
+        data.part.CanQuery = false
+    end
+end
+local function clearEffects()
+    if activeEffects then activeEffects:Destroy(); activeEffects = nil end
+end
+
+local opening = false
+local alive = true
+local connection
+connection = prompt.Triggered:Connect(function(player)
+    if opening or not alive or not player or not player:IsA("Player") or player.Parent ~= Players then return end
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid or humanoid.Health <= 0 then return end
+    if (hrp.Position - interaction.WorldPosition).Magnitude > CONFIG.PromptDistance + 3 then return end
+    opening = true
+    prompt.Enabled = false
+    -- Capture the current reference each activation; permits moving/rotating
+    -- the whole model with PivotTo() between activations without losing the pose.
+    originalPivot = root.CFrame
+    cancelTweens()
+    clearEffects()
+    activeEffects = Instance.new("Folder")
+    activeEffects.Name = "SkybrickOpeningFX"
+    activeEffects.Parent = Workspace
+    Debris:AddItem(activeEffects, CONFIG.OpenTime + 10)
+    local orbs = {}
+
+    local ok, err = pcall(function()
+        local center = originalPivot:PointToWorldSpace(bodyCenter)
+        for _, data in ipairs(parts) do data.part.CanCollide = false end
+        emit(goldDust, 45)
+        emit(skyDust, 25)
+        scaleTween(light, 0.45, {Brightness = 3.8})
+        for _, data in ipairs(parts) do
+            if data.group == "Body" or data.group == "Lid" then
+                scaleTween(data.part, 0.25, {Color = Color3.fromRGB(255,244,156)})
+            end
+        end
+        shockwave(center, Color3.fromRGB(255,222,77), 0.7, 8)
+        for i = 1, CONFIG.OrbitingStars do
+            local orb = sphereEffect(0.13 + (i % 3) * 0.045,
+                i % 3 == 0 and Color3.fromRGB(145,231,255) or Color3.fromRGB(255,239,85), 0)
+            orb.Position = center
+            local att0 = Instance.new("Attachment"); att0.Position = Vector3.new(0,0.08 * unit,0); att0.Parent = orb
+            local att1 = Instance.new("Attachment"); att1.Position = Vector3.new(0,-0.08 * unit,0); att1.Parent = orb
+            local trail = Instance.new("Trail")
+            trail.Attachment0 = att0; trail.Attachment1 = att1
+            trail.Lifetime = 0.21
+            trail.LightEmission = 1
+            trail.Transparency = NumberSequence.new(0.1, 1)
+            trail.Color = ColorSequence.new(orb.Color)
+            trail.Parent = orb
+            table.insert(orbs, orb)
+            Debris:AddItem(orb, CONFIG.OpenTime + 2.5)
+        end
+
+        local startTime = os.clock()
+        local lastEmit, lastPulse = 0, 0
+        while alive and os.clock() - startTime < CONFIG.OpenTime do
+            RunService.Heartbeat:Wait()
+            if not alive then return end
+            local elapsed = os.clock() - startTime
+            local t = math.clamp(elapsed / CONFIG.OpenTime, 0, 1)
+            local charging = t * t
+            local speed = 6 + 29 * charging
+            local amplitude = (0.012 + 0.20 * charging) * unit
+            local jitter = CFrame.new(randomGen:NextNumber(-amplitude, amplitude),
+                randomGen:NextNumber(-amplitude, amplitude), randomGen:NextNumber(-amplitude, amplitude))
+                * CFrame.Angles(math.rad(randomGen:NextNumber(-2,2) * charging),
+                    math.rad(randomGen:NextNumber(-2,2) * charging),
+                    math.rad(randomGen:NextNumber(-4,4) * charging))
+            local wingFlap = math.sin(elapsed * speed) * math.rad(CONFIG.WingFlapAmount) * (0.30 + 0.70 * t)
+            local pulse = 1 + 0.04 * math.sin(elapsed * (15 + 20 * charging)) + 0.12 * charging
+            pose(originalPivot * jitter, pulse, wingFlap, 0)
+            light.Brightness = 2.0 + 4.5 * t + math.abs(math.sin(elapsed * 18))
+            for i, orb in ipairs(orbs) do
+                local phi = (i / #orbs) * math.pi * 2 + elapsed * (2 + 8 * t) * (i % 2 == 0 and 1 or -1)
+                local radius = 2.35 + 1.45 * math.sin(elapsed * 2 + i) * 0.25 + 0.7 * t
+                local h = 1.15 * math.sin(phi * 1.8 + elapsed * 4 + i) + 1.2
+                orb.Position = center + Vector3.new(math.cos(phi) * radius, h, math.sin(phi) * radius) * unit
+            end
+            if elapsed - lastEmit > 0.14 then
+                emit(goldDust, 7 + 18 * t)
+                emit(skyDust, 4 + 12 * t)
+                lastEmit = elapsed
+            end
+            if elapsed - lastPulse > (0.70 - 0.36 * t) then
+                shockwave(center, t > 0.5 and Color3.fromRGB(172,229,255) or Color3.fromRGB(255,221,76),
+                    0.55, 7 + 5 * t)
+                lastPulse = elapsed
+            end
+        end
+        if not alive then return end
+
+        -- Original HUGE POP effects, now with an independently flying lid.
+        restoreParts()
+        for _, data in ipairs(parts) do data.part.CanCollide = false end
+        local blast = sphereEffect(0.1, Color3.fromRGB(255,250,200), 0.15)
+        blast.CFrame = CFrame.new(center)
+        scaleTween(blast, 0.38, {Size = Vector3.new(9,9,9) * unit, Transparency = 1}, Enum.EasingStyle.Exponential)
+        Debris:AddItem(blast, 0.6)
+        shockwave(center, Color3.fromRGB(255,224,67), 0.85, 15)
+        shockwave(center, Color3.fromRGB(111,214,255), 1.1, 19)
+        emit(goldDust, 130)
+        emit(skyDust, 95)
+        emit(burstDust, 170)
+        scaleTween(light, 0.17, {Brightness = 14})
+        -- Do not let a missing Backpack pause the pop / fading choreography.
+        task.spawn(function()
+            local rewarded, rewardError = pcall(giveReward, player)
+            if not rewarded then warn("LuckyBlock reward error: " .. tostring(rewardError)) end
+        end)
+        for _, data in ipairs(parts) do
+            scaleTween(data.part, 0.42, {Transparency = 1}, Enum.EasingStyle.Back)
+        end
+        for _, orb in ipairs(orbs) do
+            scaleTween(orb, 0.38, {Size = Vector3.new(0.02,0.02,0.02) * unit, Transparency = 1})
+            Debris:AddItem(orb, 1)
+        end
+        local popStart = os.clock()
+        while alive and os.clock() - popStart < 0.5 do
+            RunService.Heartbeat:Wait()
+            if not alive then return end
+            local alpha = math.clamp((os.clock() - popStart) / 0.42, 0, 1)
+            local pop = TweenService:GetValue(alpha, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            pose(originalPivot, 1, math.rad(CONFIG.WingFlapAmount * 1.25) * pop, pop)
+        end
+        light.Brightness = 0
+        hideParts()
+    end)
+
+    if not alive then return end
+    if not ok then
+        warn("LuckyBlock animation error: " .. tostring(err))
+        cancelTweens()
+        clearEffects()
+        goldDust:Clear(); skyDust:Clear(); burstDust:Clear()
+        restoreParts()
+        prompt.Enabled = true
+        opening = false
+        return
+    end
+    for _, orb in ipairs(orbs) do if orb.Parent then Debris:AddItem(orb, 1) end end
+    if CONFIG.RespawnSeconds > 0 then
+        task.wait(CONFIG.RespawnSeconds)
+        if not alive then return end
+        cancelTweens()
+        clearEffects()
+        restoreParts()
+        emit(goldDust, 20)
+        prompt.Enabled = true
+        opening = false
+    else
+        -- Keep ALL four groups invisible and non-collidable until removed.
+        task.delay(3, function()
+            if alive then cancelTweens(); clearEffects() end
+        end)
+    end
+end)
+
+script.Destroying:Connect(function()
+    alive = false
+    connection:Disconnect()
+    cancelTweens()
+    clearEffects()
+    if luckyBlock.Parent then restoreParts() end
+    interaction:Destroy()
+    attachment:Destroy()
+end)
