@@ -1,0 +1,242 @@
+[
+  {
+    "preset": "Toilet",
+    "format": "fbx",
+    "triangles": 1076,
+    "mesh_count": 5,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Toilet",
+    "format": "glb",
+    "triangles": 1076,
+    "mesh_count": 5,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Crab",
+    "format": "fbx",
+    "triangles": 4036,
+    "mesh_count": 5,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Crab",
+    "format": "glb",
+    "triangles": 4036,
+    "mesh_count": 5,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Shark",
+    "format": "fbx",
+    "triangles": 4080,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Shark",
+    "format": "glb",
+    "triangles": 4080,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Frog",
+    "format": "fbx",
+    "triangles": 3952,
+    "mesh_count": 3,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Frog",
+    "format": "glb",
+    "triangles": 3952,
+    "mesh_count": 3,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Mystic",
+    "format": "fbx",
+    "triangles": 4060,
+    "mesh_count": 4,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Mystic",
+    "format": "glb",
+    "triangles": 4060,
+    "mesh_count": 4,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Paradise",
+    "format": "fbx",
+    "triangles": 4852,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Paradise",
+    "format": "glb",
+    "triangles": 4852,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Pumpkin",
+    "format": "fbx",
+    "triangles": 3960,
+    "mesh_count": 4,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Pumpkin",
+    "format": "glb",
+    "triangles": 3960,
+    "mesh_count": 4,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Pizza",
+    "format": "fbx",
+    "triangles": 5592,
+    "mesh_count": 3,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Pizza",
+    "format": "glb",
+    "triangles": 5592,
+    "mesh_count": 3,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Chicken",
+    "format": "fbx",
+    "triangles": 3924,
+    "mesh_count": 6,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Chicken",
+    "format": "glb",
+    "triangles": 3924,
+    "mesh_count": 6,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Glitch",
+    "format": "fbx",
+    "triangles": 4960,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  },
+  {
+    "preset": "Glitch",
+    "format": "glb",
+    "triangles": 4960,
+    "mesh_count": 8,
+    "blender_bounds": [
+      4,
+      3.4,
+      3.8
+    ],
+    "status": "PASS"
+  }
+]

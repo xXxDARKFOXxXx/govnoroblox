@@ -1,0 +1,23 @@
+{
+  "id": "09_Chicken",
+  "preset": "Chicken",
+  "label": "SUNNY",
+  "meshes": [
+    "Body_Chicken",
+    "WingL_Chicken",
+    "WingR_Chicken",
+    "Tail_Chicken",
+    "LegL_Chicken",
+    "LegR_Chicken"
+  ],
+  "triangles": 3924,
+  "vertices": 7848,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

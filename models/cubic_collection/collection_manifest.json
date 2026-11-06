@@ -1,0 +1,226 @@
+[
+  {
+    "id": "01_Toilet",
+    "preset": "Toilet",
+    "label": "PORCELAIN",
+    "meshes": [
+      "Body_Toilet",
+      "Glow_Toilet",
+      "Bubble01_Toilet",
+      "Bubble02_Toilet",
+      "Bubble03_Toilet"
+    ],
+    "triangles": 1076,
+    "vertices": 2152,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "02_Crab",
+    "preset": "Crab",
+    "label": "CRIMSON",
+    "meshes": [
+      "Body_Crab",
+      "LegL_Crab",
+      "ClawL_Crab",
+      "LegR_Crab",
+      "ClawR_Crab"
+    ],
+    "triangles": 4036,
+    "vertices": 8072,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "03_Shark",
+    "preset": "Shark",
+    "label": "TIDAL",
+    "meshes": [
+      "Body_Shark",
+      "FinL_Shark",
+      "FinR_Shark",
+      "Dorsal_Shark",
+      "Tail_Shark",
+      "Bubble01_Shark",
+      "Bubble02_Shark",
+      "Bubble03_Shark"
+    ],
+    "triangles": 4080,
+    "vertices": 8160,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "04_Frog",
+    "preset": "Frog",
+    "label": "MOSS",
+    "meshes": [
+      "Body_Frog",
+      "LegL_Frog",
+      "LegR_Frog"
+    ],
+    "triangles": 3952,
+    "vertices": 7904,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "05_Mystic",
+    "preset": "Mystic",
+    "label": "ABYSS",
+    "meshes": [
+      "Body_Mystic",
+      "Glow_Mystic",
+      "ClawL_Mystic",
+      "ClawR_Mystic"
+    ],
+    "triangles": 4060,
+    "vertices": 8120,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "06_Paradise",
+    "preset": "Paradise",
+    "label": "AUREOLE",
+    "meshes": [
+      "Body_Paradise",
+      "WingL_Paradise",
+      "WingR_Paradise",
+      "Halo_Paradise",
+      "Glow_Paradise",
+      "Cloud01_Paradise",
+      "Cloud02_Paradise",
+      "Cloud03_Paradise"
+    ],
+    "triangles": 4852,
+    "vertices": 9704,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "07_Pumpkin",
+    "preset": "Pumpkin",
+    "label": "EMBER",
+    "meshes": [
+      "Body_Pumpkin",
+      "Glow_Pumpkin",
+      "LegL_Pumpkin",
+      "LegR_Pumpkin"
+    ],
+    "triangles": 3960,
+    "vertices": 7920,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "08_Pizza",
+    "preset": "Pizza",
+    "label": "EXTRA CHEESE",
+    "meshes": [
+      "Body_Pizza",
+      "LegL_Pizza",
+      "LegR_Pizza"
+    ],
+    "triangles": 5592,
+    "vertices": 11184,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "09_Chicken",
+    "preset": "Chicken",
+    "label": "SUNNY",
+    "meshes": [
+      "Body_Chicken",
+      "WingL_Chicken",
+      "WingR_Chicken",
+      "Tail_Chicken",
+      "LegL_Chicken",
+      "LegR_Chicken"
+    ],
+    "triangles": 3924,
+    "vertices": 7848,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  },
+  {
+    "id": "10_Glitch",
+    "preset": "Glitch",
+    "label": "ERROR 404",
+    "meshes": [
+      "Body_Glitch",
+      "Glitch01_Glitch",
+      "Glitch02_Glitch",
+      "Glitch03_Glitch",
+      "Glitch04_Glitch",
+      "Glitch05_Glitch",
+      "Glitch06_Glitch",
+      "Glow_Glitch"
+    ],
+    "triangles": 4960,
+    "vertices": 9920,
+    "roblox_target_size": [
+      4,
+      3.8,
+      3.4
+    ],
+    "no_lid": true,
+    "flat_shaded": true,
+    "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+  }
+]
