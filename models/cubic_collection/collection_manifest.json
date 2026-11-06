@@ -17,6 +17,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_01_Toilet_v2.fbx",
+      "glb": "LB_01_Toilet_v2.glb",
+      "blend": "LB_01_Toilet.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -39,6 +46,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_02_Crab_v2.fbx",
+      "glb": "LB_02_Crab_v2.glb",
+      "blend": "LB_02_Crab.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -64,6 +78,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_03_Shark_v2.fbx",
+      "glb": "LB_03_Shark_v2.glb",
+      "blend": "LB_03_Shark.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -84,6 +105,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_04_Frog_v2.fbx",
+      "glb": "LB_04_Frog_v2.glb",
+      "blend": "LB_04_Frog.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -105,6 +133,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_05_Mystic_v2.fbx",
+      "glb": "LB_05_Mystic_v2.glb",
+      "blend": "LB_05_Mystic.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -130,6 +165,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_06_Paradise_v2.fbx",
+      "glb": "LB_06_Paradise_v2.glb",
+      "blend": "LB_06_Paradise.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -151,6 +193,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_07_Pumpkin_v2.fbx",
+      "glb": "LB_07_Pumpkin_v2.glb",
+      "blend": "LB_07_Pumpkin.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -171,6 +220,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_08_Pizza_v2.fbx",
+      "glb": "LB_08_Pizza_v2.glb",
+      "blend": "LB_08_Pizza.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -194,6 +250,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_09_Chicken_v2.fbx",
+      "glb": "LB_09_Chicken_v2.glb",
+      "blend": "LB_09_Chicken.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
@@ -219,6 +282,13 @@
       3.8,
       3.4
     ],
+    "format_version": 2,
+    "files": {
+      "fbx": "LB_10_Glitch_v2.fbx",
+      "glb": "LB_10_Glitch_v2.glb",
+      "blend": "LB_10_Glitch.blend"
+    },
+    "outward_winding": true,
     "no_lid": true,
     "flat_shaded": true,
     "surface": "orthogonal cuboids + nearest-filtered pixel atlas"

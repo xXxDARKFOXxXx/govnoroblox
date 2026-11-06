@@ -17,6 +17,13 @@
     3.8,
     3.4
   ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_09_Chicken_v2.fbx",
+    "glb": "LB_09_Chicken_v2.glb",
+    "blend": "LB_09_Chicken.blend"
+  },
+  "outward_winding": true,
   "no_lid": true,
   "flat_shaded": true,
   "surface": "orthogonal cuboids + nearest-filtered pixel atlas"

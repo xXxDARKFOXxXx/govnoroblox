@@ -4,7 +4,12 @@
 
 ![10 кубических лаки-блоков](models/cubic_collection/Collection_Preview.png)
 
-**[Скачать все 10 блоков ZIP](https://github.com/xXxDARKFOXxXx/govnoroblox/raw/refs/heads/main/downloads/Cubic_Lucky_Blocks_10.zip)**
+**[Скачать исправленный комплект v2 ZIP](https://github.com/xXxDARKFOXxXx/govnoroblox/raw/refs/heads/main/downloads/Cubic_Lucky_Blocks_10_v2.zip)**
+
+В **v2** исправлены направленные внутрь грани, из-за которых Roblox показывал
+модели с «дырами». Нужен повторный импорт файлов **`*_v2.fbx` / `*_v2.glb`**;
+замена скрипта не исправит старые MeshId. У райского блока расширены корпус
+и нимб, а общий размер сохранён.
 
 Унитаз, краб, акула, лягушка, мистический блок с глазами, райский блок
 с крыльями/нимбом/облаками, тыква, коробка пиццы, курица и Glitch.

@@ -56,7 +56,10 @@ for _,entry in ipairs(candidates) do
     end
     if not model:IsDescendantOf(workspace) then model.Parent=workspace end
     for _,part in ipairs(model:GetDescendants()) do
-        if part:IsA("MeshPart") then part.Color=Color3.fromRGB(255,255,255); part.Material=Enum.Material.SmoothPlastic end
+        if part:IsA("MeshPart") then
+            part.Color=Color3.fromRGB(255,255,255); part.Material=Enum.Material.SmoothPlastic
+            part.DoubleSided=false -- v2 winding is correct; no two-sided workaround
+        end
     end
     if RESIZE_TO_FOUR_STUDS then
         local before,size=model:GetBoundingBox()

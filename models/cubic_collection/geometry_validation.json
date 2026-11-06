@@ -2,6 +2,7 @@
   {
     "preset": "Toilet",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 1076,
     "mesh_count": 5,
     "blender_bounds": [
@@ -9,11 +10,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.4000004529953003,
+      3.800000706118567
+    ],
+    "facing": {
+      "outward": 967,
+      "inward": 0,
+      "internal": 109,
+      "ambiguous": 0
+    },
+    "sha256": "4670e7f20a8fd07610fcc24b14a21beeacc02b3cac15fe51208e45de4c50b3b2",
     "status": "PASS"
   },
   {
     "preset": "Toilet",
     "format": "glb",
+    "format_version": 2,
     "triangles": 1076,
     "mesh_count": 5,
     "blender_bounds": [
@@ -21,11 +35,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.3999998569488525,
+      3.8000001907348633
+    ],
+    "facing": {
+      "outward": 967,
+      "inward": 0,
+      "internal": 109,
+      "ambiguous": 0
+    },
+    "sha256": "d14acebd17e0ce28eb4a8109921557fdc1bc5f07c9172e54f300c4b7737ffc27",
     "status": "PASS"
   },
   {
     "preset": "Crab",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 4036,
     "mesh_count": 5,
     "blender_bounds": [
@@ -33,11 +60,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.4285714626312256,
+      3.4000006914138794,
+      3.4675643742084503
+    ],
+    "facing": {
+      "outward": 2455,
+      "inward": 0,
+      "internal": 1581,
+      "ambiguous": 0
+    },
+    "sha256": "de85bed453f6b046e726fa462e66823bcdffb7d1a3b4210907b60d2415fd9fa6",
     "status": "PASS"
   },
   {
     "preset": "Crab",
     "format": "glb",
+    "format_version": 2,
     "triangles": 4036,
     "mesh_count": 5,
     "blender_bounds": [
@@ -45,11 +85,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.4285714626312256,
+      3.4000000953674316,
+      3.4675638675689697
+    ],
+    "facing": {
+      "outward": 2455,
+      "inward": 0,
+      "internal": 1581,
+      "ambiguous": 0
+    },
+    "sha256": "11b73668eb50222029897f181109a2cb8e991599ac12f98fb478f8e4381b62aa",
     "status": "PASS"
   },
   {
     "preset": "Shark",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 4080,
     "mesh_count": 8,
     "blender_bounds": [
@@ -57,11 +110,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.7566264867782593,
+      2.633803129196167,
+      2.8753868670710716
+    ],
+    "facing": {
+      "outward": 2486,
+      "inward": 0,
+      "internal": 1594,
+      "ambiguous": 0
+    },
+    "sha256": "9278acb64ca28d79afb26a4bc1e13273d7d14b35e641d178db8256707497aff1",
     "status": "PASS"
   },
   {
     "preset": "Shark",
     "format": "glb",
+    "format_version": 2,
     "triangles": 4080,
     "mesh_count": 8,
     "blender_bounds": [
@@ -69,11 +135,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.7566264867782593,
+      2.633802652359009,
+      2.8753864765167236
+    ],
+    "facing": {
+      "outward": 2486,
+      "inward": 0,
+      "internal": 1594,
+      "ambiguous": 0
+    },
+    "sha256": "057adad5b181c373acd8d3bcbbcc8531cbd5b31ecb700f93d00acdab5281ca28",
     "status": "PASS"
   },
   {
     "preset": "Frog",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 3952,
     "mesh_count": 3,
     "blender_bounds": [
@@ -81,11 +160,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      3.241572856903076,
+      3.4000003337860107,
+      3.3741848468780518
+    ],
+    "facing": {
+      "outward": 2270,
+      "inward": 0,
+      "internal": 1682,
+      "ambiguous": 0
+    },
+    "sha256": "f0c711fa5bd250ddc005cd1e8218098719dc7408e6c8aa2d667d8eb3fd416069",
     "status": "PASS"
   },
   {
     "preset": "Frog",
     "format": "glb",
+    "format_version": 2,
     "triangles": 3952,
     "mesh_count": 3,
     "blender_bounds": [
@@ -93,11 +185,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      3.241572856903076,
+      3.3999998569488525,
+      3.374184340238571
+    ],
+    "facing": {
+      "outward": 2270,
+      "inward": 0,
+      "internal": 1682,
+      "ambiguous": 0
+    },
+    "sha256": "de50d172e7a8cf5868cdab3f23ca3833cc03836a94b4402bea8294c22ac1f01d",
     "status": "PASS"
   },
   {
     "preset": "Mystic",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 4060,
     "mesh_count": 4,
     "blender_bounds": [
@@ -105,11 +210,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.7233011722564697,
+      3.4000006914138794,
+      3.429268956184387
+    ],
+    "facing": {
+      "outward": 2482,
+      "inward": 0,
+      "internal": 1578,
+      "ambiguous": 0
+    },
+    "sha256": "cc2589ab19ce42e64b0743aff253466707185fbe728110a31fba4fdfb42a28bd",
     "status": "PASS"
   },
   {
     "preset": "Mystic",
     "format": "glb",
+    "format_version": 2,
     "triangles": 4060,
     "mesh_count": 4,
     "blender_bounds": [
@@ -117,11 +235,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.7233011722564697,
+      3.4000000953674316,
+      3.4292684346437454
+    ],
+    "facing": {
+      "outward": 2482,
+      "inward": 0,
+      "internal": 1578,
+      "ambiguous": 0
+    },
+    "sha256": "86c1247f73542adc98b70718c6de2c3891346afc051fe7b4c32fc0dc60034666",
     "status": "PASS"
   },
   {
     "preset": "Paradise",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 4852,
     "mesh_count": 8,
     "blender_bounds": [
@@ -129,11 +260,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.793129086494446,
+      2.73323392868042,
+      2.8834983601685877
+    ],
+    "facing": {
+      "outward": 3049,
+      "inward": 0,
+      "internal": 1803,
+      "ambiguous": 0
+    },
+    "sha256": "9f1354c10433b1c1315e2a9dcdce8bd43e3b2053de20475e268211fbfaa5f4e4",
     "status": "PASS"
   },
   {
     "preset": "Paradise",
     "format": "glb",
+    "format_version": 2,
     "triangles": 4852,
     "mesh_count": 8,
     "blender_bounds": [
@@ -141,11 +285,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.793129086494446,
+      2.7332334518432617,
+      2.883497953414917
+    ],
+    "facing": {
+      "outward": 3049,
+      "inward": 0,
+      "internal": 1803,
+      "ambiguous": 0
+    },
+    "sha256": "3546bdb64a5f5a1d610ba5e9ccc12872964407fba596c714e4b46c25c92ac06e",
     "status": "PASS"
   },
   {
     "preset": "Pumpkin",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 3960,
     "mesh_count": 4,
     "blender_bounds": [
@@ -153,11 +310,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.3493486642837524,
+      3.391565054655075
+    ],
+    "facing": {
+      "outward": 2400,
+      "inward": 0,
+      "internal": 1560,
+      "ambiguous": 0
+    },
+    "sha256": "9d1ea1db911a8ee9617563784d22ca42eda314d387d9c89de46e1af2a775a159",
     "status": "PASS"
   },
   {
     "preset": "Pumpkin",
     "format": "glb",
+    "format_version": 2,
     "triangles": 3960,
     "mesh_count": 4,
     "blender_bounds": [
@@ -165,11 +335,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.3493481874465942,
+      3.3915645480155945
+    ],
+    "facing": {
+      "outward": 2400,
+      "inward": 0,
+      "internal": 1560,
+      "ambiguous": 0
+    },
+    "sha256": "861eadb984cb07e870bbc4b20940e93ea758a26b126e5656ba81022c4212f190",
     "status": "PASS"
   },
   {
     "preset": "Pizza",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 5592,
     "mesh_count": 3,
     "blender_bounds": [
@@ -177,11 +360,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.40000057220459,
+      3.3356539607048035
+    ],
+    "facing": {
+      "outward": 3790,
+      "inward": 0,
+      "internal": 1802,
+      "ambiguous": 0
+    },
+    "sha256": "d29a97350c1abed6f16707cdd16069bfbb2fbb27267dbb22a5cc45ab3bf7f0ac",
     "status": "PASS"
   },
   {
     "preset": "Pizza",
     "format": "glb",
+    "format_version": 2,
     "triangles": 5592,
     "mesh_count": 3,
     "blender_bounds": [
@@ -189,11 +385,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      4.0,
+      3.4000000953674316,
+      3.335653454065323
+    ],
+    "facing": {
+      "outward": 3790,
+      "inward": 0,
+      "internal": 1802,
+      "ambiguous": 0
+    },
+    "sha256": "0214c027b859c1b1d90ed9d44a608337de99b9be316f59afe6552116e9f1109a",
     "status": "PASS"
   },
   {
     "preset": "Chicken",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 3924,
     "mesh_count": 6,
     "blender_bounds": [
@@ -201,11 +410,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.9840426445007324,
+      3.0156527757644653,
+      3.3910085558891296
+    ],
+    "facing": {
+      "outward": 2360,
+      "inward": 0,
+      "internal": 1564,
+      "ambiguous": 0
+    },
+    "sha256": "8fddae0f765ba07614a587407a1b360c5c8d42fe2f2fc750df661cce06dd6c42",
     "status": "PASS"
   },
   {
     "preset": "Chicken",
     "format": "glb",
+    "format_version": 2,
     "triangles": 3924,
     "mesh_count": 6,
     "blender_bounds": [
@@ -213,11 +435,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      2.9840426445007324,
+      3.015652298927307,
+      3.391008108854294
+    ],
+    "facing": {
+      "outward": 2360,
+      "inward": 0,
+      "internal": 1564,
+      "ambiguous": 0
+    },
+    "sha256": "1486c212fdf0938aebe948cae82026aeaeb93e12e271c67ac548a42c6a771b3c",
     "status": "PASS"
   },
   {
     "preset": "Glitch",
     "format": "fbx",
+    "format_version": 2,
     "triangles": 4960,
     "mesh_count": 8,
     "blender_bounds": [
@@ -225,11 +460,24 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      3.287671208381653,
+      3.400000214576721,
+      2.8227092027664185
+    ],
+    "facing": {
+      "outward": 2976,
+      "inward": 0,
+      "internal": 1984,
+      "ambiguous": 0
+    },
+    "sha256": "3238289f599fb6c2a158cfa05abc077827f374fca6a3f269526fc17baea830e4",
     "status": "PASS"
   },
   {
     "preset": "Glitch",
     "format": "glb",
+    "format_version": 2,
     "triangles": 4960,
     "mesh_count": 8,
     "blender_bounds": [
@@ -237,6 +485,18 @@
       3.4,
       3.8
     ],
+    "body_bounds": [
+      3.287671208381653,
+      3.3999998569488525,
+      2.822708696126938
+    ],
+    "facing": {
+      "outward": 2976,
+      "inward": 0,
+      "internal": 1984,
+      "ambiguous": 0
+    },
+    "sha256": "4ac6d8296278b20ff6338394d3130a8143eb6e1b3ed8ee42cc28d5705cf316f7",
     "status": "PASS"
   }
 ]

@@ -45,7 +45,10 @@ mask.pixels.foreach_set(mp.ravel()); mask.filepath_raw=str(OUT/'Pixel_Particle.p
 FONT={'?':['01110','11011','00011','00110','00100','00000','00100'],
  'P':['1110','1001','1110','1000','1000'],'I':['111','010','010','010','111'],
  'Z':['1111','0001','0010','0100','1111'],'A':['0110','1001','1111','1001','1001']}
-FACES=[(0,1,2,3),(4,7,6,5),(0,4,5,1),(1,5,6,2),(2,6,7,3),(4,0,3,7)]
+# Explicit OUTWARD winding: bottom, top, front, right, back, left.
+# Face clipping creates independent quads; recalculating normals afterwards
+# cannot infer an inside/outside for those disconnected faces.
+FACES=[(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
 
 def init(slug):
  global G,R,MATS,ATLAS,SLUG
@@ -56,6 +59,7 @@ def init(slug):
  for glow in (False,True):
   m=bpy.data.materials.new('VoxelGlow' if glow else 'VoxelPlastic'); m.use_nodes=True
   bs=m.node_tree.nodes.get('Principled BSDF'); bs.inputs['Roughness'].default_value=.73
+  m.use_backface_culling=True
   tex=m.node_tree.nodes.new('ShaderNodeTexImage'); tex.image=ATLAS; tex.interpolation='Closest'
   m.node_tree.links.new(tex.outputs['Color'],bs.inputs['Base Color'])
   if glow:
@@ -209,6 +213,14 @@ def paradise():
  for i,(x,y,z) in enumerate([(-1.95,-.1,1.32),(1.90,.55,1.60),(.25,1.52,2.86)]):
   for dx,dy,dz,d in [(-.3,0,0,.46),(0,0,.15,.66),(.4,.03,0,.47),(0,.2,-.18,.45)]:
    box((x+dx,y+dy,z+dz),(d,d*.8,d*.75),'white',f'Cloud{i+1:02}',shade=i%2)
+ # A broad cube-shaped body instead of the old tall, narrow angel. Keep the
+ # total 4-stud envelope by bringing the wings closer to the wider shoulders.
+ for group,(verts,_,_) in G.items():
+  for i,(x,y,z) in enumerate(verts):
+   if group in ('Body','Halo','Glow'): x*=1.5
+   elif group in ('WingL','WingR'): x=(1 if x>=0 else -1)*(1.95+(abs(x)-1.155)*.65)
+   elif group.startswith('Cloud'): x*=1.2
+   verts[i]=(x,y,z)
 
 def pumpkin():
  core('orange','brown')
@@ -311,26 +323,40 @@ def finalize(slug):
  high=Vector(tuple(max(v[i] for v in allv) for i in range(3)))
  # Exact common game envelope: Roblox X=4, Y=3.8, Z=3.4 studs at scale 1.
  factor=Vector((4/(high.x-low.x),3.4/(high.y-low.y),3.8/(high.z-low.z)))
- center=(low+high)/2; objects=[]
+ center=(low+high)/2; objects=[]; solids={}
  for group,(verts,faces,tiles) in G.items():
+  name=(f'Body_{slug}' if group=='Body' else f'{group}_{slug}')
+  # Store the actual solid cuboids as an independent orientation contract for
+  # post-export tests. An exterior face must point from solid toward empty air.
+  original=np.array(verts,dtype=float).reshape((-1,8,3))
+  offset=np.array([center.x,center.y,low.z]); scale=np.array(factor)
+  solids[name]=np.stack(((original.min(axis=1)-offset)*scale,(original.max(axis=1)-offset)*scale),axis=1).tolist()
   verts,faces,tiles,face_uvs=clean_planes(verts,faces,tiles)
   transformed=[((v[0]-center.x)*factor.x,(v[1]-center.y)*factor.y,(v[2]-low.z)*factor.z) for v in verts]
-  name=(f'Body_{slug}' if group=='Body' else f'{group}_{slug}')
   mesh=bpy.data.meshes.new(name); mesh.from_pydata(transformed,[],faces); mesh.update()
   obj=bpy.data.objects.new(name,mesh); bpy.context.collection.objects.link(obj)
   obj['LuckyPreset']=slug; obj['NoLid']=True
   mesh.materials.append(MATS[1 if group=='Glow' else 0])
   uv=mesh.uv_layers.new(name='UVMap')
   for poly,tile,coords in zip(mesh.polygons,tiles,face_uvs):
-   # Cube winding is inward initially; recalculate below without smoothing.
+   # Winding and UV order are preserved through clipping and triangulation.
    for li,coord in zip(poly.loop_indices,coords):
     uv.data[li].uv=((tile%8+.02+coord[0]*.96)/8,(tile//8+.02+coord[1]*.96)/8)
   bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True); bpy.context.view_layer.objects.active=obj
-  bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.normals_make_consistent(inside=False); bpy.ops.object.mode_set(mode='OBJECT')
   for poly in mesh.polygons: poly.use_smooth=False
   tri=obj.modifiers.new('Triangles','TRIANGULATE'); bpy.ops.object.modifier_apply(modifier=tri.name)
   objects.append(obj)
- return objects
+ return objects,solids
+
+def render_single_sided(materials=None):
+ # Cycles normally renders both sides. Make back faces transparent in previews
+ # as well, so Blender can no longer conceal a one-sided game-engine defect.
+ for m in (MATS if materials is None else materials):
+  nodes=m.node_tree.nodes; links=m.node_tree.links
+  bs=nodes.get('Principled BSDF'); output=nodes.get('Material Output')
+  geo=nodes.new('ShaderNodeNewGeometry'); transparent=nodes.new('ShaderNodeBsdfTransparent'); mix=nodes.new('ShaderNodeMixShader')
+  links.new(geo.outputs['Backfacing'],mix.inputs[0]); links.new(bs.outputs[0],mix.inputs[1])
+  links.new(transparent.outputs[0],mix.inputs[2]); links.new(mix.outputs[0],output.inputs['Surface'])
 
 def track(o,target): o.rotation_euler=(Vector(target)-o.location).to_track_quat('-Z','Y').to_euler()
 def studio(gallery=False):
@@ -358,19 +384,23 @@ for folder,slug,label in VARIANTS:
  if ONLY and slug not in ONLY:
   allstats.append(json.loads((OUT/folder/'model_info.json').read_text())); continue
  print('BUILDING',slug,flush=True); dest=OUT/folder; dest.mkdir(exist_ok=True)
- init(slug); globals()[slug.lower()](); objects=finalize(slug)
+ init(slug); globals()[slug.lower()](); objects,solids=finalize(slug)
  bpy.ops.object.select_all(action='DESELECT')
  for o in objects: o.select_set(True)
  bpy.context.view_layer.objects.active=objects[0]
- bpy.ops.export_scene.fbx(filepath=str(dest/f'LB_{folder}.fbx'),use_selection=True,object_types={'MESH'},axis_forward='-Z',axis_up='Y',bake_anim=False,path_mode='COPY',embed_textures=True)
- bpy.ops.export_scene.gltf(filepath=str(dest/f'LB_{folder}.glb'),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_extras=True)
+ files={'fbx':f'LB_{folder}_v2.fbx','glb':f'LB_{folder}_v2.glb','blend':f'LB_{folder}.blend'}
+ bpy.ops.export_scene.fbx(filepath=str(dest/files['fbx']),use_selection=True,object_types={'MESH'},axis_forward='-Z',axis_up='Y',bake_anim=False,path_mode='COPY',embed_textures=True)
+ bpy.ops.export_scene.gltf(filepath=str(dest/files['glb']),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_extras=True)
+ (dest/'solid_contract.json').write_text(json.dumps(solids,separators=(',',':')))
  stats={'id':folder,'preset':slug,'label':label,'meshes':[o.name for o in objects],
   'triangles':sum(len(o.data.polygons) for o in objects),'vertices':sum(len(o.data.vertices) for o in objects),
-  'roblox_target_size':[4,3.8,3.4],'no_lid':True,'flat_shaded':True,'surface':'orthogonal cuboids + nearest-filtered pixel atlas'}
+  'roblox_target_size':[4,3.8,3.4],'format_version':2,'files':files,'outward_winding':True,
+  'no_lid':True,'flat_shaded':True,'surface':'orthogonal cuboids + nearest-filtered pixel atlas'}
  allstats.append(stats); (dest/'model_info.json').write_text(json.dumps(stats,indent=2))
  studio(); bpy.context.scene.render.filepath=str(dest/'Preview.png')
  bpy.ops.wm.save_as_mainfile(filepath=str(dest/f'LB_{folder}.blend'))
- if RENDER: bpy.ops.render.render(write_still=True)
+ if RENDER:
+  render_single_sided(); bpy.ops.render.render(write_still=True)
 
 (OUT/'collection_manifest.json').write_text(json.dumps(allstats,indent=2))
 # Collection scene: actual meshes, presentation labels, no compositing or AI image.
@@ -386,5 +416,6 @@ for index,(folder,slug,label) in enumerate(VARIANTS):
  mat=bpy.data.materials.get('Label') or bpy.data.materials.new('Label'); mat.diffuse_color=(.78,.88,1,1); txt.data.materials.append(mat)
 studio(True); bpy.context.scene.render.filepath=str(OUT/'Collection_Preview.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'Cubic_Collection.blend'))
-if RENDER: bpy.ops.render.render(write_still=True)
+if RENDER:
+ render_single_sided([m for m in bpy.data.materials if m.name.startswith('Voxel')]); bpy.ops.render.render(write_still=True)
 print('CUBIC_COLLECTION_BUILD_OK',json.dumps({x['preset']:x['triangles'] for x in allstats}),flush=True)
