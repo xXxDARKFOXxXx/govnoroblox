@@ -388,5 +388,45 @@ def sparkle_icon():
     finish(cv, "Sparkle", 128, shadow=False)
 
 
-for fn in (rebirth, gifts, shop, index, coin, flippers, shark_fin, egg_icon, sparkle_icon):
+def backpack():
+    """Rounded orange-red backpack: handle, side straps, front pocket, gold buckle."""
+    cv = canvas()
+    outline = (70, 16, 6)
+    body_top, body_bottom = (255, 116, 52), (196, 48, 18)
+    handle = minus(rrect(392, 90, 632, 250, 70), rrect(452, 140, 572, 260, 40))
+    part(cv, handle, (150, 70, 40), (100, 40, 20), outline, ow=18, gloss=False)
+    for x in (230, 794):  # side pockets
+        part(cv, rrect(x - 80, 420, x + 80, 820, 60), (236, 92, 40), (176, 40, 16), outline, ow=20, gloss=False)
+    body = rrect(250, 200, 774, 930, 170)
+    part(cv, body, body_top, body_bottom, outline, ow=24)
+    for x in (360, 664):  # shoulder straps seen from the front
+        paint(cv, rrect(x - 30, 230, x + 30, 900, 26), solid((150, 40, 14)), 0.55)
+    pocket = rrect(330, 560, 694, 880, 90)
+    part(cv, pocket, (240, 100, 44), (184, 44, 16), outline, ow=16, gloss=False)
+    flap = rrect(330, 520, 694, 660, 70)
+    part(cv, flap, (255, 132, 64), (214, 64, 24), outline, ow=16)
+    ring = minus(ell(512, 380, 92, 92), ell(512, 380, 50, 50))
+    part(cv, ring, (255, 236, 110), (240, 150, 14), outline=(120, 56, 0), ow=12)
+    part(cv, rrect(476, 610, 548, 700, 18), (255, 236, 110), (240, 150, 14), outline=(120, 56, 0), ow=10, gloss=False)
+    finish(cv, "Backpack")
+
+
+def food():
+    """Shiny red apple with a stem and a leaf."""
+    cv = canvas()
+    outline = (80, 8, 16)
+    apple = smooth(union(ell(400, 590, 290, 320), ell(624, 590, 290, 320), ell(512, 700, 330, 230)), 10)
+    apple = minus(apple, ell(512, 270, 70, 60))
+    part(cv, apple, (255, 96, 96), (192, 16, 36), outline, ow=24, gloss=False)
+    shine = inter(shrink(apple, 30), ell(340, 470, 80, 150, -20))
+    paint(cv, shine.filter(ImageFilter.GaussianBlur(10)), solid((255, 255, 255)), 0.75)
+    paint(cv, inter(shrink(apple, 20), ell(700, 820, 160, 80, 20)).filter(ImageFilter.GaussianBlur(16)), solid((120, 0, 20)), 0.45)
+    part(cv, rrect(490, 120, 540, 330, 20).rotate(-10, center=(512, 300), resample=Image.BICUBIC), (140, 90, 40), (90, 50, 20), outline=(50, 24, 8), ow=12, gloss=False)
+    leaf = ell(660, 190, 130, 62, 25)
+    part(cv, leaf, (140, 236, 90), (40, 150, 40), outline=(16, 70, 16), ow=14, gloss=False)
+    paint(cv, rrect(580, 186, 740, 196, 5).rotate(25, center=(660, 190), resample=Image.BICUBIC), solid((30, 110, 30)), 0.8)
+    finish(cv, "Food")
+
+
+for fn in (rebirth, gifts, shop, index, coin, flippers, shark_fin, egg_icon, sparkle_icon, backpack, food):
     fn()

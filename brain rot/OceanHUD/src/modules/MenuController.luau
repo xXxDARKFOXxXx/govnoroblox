@@ -14,15 +14,7 @@ local DESCRIPTIONS = {
 	Gifts = "Забирай подарки за время в игре и ежедневные награды.",
 	Shop = "Улучшения скорости, яйца и полезные предметы.",
 	Index = "Коллекция всех найденных яиц и питомцев.",
-	Fish = "Здесь будут все твои рыбы.",
-	Eggs = "Здесь будут все твои яйца.",
 }
-
-local function allSpecs()
-	local list = table.clone(Theme.Buttons)
-	for _, spec in Theme.Inventory do table.insert(list, spec) end
-	return list
-end
 
 function MenuController.new(root: GuiObject, openEvent: BindableEvent, sound: Sound?)
 	local self = setmetatable({root = root, openEvent = openEvent, sound = sound, windows = {}, current = nil, connections = {}}, MenuController)
@@ -32,7 +24,7 @@ function MenuController.new(root: GuiObject, openEvent: BindableEvent, sound: So
 		BackgroundColor3 = Theme.Ink, BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 30,
 	})
 	self.backdrop = backdrop
-	for _, spec in allSpecs() do
+	for _, spec in Theme.Buttons do
 		local window = C.new("CanvasGroup", backdrop, {
 			Name = spec.key .. "Menu", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
 			Size = UDim2.fromOffset(size.MenuW, size.MenuH + 10), BackgroundTransparency = 1,

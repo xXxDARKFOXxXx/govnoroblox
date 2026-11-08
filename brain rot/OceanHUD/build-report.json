@@ -6,9 +6,10 @@
     "UIComponents",
     "UIAnimations",
     "UIDataController",
-    "MenuController"
+    "MenuController",
+    "InventoryController"
   ],
-  "placeBytes": 367716,
+  "placeBytes": 376751,
   "placeRoundTrip": true,
-  "placeScriptCount": 14
+  "placeScriptCount": 16
 }

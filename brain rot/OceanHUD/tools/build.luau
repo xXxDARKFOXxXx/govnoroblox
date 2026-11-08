@@ -7,7 +7,7 @@ local serde = require("@lune/serde")
 local process = require("@lune/process")
 local root = process.cwd:gsub("\\", "/"):gsub("/?$", "/")
 
-local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController"}
+local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController"}
 
 local function source(path)
 	local text = fs.readFile(root .. path)
@@ -34,10 +34,13 @@ local function serverTree()
 	local stats = roblox.Instance.new("ModuleScript")
 	stats.Name = "OceanHUDStats"
 	stats.Source = source("src/server/OceanHUDStats.luau")
+	local inventory = roblox.Instance.new("ModuleScript")
+	inventory.Name = "OceanInventory"
+	inventory.Source = source("src/server/OceanInventory.luau")
 	local test = roblox.Instance.new("Script")
 	test.Name = "OceanHUDTestData"
 	test.Source = source("src/server/OceanHUDTestData.server.luau")
-	return {stats, test}
+	return {stats, inventory, test}
 end
 
 fs.writeFile(root .. "OceanHUD.rbxmx", roblox.serializeModel({clientTree()}, true))

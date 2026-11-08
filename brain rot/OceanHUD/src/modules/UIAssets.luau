@@ -19,6 +19,8 @@ UIAssets.Uploaded = {
 	SharkFin = "",
 	Egg = "",
 	Sparkle = "",
+	Backpack = "",
+	Food = "",
 }
 
 UIAssets.LocalFolder = "rbxasset://textures/OceanHUD/"

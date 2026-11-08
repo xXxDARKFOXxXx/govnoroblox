@@ -42,6 +42,8 @@ r.implementMethod("Instance", "GetAttributeChangedSignal", function(object, name
 r.implementMethod("BindableEvent", "Fire", function(object, ...) event(object, "Event"):Fire(...) end)
 local soundPlays = 0
 r.implementMethod("Sound", "Play", function() soundPlays += 1 end)
+r.implementMethod("TextBox", "ReleaseFocus", function() end)
+r.implementProperty("Instance", "AttributeChanged", function(object) return event(object, "AttributeChanged") end)
 -- Tweens finish instantly: properties are applied, change signals and Completed fire.
 local tweenCount = 0
 r.implementMethod("TweenService", "Create", function(_, object, _, props)
@@ -70,7 +72,7 @@ local playerGui = r.Instance.new("PlayerGui")
 playerGui.Parent = player
 
 -- Script tree exactly like the build: LocalScript with ModuleScript children.
-local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController"}
+local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController"}
 local hudScript = r.Instance.new("LocalScript")
 hudScript.Name = "OceanHUD"
 hudScript.Source = fs.readFile(rootPath .. "src/OceanHUD.client.luau")
@@ -131,7 +133,7 @@ local images = {}
 for _, object in gui:GetDescendants() do
 	if object:IsA("ImageLabel") then images[object.Image] = true end
 end
-for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "SharkFin", "Egg", "Sparkle"} do
+for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "SharkFin", "Egg", "Sparkle", "Backpack", "Food"} do
 	check(images["rbxasset://textures/OceanHUD/" .. name .. ".png"], "Uses icon image " .. name)
 	check(fs.isFile(rootPath .. "assets/" .. name .. ".png"), "Icon file exists " .. name)
 end
@@ -202,15 +204,91 @@ event(backdrop.IndexMenu.Panel.Body.Close, "Activated"):Fire()
 check(not backdrop.Visible, "Close button closes")
 press("Rebirth"); event(backdrop, "Activated"):Fire()
 check(not backdrop.Visible, "Backdrop click closes")
-local inv = root.Inventory
-check(inv.FishSlot.Plate.Body.Caption.Text == "Рыбы" and inv.EggsSlot.Plate.Body.Caption.Text == "Яйца", "Fish and Eggs buttons bottom-right")
-check(inv.FishSlot.Plate.Body.Icon.Image:find("SharkFin") and inv.EggsSlot.Plate.Body.Icon.Image:find("Egg"), "Shark fin and egg icons")
-event(inv.FishSlot.Fish, "Activated"):Fire()
-check(shown("Fish"), "Fish button opens the fish menu")
-event(inv.EggsSlot.Eggs, "Activated"):Fire()
-check(shown("Eggs") and not backdrop.FishMenu.Visible, "Eggs button switches to the eggs menu")
-event(inv.EggsSlot.Eggs, "Activated"):Fire()
-check(not backdrop.Visible, "Eggs button closes its menu")
+local col = root.Collection
+check(col.FishSlot.Plate.Body.Caption.Text == "Рыбы" and col.EggsSlot.Plate.Body.Caption.Text == "Яйца", "Fish and Eggs buttons bottom-right")
+check(col.FishSlot.Plate.Body.Icon.Image:find("SharkFin") and col.EggsSlot.Plate.Body.Icon.Image:find("Egg"), "Shark fin and egg icons")
+
+-- Inventory
+local uis = game:GetService("UserInputService")
+local function key(code) event(uis, "InputBegan"):Fire({KeyCode = code}, false) end
+local backpack = root.Backpack
+local hotbar = root.Hotbar
+local panel = root.InventoryPanel
+local main = panel.Main
+check(backpack.Button.Key.Text == "[G]" and backpack.Button.Icon.Image:find("Backpack"), "Closed inventory: backpack with [G]")
+check(not panel.Visible and not hotbar.Visible, "Closed: no window, no hotbar")
+check(main.Empty.Visible and main.Empty.Text == "Здесь пока ничего нет", "Empty inventory message")
+local tabNames = {}
+for _, spec in {"All", "Eggs", "Fish", "Food"} do tabNames[#tabNames + 1] = panel[spec .. "Tab"].Caption.Text end
+check(table.concat(tabNames, ",") == "Все,Яйца,Рыбы,Еда", "Tabs Все / Яйца / Рыбы / Еда")
+check(panel.FoodTab.Icon.Image:find("Food") and panel.AllTab.Icon.Image:find("Backpack"), "Tab icons")
+check(main.Search.PlaceholderText == "Поиск", "Search box")
+for i = 1, 8 do assert(hotbar["Slot" .. i].Number.Text == tostring(i)) end
+check(true, "Hotbar slots numbered 1-8")
+key(r.Enum.KeyCode.G)
+check(panel.Visible and panel.GroupTransparency == 0 and hotbar.Visible, "G opens the inventory")
+check(backpack.Button.UIStroke.Color == r.Color3.new(1, 1, 1), "Open backpack slot is outlined white")
+check(backpack.Position.X.Offset < hotbar.Position.X.Offset, "Backpack moves to the start of the hotbar")
+-- Server-style items in Player.Inventory
+local folder = r.Instance.new("Folder"); folder.Name = "Inventory"; folder.Parent = player
+local function item(id, name, category, icon, count, slot)
+	local f = r.Instance.new("Folder"); f.Name = id
+	f:SetAttribute("DisplayName", name); f:SetAttribute("Category", category)
+	f:SetAttribute("Icon", icon); f:SetAttribute("Count", count); f:SetAttribute("HotbarSlot", slot)
+	f.Parent = folder
+	return f
+end
+event(player, "ChildAdded"):Fire(folder)
+item("BasicEgg", "Обычное яйцо", "Eggs", "Egg", 3, nil)
+item("Shark", "Акула", "Fish", "SharkFin", 1, 1)
+local apple = item("Apple", "Яблоко", "Food", "Food", 5, 2)
+event(folder, "ChildAdded"):Fire()
+local function cards()
+	local n = 0
+	for _, child in main.Grid:GetChildren() do if child:IsA("Frame") then n += 1 end end
+	return n
+end
+check(cards() == 3 and not main.Empty.Visible, "All tab shows every item")
+check(main.Grid.Item_BasicEgg.Count.Text == "x3" and main.Grid.Item_BasicEgg.ItemName.Text == "Обычное яйцо", "Item card with name and count")
+check(main.Grid.Item_Shark:FindFirstChild("Count") == nil, "Single items have no count badge")
+check(hotbar.Slot1.Icon.Image:find("SharkFin") and hotbar.Slot2.Icon.Image:find("Food") and hotbar.Slot3.Icon.Image == "", "Hotbar shows assigned items")
+event(panel.EggsTab, "Activated"):Fire()
+check(cards() == 1 and main.Grid:FindFirstChild("Item_BasicEgg"), "Eggs tab filters")
+check(panel.EggsTab.UIGradient.Enabled and not panel.AllTab.UIGradient.Enabled, "Selected tab is highlighted blue")
+event(panel.FoodTab, "Activated"):Fire()
+check(cards() == 1 and main.Grid:FindFirstChild("Item_Apple"), "Food tab filters")
+event(panel.AllTab, "Activated"):Fire()
+main.Search.Text = "ЯЙЦ"; event(main.Search, "property:Text"):Fire()
+check(cards() == 1 and main.Grid:FindFirstChild("Item_BasicEgg"), "Search is case-insensitive in Russian")
+main.Search.Text = "кит"; event(main.Search, "property:Text"):Fire()
+check(cards() == 0 and main.Empty.Visible, "No matches shows the empty message")
+main.Search.Text = ""; event(main.Search, "property:Text"):Fire()
+apple:SetAttribute("Count", 6); event(apple, "AttributeChanged"):Fire("Count")
+check(main.Grid.Item_Apple.Count.Text == "x6", "Count updates live")
+local picks = {}
+root.HotbarSelected.Event:Connect(function(index, id) table.insert(picks, tostring(index) .. ":" .. tostring(id)) end)
+key(r.Enum.KeyCode.One)
+check(hotbar.Slot1.UIStroke.Color == r.Color3.new(1, 1, 1) and picks[#picks] == "1:Shark", "Key 1 selects slot 1")
+key(r.Enum.KeyCode.One)
+check(hotbar.Slot1.UIStroke.Color == r.Color3.new(0, 0, 0) and picks[#picks] == "nil:nil", "Pressing 1 again unselects")
+event(hotbar.Slot2, "Activated"):Fire()
+check(picks[#picks] == "2:Apple", "Clicking a slot selects it")
+key(r.Enum.KeyCode.G)
+check(not panel.Visible and not hotbar.Visible, "G closes the inventory")
+event(col.FishSlot.Fish, "Activated"):Fire()
+check(panel.Visible and panel.FishTab.UIGradient.Enabled and cards() == 1, "Fish button opens the inventory on Рыбы")
+event(col.EggsSlot.Eggs, "Activated"):Fire()
+check(panel.Visible and panel.EggsTab.UIGradient.Enabled, "Eggs button switches to Яйца")
+event(col.EggsSlot.Eggs, "Activated"):Fire()
+check(not panel.Visible, "Eggs button again closes the inventory")
+event(backpack.Button, "Activated"):Fire()
+check(panel.Visible, "Clicking the backpack opens the inventory")
+press("Shop")
+check(not panel.Visible and shown("Shop"), "Opening a menu closes the inventory")
+event(backpack.Button, "Activated"):Fire()
+check(panel.Visible and not backdrop.Visible, "Opening the inventory closes the menu")
+key(r.Enum.KeyCode.Escape)
+check(not panel.Visible, "Escape closes the inventory")
 check(counters.SpeedCounter.Icon.Image:find("Flippers"), "Speed uses the flippers icon")
 check(backdrop.RebirthMenu.Panel.Body.Content:IsA("ScrollingFrame"), "Menus have a Content container")
 event(nav.IndexSlot.Index, "MouseEnter"):Fire()
@@ -243,17 +321,27 @@ for _, d in sizes do
 	event(root, "property:AbsoluteSize"):Fire()
 	local n = box(nav, 112, 106 * 4 + 36)
 	local c = box(counters, 362, 190)
-	local inv = box(root.Inventory, 238, 106)
+	local inv = box(root.Collection, 238, 106)
 	local tag = w .. "x" .. h
 	check(inside(n, w, h) and inside(c, w, h) and inside(inv, w, h), "All groups on screen at " .. tag)
 	check(apart(n, c) and apart(inv, c) and apart(inv, n), "No overlap at " .. tag)
+	local closedBag = box(root.Backpack, 92, 92)
+	check(inside(closedBag, w, h) and apart(closedBag, n) and apart(closedBag, c) and apart(closedBag, inv), "Closed backpack clear of other HUD at " .. tag)
+	key(r.Enum.KeyCode.G)
+	local bag, bar, win = box(root.Backpack, 92, 92), box(root.Hotbar, 792, 92), box(root.InventoryPanel, 1000, 500)
+	local ok = inside(bag, w, h) and inside(bar, w, h) and inside(win, w, h) and apart(bag, bar) and apart(bar, win) and apart(bag, win)
+	for _, other in {n, c, inv} do ok = ok and apart(bag, other) and apart(bar, other) and apart(win, other) end
+	check(ok, "Open inventory clear of other HUD at " .. tag)
+	check(root.InventoryPanel.UIScale.Scale >= 0.2, "Inventory window visible at " .. tag)
+	key(r.Enum.KeyCode.G)
 	check(nav.UIScale.Scale >= 0.3, "Buttons stay usable at " .. tag)
 	table.insert(layoutReport, {size = tag, nav = n, counters = c, inventory = inv})
 end
 screen = r.Vector2.new(1648, 928); root.AbsoluteSize = screen; event(root, "property:AbsoluteSize"):Fire()
 check(nav.Position.X.Offset == 35 and counters.Position.X.Offset == 35, "Reference left margin 35 px")
 check(math.abs(nav.UIScale.Scale - 1) < 0.06 and counters.UIScale.Scale == 1, "Reference size at 1648x928")
-check(root.Inventory.Position.Y.Offset + 106 <= 928 and root.Inventory.Position.X.Offset > 1300, "Fish/Eggs buttons bottom-right at reference size")
+check(root.Collection.Position.Y.Offset + 106 <= 928 and root.Collection.Position.X.Offset > 1300, "Fish/Eggs buttons bottom-right at reference size")
+check(math.abs(root.Backpack.Position.X.Offset + 46 - 824) <= 2 and root.Backpack.Position.Y.Offset > 780, "Closed backpack bottom-centre at reference size")
 
 -- Cleanup
 event(gui, "Destroying"):Fire()
@@ -272,6 +360,21 @@ check(p:GetAttribute("SpeedLevel") == 0, "Server: speed never goes negative")
 check(p:GetAttribute("XP") == nil and p:GetAttribute("Level") == nil, "Server: no XP or level attributes")
 statsModule.addCoins(p, -999999)
 check(p:GetAttribute("Coins") == 0, "Server: coins never go negative")
+
+-- Server inventory module
+local invModule = luau.load(fs.readFile(rootPath .. "src/server/OceanInventory.luau"), {debugName = "OceanInventory", environment = {Instance = r.Instance}})()
+invModule.add(p, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 2})
+invModule.add(p, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg"})
+check(invModule.count(p, "BasicEgg") == 3 and p.Inventory.BasicEgg:GetAttribute("DisplayName") == "Обычное яйцо", "Server: add stacks items")
+check(not pcall(invModule.add, p, "Rock", {Name = "Камень", Category = "Rocks"}), "Server: unknown category is rejected")
+check(not invModule.remove(p, "BasicEgg", 5) and invModule.count(p, "BasicEgg") == 3, "Server: cannot remove more than owned")
+check(invModule.remove(p, "BasicEgg", 3) and p.Inventory:FindFirstChild("BasicEgg") == nil, "Server: removing the last one deletes the item")
+invModule.add(p, "Shark", {Name = "Акула", Category = "Fish", Icon = "SharkFin"})
+invModule.add(p, "Apple", {Name = "Яблоко", Category = "Food", Icon = "Food"})
+invModule.setHotbar(p, "Shark", 1)
+invModule.setHotbar(p, "Apple", 1)
+check(p.Inventory.Apple:GetAttribute("HotbarSlot") == 1 and p.Inventory.Shark:GetAttribute("HotbarSlot") == nil, "Server: one item per hotbar slot")
+check(not pcall(invModule.setHotbar, p, "Apple", 9), "Server: hotbar slot must be 1-8")
 
 fs.writeFile(rootPath .. "test-report.json", serde.encode("json", {passed = true, count = #tests, tests = tests, layout = layoutReport, studioPlayTest = false}, true))
 print("PASS: " .. #tests .. " checks")

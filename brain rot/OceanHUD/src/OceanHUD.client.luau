@@ -1,9 +1,10 @@
 -- OceanHUD (HUDController) | LocalScript in StarterPlayer > StarterPlayerScripts.
 -- Child ModuleScripts: UITheme, UIAssets, UIComponents, UIAnimations,
--- UIDataController, MenuController.
+-- UIDataController, MenuController, InventoryController.
 --
 -- Layout follows the 1648x928 reference: four candy buttons top-left,
--- coins + speed bottom-left, fish/eggs buttons bottom-right. The ScreenGui is built
+-- coins + speed bottom-left, fish/eggs buttons bottom-right, backpack [G]
+-- bottom-centre (opens the inventory with hotbar 1-8). The ScreenGui is built
 -- once; data changes only update text, fills and animations.
 local Players = game:GetService("Players")
 
@@ -13,6 +14,7 @@ local C = require(script.UIComponents)
 local Anim = require(script.UIAnimations)
 local Data = require(script.UIDataController)
 local MenuController = require(script.MenuController)
+local InventoryController = require(script.InventoryController)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -30,20 +32,24 @@ local gui = C.new("ScreenGui", playerGui, {
 	Name = "OceanHUD", ResetOnSpawn = false, DisplayOrder = 20, IgnoreGuiInset = false,
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling, ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 })
-gui:SetAttribute("Version", "3.0.0")
+gui:SetAttribute("Version", "3.3.0")
 gui:SetAttribute("UseExternalMenus", false)
 local openMenuEvent = C.new("BindableEvent", gui, {Name = "OpenMenu"})
 local clickSound = C.new("Sound", gui, {Name = "ClickSound", SoundId = Assets.ClickSound, Volume = 0.6})
 local root = C.holder(gui, "SafeArea", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
 
 local menus = MenuController.new(root, openMenuEvent, clickSound)
+local inventory = InventoryController.new(root, player, clickSound)
+-- Only one big window at a time: the inventory and the menus close each other.
+inventory.onOpen = function() menus:close() end
+connect(openMenuEvent.Event, function() inventory:close() end)
 
 ---------------------------------------------------------------- left buttons
 local NAV_H = S.ButtonH * 4 + S.ButtonGap * 3
 local navigation = C.holder(root, "Navigation", UDim2.fromOffset(S.Left, S.Top), UDim2.fromOffset(S.ButtonW, NAV_H))
 local navScale = C.new("UIScale", navigation, {Scale = 1})
 -- One candy button: glow, volumetric plate, white rim, picture icon, caption.
-local function makeSlot(parent, spec, position, captionSize)
+local function makeSlot(parent, spec, position, captionSize, onActivated)
 	local slot = C.holder(parent, spec.key .. "Slot", position, UDim2.fromOffset(S.ButtonW, S.ButtonH))
 	local scale = C.new("UIScale", slot, {Scale = 1})
 	local glow = C.frame(slot, "HoverGlow", {
@@ -66,7 +72,7 @@ local function makeSlot(parent, spec, position, captionSize)
 		Name = spec.key, Text = "", AutoButtonColor = false, BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1), Selectable = true, ZIndex = 10,
 	})
-	for _, connection in Anim.bindButton({button = button, scale = scale, rim = rim, glow = glow, sound = clickSound}, function()
+	for _, connection in Anim.bindButton({button = button, scale = scale, rim = rim, glow = glow, sound = clickSound}, onActivated or function()
 		if gui:GetAttribute("UseExternalMenus") then
 			openMenuEvent:Fire(spec.key)
 		else
@@ -118,10 +124,13 @@ local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Th
 speed.value.Text = "0"
 
 ---------------------------------------------------------------- fish & eggs (bottom-right)
-local inventory = C.holder(root, "Inventory", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.InventoryW, S.InventoryH))
-local inventoryScale = C.new("UIScale", inventory, {Scale = 1})
+-- Shortcuts into the inventory, opened on the matching tab.
+local collection = C.holder(root, "Collection", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.InventoryW, S.InventoryH))
+local collectionScale = C.new("UIScale", collection, {Scale = 1})
 for i, spec in Theme.Inventory do
-	makeSlot(inventory, spec, UDim2.fromOffset((i - 1) * (S.ButtonW + S.InventoryGap), 0), 26)
+	makeSlot(collection, spec, UDim2.fromOffset((i - 1) * (S.ButtonW + S.InventoryGap), 0), 26, function()
+		inventory:toggle(spec.key)
+	end)
 end
 
 ---------------------------------------------------------------- data binding
@@ -170,13 +179,50 @@ local function layout()
 	counterScale.Scale = bs
 	local countersTop = h - bottom - COUNTERS_H * bs
 	counters.Position = UDim2.fromOffset(math.floor(side), math.floor(countersTop))
-	inventoryScale.Scale = bs
-	inventory.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * bs), math.floor(h - bottom - S.InventoryH * bs))
+	collectionScale.Scale = bs
+	local collectionTop = h - bottom - S.InventoryH * bs
+	collection.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * bs), math.floor(collectionTop))
 	local top = math.max(8, S.Top * s)
-	local available = countersTop - top - 18
+
+	-- Inventory: the backpack + hotbar row sits between the counters and the
+	-- fish/eggs buttons; if it does not fit there, it goes above them.
+	local slot, rowW = InventoryController.Slot, InventoryController.RowW
+	local leftLimit = side + COUNTERS_W * bs + 16
+	local rightLimit = w - side - S.InventoryW * bs - 16
+	local hs, rowX, rowY = bs, 0, 0
+	local wide = rowW * bs <= rightLimit - leftLimit
+	if wide then
+		rowX = math.clamp(w / 2 - rowW * hs / 2, leftLimit, rightLimit - rowW * hs)
+		rowY = h - bottom - slot * hs
+	else
+		hs = math.min(bs * 1.2, (w - 2 * side) / rowW)
+		rowX = (w - rowW * hs) / 2
+		rowY = math.min(countersTop, collectionTop) - 10 - slot * hs
+	end
+	-- Left buttons use the space above the counters (and above the row when it is raised).
+	local navFloor = wide and countersTop or math.min(countersTop, rowY)
+	local available = navFloor - top - 18
 	local ns = math.clamp(math.min(s * 1.05, available / NAV_H), 0.3, 1.3)
 	navScale.Scale = ns
-	navigation.Position = UDim2.fromOffset(math.floor(side), math.floor(math.max(8, math.min(top, countersTop - 18 - NAV_H * ns))))
+	local navTop = math.floor(math.max(8, math.min(top, navFloor - 18 - NAV_H * ns)))
+	navigation.Position = UDim2.fromOffset(math.floor(side), navTop)
+	local navRight = side + S.ButtonW * ns
+	local closedFitsBottom = w / 2 - slot * hs / 2 >= leftLimit and w / 2 + slot * hs / 2 <= rightLimit
+	local closedY = closedFitsBottom and (h - bottom - slot * hs) or rowY
+	-- Window above the row, clear of the left buttons and of the bottom groups.
+	local x0 = wide and math.max(leftLimit, navRight + 12) or (navRight + 12)
+	local x1 = wide and rightLimit or (w - side)
+	local y1 = rowY - 10
+	local panelScale = math.max(0.2, math.min(1.15, (x1 - x0) / InventoryController.PanelW, (y1 - top) / InventoryController.PanelH))
+	local panelW, panelH = InventoryController.PanelW * panelScale, InventoryController.PanelH * panelScale
+	inventory:applyLayout({
+		scale = hs,
+		backpackClosed = UDim2.fromOffset(math.floor(w / 2 - slot * hs / 2), math.floor(closedY)),
+		backpackOpen = UDim2.fromOffset(math.floor(rowX), math.floor(rowY)),
+		hotbar = UDim2.fromOffset(math.floor(rowX + (slot + InventoryController.Gap) * hs), math.floor(rowY)),
+		panel = UDim2.fromOffset(math.floor(x0 + (x1 - x0 - panelW) / 2), math.floor(y1 - panelH)),
+		panelScale = panelScale,
+	})
 	-- Menus shrink to fit small screens (the window's own UIScale is used by the open animation).
 	local menuFit = math.min(1, (w - 24) / S.MenuW, (h - 24) / (S.MenuH + 10))
 	for _, entry in menus.windows do
@@ -190,6 +236,7 @@ data:start()
 connect(gui.Destroying, function()
 	data:destroy()
 	menus:destroy()
+	inventory:destroy()
 	Anim.cancelAll()
 	for _, connection in connections do connection:Disconnect() end
 	table.clear(connections)
