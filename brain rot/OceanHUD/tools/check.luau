@@ -119,11 +119,6 @@ local nav = root.Navigation
 local counters = root.Counters
 local coinsValue = counters.CoinsCounter.Body.Value
 local speedValue = counters.SpeedCounter.Body.Value
-local xp = root.LevelProgress
-local track = xp.Panel.Body.Track
-local fill = track.FillClip.BlueFill
-local levelText = xp.LevelBadge.StarHolder.Level
-local badgeCaption = xp.LevelBadge.Caption
 
 -- Structure and images
 check(#nav:GetChildren() == 5, "Four button slots plus one UIScale")
@@ -136,7 +131,7 @@ local images = {}
 for _, object in gui:GetDescendants() do
 	if object:IsA("ImageLabel") then images[object.Image] = true end
 end
-for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "LevelStar", "SharkFin", "Egg", "Sparkle", "Stripes"} do
+for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "SharkFin", "Egg", "Sparkle"} do
 	check(images["rbxasset://textures/OceanHUD/" .. name .. ".png"], "Uses icon image " .. name)
 	check(fs.isFile(rootPath .. "assets/" .. name .. ".png"), "Icon file exists " .. name)
 end
@@ -149,18 +144,18 @@ check(true, "No invented asset IDs")
 check(nav.ShopSlot.Plate.Body.Caption.Text == "Магазин", "Captions on buttons")
 
 -- Defaults
-check(coinsValue.Text == "0" and speedValue.Text == "Уровень 1", "Defaults for counters")
-check(levelText.Text == "1" and badgeCaption.Text == "Уровень" and not xp:FindFirstChild("NextLevel"), "Level star sits where the crown was")
-check(track.ProgressText.Text == "0 / 10,000 XP" and not fill.Visible, "Empty XP bar")
+check(coinsValue.Text == "0" and speedValue.Text == "0", "Defaults for counters")
+check(root:FindFirstChild("LevelProgress") == nil, "No XP bar on screen")
+local hasXPText = false
+for _, object in gui:GetDescendants() do
+	if object:IsA("TextLabel") and (object.Text:find("XP") or object.Text:find("Опыт")) then hasXPText = true end
+end
+check(not hasXPText, "No XP text anywhere")
 
 -- Reference values
-attr("Coins", 125430); attr("SpeedLevel", 18); attr("Level", 24); attr("XPRequired", 10000); attr("XP", 7850)
+attr("Coins", 125430); attr("SpeedLevel", 18)
 check(coinsValue.Text == "125,430", "Coins 125,430")
-check(speedValue.Text == "Уровень 18", "Speed Уровень 18")
-check(levelText.Text == "24", "Star shows level 24")
-check(xp.LevelBadge.Position.X.Offset > 300 and xp.LevelBadge.StarHolder.Size.X.Offset <= 72, "Star is on the right and crown-sized")
-check(track.ProgressText.Text == "7,850 / 10,000 XP", "XP text 7,850 / 10,000 XP")
-check(fill.Visible and math.abs(fill.Size.X.Scale - 0.785) < 1e-6, "XP fill 78.5%")
+check(speedValue.Text == "18", "Speed shows only the number 18")
 
 -- Animated updates
 local before = tweenCount
@@ -170,22 +165,12 @@ check(counters.CoinsCounter.Icon.UIScale.Scale == 1 and counters.CoinsCounter.Sh
 attr("Coins", 2.5e9 + 0.5) -- Lune stores whole attributes as int32; Roblox uses doubles
 check(coinsValue.Text == "2.5B", "Huge values are shortened")
 attr("Coins", 125430)
-attr("SpeedLevel", 19)
-check(speedValue.Text == "Уровень 19" and counters.SpeedCounter.Icon.Rotation == 0, "Speed level-up pops and settles")
+attr("SpeedLevel", 1250)
+check(speedValue.Text == "1,250" and counters.SpeedCounter.Icon.Rotation == 0, "Speed upgrade pops, settles, uses separators")
 attr("Speed", 99)
-check(speedValue.Text == "Уровень 19", "SpeedLevel wins over Speed alias")
--- Level up with progress carried over (server writes Level, XPRequired, XP).
-attr("Level", 25); attr("XPRequired", 10375); attr("XP", 500)
-check(levelText.Text == "25", "Level-up updates the star")
-check(math.abs(fill.Size.X.Scale - 500 / 10375) < 1e-6, "Leftover XP carried into the new level")
-check(xp.LevelBadge.StarHolder.UIScale.Scale == 1 and xp.LevelBadge.StarHolder.Flash.ImageTransparency == 1, "Star bounce and flash settle")
-attr("XP", 99999)
-check(fill.Size.X.Scale == 1, "Overflow clamps to full")
-attr("XP", -5)
-check(fill.Size.X.Scale == 0 and not fill.Visible, "Negative XP clamps to empty")
-attr("XPRequired", 0)
-check(track.ProgressText.Text == "МАКС. УРОВЕНЬ" and fill.Size.X.Scale == 1, "Max level")
-attr("XPRequired", 10000); attr("XP", 7850); attr("Level", 24)
+check(speedValue.Text == "1,250", "SpeedLevel wins over Speed alias")
+attr("SpeedLevel", 18)
+
 
 -- leaderstats fallback
 attr("Coins", nil)
@@ -258,17 +243,17 @@ for _, d in sizes do
 	event(root, "property:AbsoluteSize"):Fire()
 	local n = box(nav, 112, 106 * 4 + 36)
 	local c = box(counters, 362, 190)
-	local x = box(xp, 494, 112)
 	local inv = box(root.Inventory, 238, 106)
 	local tag = w .. "x" .. h
-	check(inside(n, w, h) and inside(c, w, h) and inside(x, w, h) and inside(inv, w, h), "All groups on screen at " .. tag)
-	check(apart(n, c) and apart(c, x) and apart(n, x) and apart(inv, x) and apart(inv, c) and apart(inv, n), "No overlap at " .. tag)
+	check(inside(n, w, h) and inside(c, w, h) and inside(inv, w, h), "All groups on screen at " .. tag)
+	check(apart(n, c) and apart(inv, c) and apart(inv, n), "No overlap at " .. tag)
 	check(nav.UIScale.Scale >= 0.3, "Buttons stay usable at " .. tag)
-	table.insert(layoutReport, {size = tag, nav = n, counters = c, xp = x})
+	table.insert(layoutReport, {size = tag, nav = n, counters = c, inventory = inv})
 end
 screen = r.Vector2.new(1648, 928); root.AbsoluteSize = screen; event(root, "property:AbsoluteSize"):Fire()
 check(nav.Position.X.Offset == 35 and counters.Position.X.Offset == 35, "Reference left margin 35 px")
-check(math.abs(nav.UIScale.Scale - 1) < 0.06 and xp.UIScale.Scale == 1, "Reference size at 1648x928")
+check(math.abs(nav.UIScale.Scale - 1) < 0.06 and counters.UIScale.Scale == 1, "Reference size at 1648x928")
+check(root.Inventory.Position.Y.Offset + 106 <= 928 and root.Inventory.Position.X.Offset > 1300, "Fish/Eggs buttons bottom-right at reference size")
 
 -- Cleanup
 event(gui, "Destroying"):Fire()
@@ -279,12 +264,12 @@ check(coinsValue.Text == last, "Cleanup disconnects data subscriptions")
 -- Server stats module: level carry-over
 local statsModule = luau.load(fs.readFile(rootPath .. "src/server/OceanHUDStats.luau"), {debugName = "OceanHUDStats"})()
 local p = r.Instance.new("Player")
-statsModule.init(p, {Coins = 125430, SpeedLevel = 18, Level = 24, XP = 7850})
-check(p:GetAttribute("XPRequired") == 10000, "Server: level 24 needs 10,000 XP")
-statsModule.addXP(p, 3000)
-check(p:GetAttribute("Level") == 25 and p:GetAttribute("XP") == 850 and p:GetAttribute("XPRequired") == 10375, "Server: addXP carries leftover into level 25")
-statsModule.addXP(p, 30000)
-check(p:GetAttribute("Level") == 27, "Server: addXP can pass several levels")
+statsModule.init(p, {Coins = 125430, SpeedLevel = 18})
+statsModule.addSpeed(p, 2)
+check(p:GetAttribute("SpeedLevel") == 20, "Server: addSpeed adds upgrades")
+statsModule.setSpeed(p, -4)
+check(p:GetAttribute("SpeedLevel") == 0, "Server: speed never goes negative")
+check(p:GetAttribute("XP") == nil and p:GetAttribute("Level") == nil, "Server: no XP or level attributes")
 statsModule.addCoins(p, -999999)
 check(p:GetAttribute("Coins") == 0, "Server: coins never go negative")
 

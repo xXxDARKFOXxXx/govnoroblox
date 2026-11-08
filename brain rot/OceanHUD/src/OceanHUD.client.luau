@@ -3,7 +3,7 @@
 -- UIDataController, MenuController.
 --
 -- Layout follows the 1648x928 reference: four candy buttons top-left,
--- coins + speed bottom-left, XP panel bottom-centre. The ScreenGui is built
+-- coins + speed bottom-left, fish/eggs buttons bottom-right. The ScreenGui is built
 -- once; data changes only update text, fills and animations.
 local Players = game:GetService("Players")
 
@@ -115,7 +115,7 @@ local function counter(key, title, y, style, iconName)
 end
 local coins = counter("Coins", "Монеты", 0, Theme.Coins, "Coin")
 local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Theme.Speed, "Flippers")
-speed.value.Text = "Уровень 1"
+speed.value.Text = "0"
 
 ---------------------------------------------------------------- fish & eggs (bottom-right)
 local inventory = C.holder(root, "Inventory", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.InventoryW, S.InventoryH))
@@ -124,96 +124,13 @@ for i, spec in Theme.Inventory do
 	makeSlot(inventory, spec, UDim2.fromOffset((i - 1) * (S.ButtonW + S.InventoryGap), 0), 26)
 end
 
----------------------------------------------------------------- XP panel
-local xp = C.holder(root, "LevelProgress", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.XPW, S.XPH))
-local xpScale = C.new("UIScale", xp, {Scale = 1})
-local PANEL_X, PANEL_W, PANEL_Y, PANEL_H = 0, S.XPW, 30, 78
-local _, panel = C.plate(xp, "Panel", UDim2.fromOffset(PANEL_X, PANEL_Y), UDim2.fromOffset(PANEL_W, PANEL_H), {
-	top = Theme.XP.top, bottom = Theme.XP.bottom, rim = Theme.XP.rim, rimThickness = 3.5, glow = Theme.XP.glow, radius = 0.5,
-}, 1)
-local TRACK_X, TRACK_W = 26, PANEL_W - 26 - 108
-C.label(panel, "Title", "Опыт (XP)", {
-	Position = UDim2.fromOffset(TRACK_X, 3), Size = UDim2.fromOffset(TRACK_W, 28), TextSize = 23, ZIndex = 6,
-})
-local track = C.frame(panel, "Track", {
-	Position = UDim2.fromOffset(TRACK_X, 34), Size = UDim2.fromOffset(TRACK_W, 32),
-	BackgroundColor3 = Theme.XP.track, ZIndex = 4,
-})
-C.corner(track, 0.5)
-C.stroke(track, Color3.fromRGB(4, 8, 30), 2.5)
-local fillClip = C.holder(track, "FillClip", UDim2.fromOffset(3, 3), UDim2.new(1, -6, 1, -6), 5)
-fillClip.ClipsDescendants = true
-C.corner(fillClip, 0.5)
-local fill = C.frame(fillClip, "BlueFill", {Size = UDim2.fromScale(0, 1), Visible = false, ZIndex = 5})
-C.corner(fill, 0.5)
-C.gradient(fill, Theme.XP.fillTop, Theme.XP.fillBottom)
--- Diagonal stripes as a tiled image: rotated frames would not be clipped by Roblox.
-fill.ClipsDescendants = true
-local stripes = C.image(fill, "Stripes", "Stripes", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 6)
-stripes.ScaleType = Enum.ScaleType.Tile
-stripes.TileSize = UDim2.fromOffset(26, 26)
-local fillGloss = C.frame(fill, "Gloss", {Position = UDim2.fromOffset(5, 2), Size = UDim2.new(1, -10, 0.38, 0), BackgroundTransparency = 0.5, ZIndex = 7})
-C.corner(fillGloss, 0.5)
-local innerGlow = C.holder(track, "InnerGlow", UDim2.fromOffset(1, 1), UDim2.new(1, -2, 1, -2), 8)
-C.corner(innerGlow, 0.5)
-C.stroke(innerGlow, Theme.XP.rim, 1.5, 0.55)
-local progressText = C.label(track, "ProgressText", "0 / 10,000 XP", {Size = UDim2.fromScale(1, 1), TextSize = 20, ZIndex = 9})
-
--- Level star at the right end (crown-sized): current level inside, caption below.
-local badge = C.holder(xp, "LevelBadge", UDim2.fromOffset(PANEL_X + PANEL_W - 110, 0), UDim2.fromOffset(110, 106), 10)
-local starHolder = C.holder(badge, "StarHolder", UDim2.new(0.5, -36, 0, 0), UDim2.fromOffset(72, 72), 11)
-local badgeScale = C.new("UIScale", starHolder, {Scale = 1})
-local starFlash = C.image(starHolder, "Flash", "Sparkle", UDim2.fromOffset(-34, -34), UDim2.fromOffset(140, 140), 10)
-starFlash.ImageTransparency = 1
-C.image(starHolder, "Star", "LevelStar", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 11)
-local levelText = C.label(starHolder, "Level", "1", {Position = UDim2.fromOffset(0, 22), Size = UDim2.new(1, 0, 0, 32), TextSize = 30, ZIndex = 12})
-C.label(badge, "Caption", "Уровень", {Position = UDim2.fromOffset(0, 72), Size = UDim2.new(1, 0, 0, 24), TextSize = 20, ZIndex = 12})
-for _, spot in {{6, 10, 18}, {90, 4, 22}} do
-	C.image(badge, "Sparkle", "Sparkle", UDim2.fromOffset(spot[1], spot[2]), UDim2.fromOffset(spot[3], spot[3]), 12)
-end
-
 ---------------------------------------------------------------- data binding
 local shownCoins = C.new("NumberValue", gui, {Name = "ShownCoins", Value = 0})
 connect(shownCoins:GetPropertyChangedSignal("Value"), function()
 	coins.value.Text = Data.format(shownCoins.Value)
 end)
-local currentFraction = 0
-local pendingLevelUp = false
-local data
 
-local function setFill(fraction)
-	fill.Visible = fraction > 0
-	fill.Size = UDim2.fromScale(fraction, 1)
-end
-local function showProgress()
-	local xpValue = math.max(0, data:get("XP"))
-	local required = data:get("XPRequired")
-	if required > 0 then
-		progressText.Text = Data.format(xpValue) .. " / " .. Data.format(required) .. " XP"
-	else
-		progressText.Text = "МАКС. УРОВЕНЬ"
-	end
-	local fraction = required > 0 and math.clamp(xpValue / required, 0, 1) or 1
-	if fraction == currentFraction and not pendingLevelUp then return end
-	if pendingLevelUp then
-		-- Finish the old bar, then carry the leftover progress into the new level.
-		pendingLevelUp = false
-		fill.Visible = true
-		Anim.tween(fill, Theme.Time.Fill * 0.6, {Size = UDim2.fromScale(1, 1)}, nil, nil, "fill", function()
-			setFill(0)
-			fill.Visible = fraction > 0
-			Anim.tween(fill, Theme.Time.Fill, {Size = UDim2.fromScale(fraction, 1)}, nil, nil, "fill")
-		end)
-	else
-		fill.Visible = fraction > 0 or currentFraction > 0
-		Anim.tween(fill, Theme.Time.Fill, {Size = UDim2.fromScale(fraction, 1)}, nil, nil, "fill", function()
-			fill.Visible = fraction > 0
-		end)
-	end
-	currentFraction = fraction
-end
-
-data = Data.new(player, function(key, value, old)
+local data = Data.new(player, function(key, value, old)
 	if key == "Coins" then
 		if old == nil then
 			shownCoins.Value = value
@@ -228,29 +145,20 @@ data = Data.new(player, function(key, value, old)
 			end
 		end
 	elseif key == "SpeedLevel" then
-		speed.value.Text = "Уровень " .. Data.format(math.max(1, value))
+		-- Just the upgraded speed amount, no word in front.
+		speed.value.Text = Data.format(math.max(0, value))
 		if old ~= nil and value > old then
 			Anim.pop(speed.valueScale, 1.3)
 			Anim.wiggle(speed.icon, 16)
 			Anim.flash(speed.shine, "ImageTransparency", 0.2)
 		end
-	elseif key == "Level" then
-		levelText.Text = Data.format(math.max(1, math.floor(value)))
-		if old ~= nil and value > old then
-			pendingLevelUp = true
-			Anim.pop(badgeScale, 1.22)
-			Anim.flash(starFlash, "ImageTransparency", 0)
-		end
-		showProgress()
-	else -- XP / XPRequired
-		showProgress()
 	end
 end)
 
 ---------------------------------------------------------------- layout
 -- Pixel layout from the safe area: groups keep their reference proportions,
--- scale with the screen and never overlap. Narrow screens stack the counters
--- (left) and fish/eggs buttons (right) above the XP panel.
+-- scale with the screen and never overlap. Counters sit bottom-left and the
+-- fish/eggs buttons bottom-right; on very narrow screens both shrink to fit side by side.
 local function layout()
 	local area = root.AbsoluteSize
 	if area.X < 1 or area.Y < 1 then return end
@@ -258,20 +166,12 @@ local function layout()
 	local s = math.clamp(math.min(w / S.Reference.X, h / S.Reference.Y), 0.4, 1.3)
 	local side = math.max(10, S.Left * s)
 	local bottom = math.max(8, S.Bottom * s)
-	local leftEdge = side + COUNTERS_W * s + 16
-	local rightEdge = w - side - S.InventoryW * s - 16
-	local stacked = w / 2 - S.XPW * s / 2 < leftEdge or w / 2 + S.XPW * s / 2 > rightEdge
-	local xs = stacked and math.min(s * 1.1, (w - 2 * side) / S.XPW) or s
-	xpScale.Scale = xs
-	local xpTop = h - S.XPH * xs - bottom
-	xp.Position = UDim2.fromOffset(math.floor((w - S.XPW * xs) / 2), math.floor(xpTop))
-	counterScale.Scale = s
-	local countersBottom = stacked and (xpTop - 6) or (h - bottom)
-	local countersTop = countersBottom - COUNTERS_H * s
+	local bs = math.min(s, (w - 2 * side - 16) / (COUNTERS_W + S.InventoryW))
+	counterScale.Scale = bs
+	local countersTop = h - bottom - COUNTERS_H * bs
 	counters.Position = UDim2.fromOffset(math.floor(side), math.floor(countersTop))
-	inventoryScale.Scale = s
-	local inventoryBottom = stacked and (xpTop - 6) or (h - bottom)
-	inventory.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * s), math.floor(inventoryBottom - S.InventoryH * s))
+	inventoryScale.Scale = bs
+	inventory.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * bs), math.floor(h - bottom - S.InventoryH * bs))
 	local top = math.max(8, S.Top * s)
 	local available = countersTop - top - 18
 	local ns = math.clamp(math.min(s * 1.05, available / NAV_H), 0.3, 1.3)

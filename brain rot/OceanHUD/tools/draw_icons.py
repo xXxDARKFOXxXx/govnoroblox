@@ -382,34 +382,11 @@ def egg_icon():
     finish(cv, "Egg")
 
 
-def level_star():
-    cv = canvas()
-    st = smooth(star(512, 540, 470, 230), 26)
-    paint(cv, grow(st, 50).filter(ImageFilter.GaussianBlur(30)), solid((255, 220, 90)), 0.55)
-    part(cv, st, (255, 242, 120), (255, 146, 16), outline=(196, 84, 0), ow=26)
-    inner = shrink(st, 70)
-    paint(cv, inner, grad((255, 200, 50), (255, 236, 120), 200, 900), 0.35)
-    finish(cv, "LevelStar")
-
-
 def sparkle_icon():
     cv = canvas()
     sparkle(cv, 512, 512, 380)
     finish(cv, "Sparkle", 128, shadow=False)
 
 
-def stripes():
-    """Seamless tile of light diagonal stripes for the XP fill (ScaleType Tile)."""
-    size, period, band = 256, 128, 44
-    m = Image.new("L", (size, size), 0)
-    d = ImageDraw.Draw(m)
-    for offset in range(-size, size * 2, period):
-        d.polygon([(offset, size), (offset + band, size), (offset + band + size, 0), (offset + size, 0)], fill=255)
-    tile = Image.new("RGBA", (size, size), (255, 255, 255, 0))
-    tile.putalpha(m.point(lambda v: v * 80 // 255))
-    tile.resize((64, 64), Image.LANCZOS).save(os.path.join(OUT, "Stripes.png"))
-    print("drew Stripes")
-
-
-for fn in (rebirth, gifts, shop, index, coin, flippers, level_star, shark_fin, egg_icon, sparkle_icon, stripes):
+for fn in (rebirth, gifts, shop, index, coin, flippers, shark_fin, egg_icon, sparkle_icon):
     fn()

@@ -1,5 +1,5 @@
 {
-  "count": 105,
+  "count": 92,
   "layout": [
     {
       "counters": {
@@ -8,19 +8,19 @@
         "x": 35,
         "y": 716
       },
+      "inventory": {
+        "b": 906,
+        "r": 1613,
+        "x": 1375,
+        "y": 800
+      },
       "nav": {
         "b": 542.9999780654907,
         "r": 152.59999465942383,
         "x": 35,
         "y": 60
       },
-      "size": "1648x928",
-      "xp": {
-        "b": 906,
-        "r": 1071,
-        "x": 577,
-        "y": 794
-      }
+      "size": "1648x928"
     },
     {
       "counters": {
@@ -29,19 +29,19 @@
         "x": 38,
         "y": 786
       },
+      "inventory": {
+        "b": 995.5086176395416,
+        "r": 1880.5948207378387,
+        "x": 1619,
+        "y": 879
+      },
       "nav": {
         "b": 595.8836150169373,
         "r": 167.25861930847168,
         "x": 38,
         "y": 65
       },
-      "size": "1920x1020",
-      "xp": {
-        "b": 995.1034450531006,
-        "r": 1230.9741237163544,
-        "x": 688,
-        "y": 872
-      }
+      "size": "1920x1020"
     },
     {
       "counters": {
@@ -50,19 +50,19 @@
         "x": 40,
         "y": 893
       },
+      "inventory": {
+        "b": 1113.4951515197754,
+        "r": 1878.281566619873,
+        "x": 1601,
+        "y": 990
+      },
       "nav": {
         "b": 631.7184295654297,
         "r": 177.00970458984375,
         "x": 40,
         "y": 69
       },
-      "size": "1920x1140",
-      "xp": {
-        "b": 1113.4854431152344,
-        "r": 1247.534008026123,
-        "x": 672,
-        "y": 983
-      }
+      "size": "1920x1140"
     },
     {
       "counters": {
@@ -71,19 +71,19 @@
         "x": 30,
         "y": 654
       },
+      "inventory": {
+        "b": 820.6213573217392,
+        "r": 1408.9611607789993,
+        "x": 1201,
+        "y": 728
+      },
       "nav": {
         "b": 474.03882217407227,
         "r": 132.7572784423828,
         "x": 30,
         "y": 52
       },
-      "size": "1440x840",
-      "xp": {
-        "b": 819.8640756607056,
-        "r": 935.6504765748978,
-        "x": 504,
-        "y": 722
-      }
+      "size": "1440x840"
     },
     {
       "counters": {
@@ -92,19 +92,19 @@
         "x": 24,
         "y": 509
       },
+      "inventory": {
+        "b": 643.3879327774048,
+        "r": 1254.2672452926636,
+        "x": 1085,
+        "y": 568
+      },
       "nav": {
         "b": 385.5129225254059,
         "r": 107.63792896270752,
         "x": 24,
         "y": 42
       },
-      "size": "1280x660",
-      "xp": {
-        "b": 643.6551742553711,
-        "r": 815.3362150192261,
-        "x": 464,
-        "y": 564
-      }
+      "size": "1280x660"
     },
     {
       "counters": {
@@ -113,19 +113,19 @@
         "x": 21,
         "y": 576
       },
+      "inventory": {
+        "b": 693.8640782833099,
+        "r": 1001.8834965229034,
+        "x": 854,
+        "y": 628
+      },
       "nav": {
         "b": 337.11651039123535,
         "r": 94.07184600830078,
         "x": 21,
         "y": 37
       },
-      "size": "1024x708",
-      "xp": {
-        "b": 693.5922336578369,
-        "r": 664.9514591693878,
-        "x": 358,
-        "y": 624
-      }
+      "size": "1024x708"
     },
     {
       "counters": {
@@ -134,19 +134,19 @@
         "x": 14,
         "y": 245
       },
+      "inventory": {
+        "b": 320.40000063180923,
+        "r": 829.2000014185905,
+        "x": 734,
+        "y": 278
+      },
       "nav": {
         "b": 217.19999396800995,
         "r": 61.03999853134155,
         "x": 14,
         "y": 24
       },
-      "size": "844x330",
-      "xp": {
-        "b": 320.800000667572,
-        "r": 520.6000029444695,
-        "x": 323,
-        "y": 276
-      }
+      "size": "844x330"
     },
     {
       "counters": {
@@ -155,26 +155,32 @@
         "x": 14,
         "y": 245
       },
+      "inventory": {
+        "b": 320.40000063180923,
+        "r": 585.2000014185905,
+        "x": 490,
+        "y": 278
+      },
       "nav": {
         "b": 217.19999396800995,
         "r": 61.03999853134155,
         "x": 14,
         "y": 24
       },
-      "size": "600x330",
-      "xp": {
-        "b": 320.800000667572,
-        "r": 398.60000294446945,
-        "x": 201,
-        "y": 276
-      }
+      "size": "600x330"
     },
     {
       "counters": {
-        "b": 719.0000011324883,
+        "b": 775.0000011324883,
         "r": 158.80000215768814,
         "x": 14,
-        "y": 643
+        "y": 699
+      },
+      "inventory": {
+        "b": 774.4000006318092,
+        "r": 375.20000141859055,
+        "x": 280,
+        "y": 732
       },
       "nav": {
         "b": 217.19999396800995,
@@ -182,20 +188,20 @@
         "x": 14,
         "y": 24
       },
-      "size": "390x784",
-      "xp": {
-        "b": 774.2799997329712,
-        "r": 303.3599988222122,
-        "x": 86,
-        "y": 725
-      }
+      "size": "390x784"
     },
     {
       "counters": {
-        "b": 515.0000011324883,
+        "b": 571.0000011324883,
         "r": 158.80000215768814,
         "x": 14,
-        "y": 439
+        "y": 495
+      },
+      "inventory": {
+        "b": 570.4000006318092,
+        "r": 345.20000141859055,
+        "x": 250,
+        "y": 528
       },
       "nav": {
         "b": 217.19999396800995,
@@ -203,13 +209,7 @@
         "x": 14,
         "y": 24
       },
-      "size": "360x580",
-      "xp": {
-        "b": 570.2799997329712,
-        "r": 288.3599988222122,
-        "x": 71,
-        "y": 521
-      }
+      "size": "360x580"
     }
   ],
   "passed": true,
@@ -229,38 +229,24 @@
     "Icon file exists Coin",
     "Uses icon image Flippers",
     "Icon file exists Flippers",
-    "Uses icon image LevelStar",
-    "Icon file exists LevelStar",
     "Uses icon image SharkFin",
     "Icon file exists SharkFin",
     "Uses icon image Egg",
     "Icon file exists Egg",
     "Uses icon image Sparkle",
     "Icon file exists Sparkle",
-    "Uses icon image Stripes",
-    "Icon file exists Stripes",
     "No invented asset IDs",
     "Captions on buttons",
     "Defaults for counters",
-    "Level star sits where the crown was",
-    "Empty XP bar",
+    "No XP bar on screen",
+    "No XP text anywhere",
     "Coins 125,430",
-    "Speed Уровень 18",
-    "Star shows level 24",
-    "Star is on the right and crown-sized",
-    "XP text 7,850 / 10,000 XP",
-    "XP fill 78.5%",
+    "Speed shows only the number 18",
     "Coins count up through a tween",
     "Coin bounce and shine settle",
     "Huge values are shortened",
-    "Speed level-up pops and settles",
+    "Speed upgrade pops, settles, uses separators",
     "SpeedLevel wins over Speed alias",
-    "Level-up updates the star",
-    "Leftover XP carried into the new level",
-    "Star bounce and flash settle",
-    "Overflow clamps to full",
-    "Negative XP clamps to empty",
-    "Max level",
     "Late leaderstats are discovered",
     "leaderstats changes refresh",
     "Removed values do not remain stale",
@@ -315,10 +301,11 @@
     "Buttons stay usable at 360x580",
     "Reference left margin 35 px",
     "Reference size at 1648x928",
+    "Fish/Eggs buttons bottom-right at reference size",
     "Cleanup disconnects data subscriptions",
-    "Server: level 24 needs 10,000 XP",
-    "Server: addXP carries leftover into level 25",
-    "Server: addXP can pass several levels",
+    "Server: addSpeed adds upgrades",
+    "Server: speed never goes negative",
+    "Server: no XP or level attributes",
     "Server: coins never go negative"
   ]
 }

@@ -8,11 +8,8 @@ UIDataController.__index = UIDataController
 UIDataController.Aliases = {
 	Coins = {"Coins", "Money", "Cash", "Монеты", "Деньги"},
 	SpeedLevel = {"SpeedLevel", "Speed", "Скорость"},
-	Level = {"Level", "Уровень"},
-	XP = {"XP", "Experience", "LevelProgress"},
-	XPRequired = {"XPRequired", "XPToNextLevel", "RequiredXP", "NextLevelXP"},
 }
-UIDataController.Defaults = {Coins = 0, SpeedLevel = 1, Level = 1, XP = 0, XPRequired = 10000}
+UIDataController.Defaults = {Coins = 0, SpeedLevel = 0}
 
 local function finite(value)
 	return type(value) == "number" and value == value and math.abs(value) < math.huge
@@ -66,8 +63,7 @@ end
 
 function UIDataController:refresh()
 	if not self.alive then return end
-	-- Level first, so XP handlers already see the new level.
-	for _, key in {"Level", "XPRequired", "XP", "Coins", "SpeedLevel"} do
+	for _, key in {"Coins", "SpeedLevel"} do
 		local value = self:read(key)
 		local old = self.values[key]
 		if value ~= old then

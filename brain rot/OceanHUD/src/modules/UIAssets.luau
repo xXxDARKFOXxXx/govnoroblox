@@ -16,11 +16,9 @@ UIAssets.Uploaded = {
 	Index = "",
 	Coin = "",
 	Flippers = "",
-	LevelStar = "",
 	SharkFin = "",
 	Egg = "",
 	Sparkle = "",
-	Stripes = "",
 }
 
 UIAssets.LocalFolder = "rbxasset://textures/OceanHUD/"

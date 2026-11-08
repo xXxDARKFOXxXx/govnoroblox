@@ -30,17 +30,11 @@ UITheme.Speed = {
 	top = rgb(54, 146, 255), bottom = rgb(16, 56, 198), rim = rgb(128, 230, 255), glow = rgb(70, 200, 255),
 	valueTop = rgb(255, 248, 130), valueBottom = rgb(255, 196, 30),
 }
-UITheme.XP = {
-	top = rgb(38, 62, 176), bottom = rgb(14, 22, 92), rim = rgb(92, 214, 255), glow = rgb(60, 180, 255),
-	track = rgb(8, 14, 50), fillTop = rgb(150, 252, 255), fillBottom = rgb(22, 146, 255),
-}
-
 UITheme.Size = {
 	Reference = Vector2.new(1648, 928),
 	ButtonW = 112, ButtonH = 106, ButtonGap = 12,
 	Left = 35, Top = 60, Bottom = 22,
 	CounterW = 340, CounterH = 88, CounterGap = 14,
-	XPW = 494, XPH = 112,
 	InventoryW = 112 * 2 + 14, InventoryH = 106, InventoryGap = 14,
 	MenuW = 560, MenuH = 400,
 }
@@ -48,7 +42,7 @@ UITheme.Size = {
 UITheme.Time = {
 	Hover = 0.17, Press = 0.08, Release = 0.3,
 	MenuOpen = 0.26, MenuClose = 0.16,
-	Count = 0.6, Fill = 0.45, Pop = 0.35,
+	Count = 0.6, Pop = 0.35,
 }
 
 return UITheme

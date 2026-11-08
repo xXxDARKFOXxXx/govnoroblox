@@ -8,18 +8,10 @@
 --
 --   local Stats = require(game.ServerScriptService.OceanHUDStats)
 --   Stats.addCoins(player, 250)
---   Stats.addXP(player, 1200)       -- carries leftover XP into the next level(s)
---   Stats.setSpeedLevel(player, 19)
+--   Stats.addSpeed(player, 1)      -- one more upgrade bought
 local OceanHUDStats = {}
 
-OceanHUDStats.Defaults = {Coins = 0, SpeedLevel = 1, Level = 1, XP = 0}
-OceanHUDStats.MaxLevel = 999
-
--- XP needed to go from `level` to `level + 1` (level 24 -> 10,000 XP).
-function OceanHUDStats.required(level: number): number
-	if level >= OceanHUDStats.MaxLevel then return 0 end
-	return 1000 + level * 375
-end
+OceanHUDStats.Defaults = {Coins = 0, SpeedLevel = 0}
 
 local function number(player: Player, name: string): number
 	local value = player:GetAttribute(name)
@@ -33,7 +25,6 @@ function OceanHUDStats.init(player: Player, saved: {[string]: number}?)
 		local value = saved[name]
 		player:SetAttribute(name, if type(value) == "number" then value else default)
 	end
-	player:SetAttribute("XPRequired", OceanHUDStats.required(number(player, "Level")))
 end
 
 function OceanHUDStats.setCoins(player: Player, amount: number)
@@ -44,31 +35,13 @@ function OceanHUDStats.addCoins(player: Player, amount: number)
 	OceanHUDStats.setCoins(player, number(player, "Coins") + amount)
 end
 
-function OceanHUDStats.setSpeedLevel(player: Player, level: number)
-	player:SetAttribute("SpeedLevel", math.max(1, math.floor(level)))
+-- Upgraded speed amount (shown as a plain number in the HUD).
+function OceanHUDStats.setSpeed(player: Player, amount: number)
+	player:SetAttribute("SpeedLevel", math.max(0, math.floor(amount)))
 end
 
-function OceanHUDStats.setLevel(player: Player, level: number, xp: number?)
-	level = math.clamp(math.floor(level), 1, OceanHUDStats.MaxLevel)
-	player:SetAttribute("Level", level)
-	player:SetAttribute("XPRequired", OceanHUDStats.required(level))
-	player:SetAttribute("XP", math.max(0, math.floor(xp or 0)))
-end
-
-function OceanHUDStats.addXP(player: Player, amount: number)
-	local level = number(player, "Level")
-	local xp = number(player, "XP") + math.max(0, amount)
-	local required = OceanHUDStats.required(level)
-	while required > 0 and xp >= required do
-		xp -= required
-		level += 1
-		required = OceanHUDStats.required(level)
-	end
-	if required == 0 then xp = 0 end
-	-- Level is written before XP so the HUD plays the level-up and carries progress over.
-	player:SetAttribute("Level", level)
-	player:SetAttribute("XPRequired", required)
-	player:SetAttribute("XP", math.floor(xp))
+function OceanHUDStats.addSpeed(player: Player, amount: number)
+	OceanHUDStats.setSpeed(player, number(player, "SpeedLevel") + amount)
 end
 
 return OceanHUDStats
@@ -83,7 +56,7 @@ return OceanHUDStats
 -- In Studio, while playing, run in the Command Bar (Server) to see animations:
 --   local S = require(game.ServerScriptService.OceanHUDStats)
 --   local p = game.Players:GetPlayers()[1]
---   S.addCoins(p, 5000)  S.addXP(p, 3000)  S.setSpeedLevel(p, 19)
+--   S.addCoins(p, 5000)  S.addSpeed(p, 1)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 if not RunService:IsStudio() then return end
@@ -92,7 +65,7 @@ local Stats = require(script.Parent:WaitForChild("OceanHUDStats"))
 
 local function seed(player: Player)
 	if player:GetAttribute("Coins") ~= nil then return end
-	Stats.init(player, {Coins = 125430, SpeedLevel = 18, Level = 24, XP = 7850})
+	Stats.init(player, {Coins = 125430, SpeedLevel = 18})
 end
 Players.PlayerAdded:Connect(seed)
 for _, player in Players:GetPlayers() do seed(player) end
