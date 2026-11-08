@@ -1,0 +1,27 @@
+{
+  "id": "04_Frog",
+  "preset": "Frog",
+  "label": "MOSS",
+  "meshes": [
+    "Body_Frog",
+    "LegL_Frog",
+    "LegR_Frog"
+  ],
+  "triangles": 3952,
+  "vertices": 7904,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_04_Frog_v2.fbx",
+    "glb": "LB_04_Frog_v2.glb",
+    "blend": "LB_04_Frog.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

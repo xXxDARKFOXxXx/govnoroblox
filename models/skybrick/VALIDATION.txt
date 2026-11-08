@@ -1,0 +1,59 @@
+SKYBRICK — VALIDATION
+
+PASS — Model generated with Blender 4.3.2 without third-party model assets.
+PASS — FBX round-trip import into a fresh Blender scene.
+PASS — GLB round-trip import into a fresh Blender scene.
+PASS — Both exports contain exactly Body, Lid, WingL, WingR mesh objects.
+PASS — UV coordinates are finite and within [0, 1]; geometry is finite.
+PASS — All material color textures resolve to a readable 1024x1024 atlas.
+PASS — Left and right wing bounds are symmetric in the closed pose.
+PASS — Atlas packed into the native .blend.
+PASS — Native timeline frame 1: closed, symmetric wings, zero rest rotations.
+PASS — Native timeline frame 38: lid is above body and both wings have risen.
+PASS — Native timeline frame 108: all four parts return to the closed pose.
+PASS — Animation .txt syntax parsed with Lua's parser; the script uses
+       Lua-compatible Luau syntax. This is NOT a Roblox engine execution test.
+
+Export triangle counts:
+  Body    12,568
+  Lid      9,652
+  WingL   10,992
+  WingR   10,992
+  Total   44,204
+
+This is a detailed hero prop. For many simultaneous instances or mobile
+scenes, profile it in your game and consider making simpler distant LODs.
+The FBX and GLB are intentionally static; runtime animation is the .txt Script.
+Blender procedural micro-bump does not transfer through FBX; the color atlas
+and modeled surface details do. Exact shading depends on Studio's importer.
+
+NOT RUN — Roblox Studio import and Play mode (Studio unavailable here).
+NOT RUN — Real Roblox particle rendering, prompt interaction and multiplayer.
+See README_RU.txt for the required Studio smoke checks and installation.
+No claim is made that these unrun engine checks passed.
+
+ADAPTED ANIMATION (Roblox_Opening_Animation_Adapted.txt)
+PASS — Official luau-compile compiles the final adapted script.
+PASS — 11 scenarios execute in the official Luau CLI with a deterministic
+       Roblox math/Instance fixture: separate/split groups at 0.5/1/2.5 scale,
+       synchronized whole-model pulse, lid pop/wing motion, repeated openings,
+       moving/rotating the model between openings, restoration of all meshes,
+       no duplicate rewards on overlapping triggers, distant trigger rejection,
+       legacy names/gems, Tool reward, animation error recovery, one-time mode,
+       visual-only mode, half particle counts and zero orbiting stars.
+       Final flash/shockwave size goals and orbiting Trail counts checked.
+LIMIT — The fixture does not implement real tween interpolation, rendering,
+        physics, replication or Roblox engine property validation.
+NOT RUN — Adapted animation in Roblox Studio, including multiplayer rendering.
+Install and Studio smoke checks: ANIMATION_ADAPTED_RU.md.
+
+PROMPT STARTUP UPDATE
+PASS — Both final animation and Command Bar installer compile with official Luau.
+PASS — Previous 11 fixture scenarios rerun after startup changes.
+PASS — 7 extra fixture scenarios: imported _Mesh/numeric names, material-split
+       names, missing geometry diagnostics, large-body UI/server range agreement,
+       globally disabled prompt warning, stale Attachment cleanup, rejection of
+       a second live controller without removing the first owner.
+PASS — 3 installer fixture scenarios: creating a server Script and disabling
+       a known legacy controller, refusing empty selection, refusing Play mode.
+TOTAL — 21 fixture scenarios. No Roblox Studio execution is claimed.

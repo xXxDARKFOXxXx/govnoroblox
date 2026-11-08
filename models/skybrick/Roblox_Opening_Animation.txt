@@ -1,0 +1,289 @@
+-- SKYBRICK LUCKY BLOCK | Server Script | Luau
+-- Copy ALL of this file into a normal Script INSIDE the imported Model.
+-- Required direct children: Body, Lid, WingL, WingR (BasePart or Model/Folder).
+-- Keep them separate on import. See README_RU.txt for setup and textures.
+-- No plugins, uploaded particle textures, RemoteEvents or paid assets needed.
+
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+
+local model = script.Parent
+assert(model:IsA("Model"), "Place this Script directly inside the Lucky Block Model")
+local IDLE = true -- Set false to disable idle hover and wing flutter.
+local groups = {}
+local offsets = {}
+local allParts = {}
+for _, name in ipairs({"Body", "Lid", "WingL", "WingR"}) do
+    local object = model:FindFirstChild(name)
+    assert(object, "Missing " .. name .. ". Rename the four imported meshes/groups exactly as in README_RU.txt")
+    local parts = {}
+    if object:IsA("BasePart") then table.insert(parts, object) end
+    for _, child in ipairs(object:GetDescendants()) do
+        if child:IsA("BasePart") then table.insert(parts, child) end
+    end
+    assert(#parts > 0, name .. " contains no BaseParts")
+    groups[name] = parts
+    for _, part in ipairs(parts) do
+        assert(not allParts[part], "A part belongs to two animation groups")
+        allParts[part] = true
+        part.Anchored = true
+        part.CanCollide = false
+        part.CanTouch = false
+    end
+end
+
+local root = model:FindFirstChild("SkybrickRoot")
+if not root then
+    root = Instance.new("Part")
+    root.Name = "SkybrickRoot"
+    root.Size = Vector3.new(0.1, 0.1, 0.1)
+    root.CFrame = model:GetPivot()
+    root.Transparency = 1
+    root.Anchored = true
+    root.CanCollide = false
+    root.CanTouch = false
+    root.CanQuery = false
+    root.Parent = model
+end
+assert(root:IsA("BasePart"), "SkybrickRoot must be a BasePart")
+model.PrimaryPart = root
+for part in pairs(allParts) do offsets[part] = root.CFrame:ToObjectSpace(part.CFrame) end
+
+-- Find the body bounds in model space, so effects also work after uniform scaling
+-- and when the model is rotated or moved with Model:PivotTo().
+local low = Vector3.new(math.huge, math.huge, math.huge)
+local high = Vector3.new(-math.huge, -math.huge, -math.huge)
+for _, part in ipairs(groups.Body) do
+    for x = -1, 1, 2 do for y = -1, 1, 2 do for z = -1, 1, 2 do
+        local point = offsets[part] * (part.Size * Vector3.new(x, y, z) / 2)
+        low = low:Min(point)
+        high = high:Max(point)
+    end end end
+end
+local center = (low + high) / 2
+local size = high - low
+local unit = size.Y / 3 -- 1 unit ~= 1 Blender unit; independent of import scale.
+local hinges = {
+    WingL = CFrame.new(low.X, low.Y + size.Y * 0.8, center.Z),
+    WingR = CFrame.new(high.X, low.Y + size.Y * 0.8, center.Z),
+    Lid = CFrame.new(center.X, high.Y, center.Z),
+}
+local zero = {lift = 0, shake = 0, wing = 0, lid = 0}
+local function pose(state)
+    local base = root.CFrame * CFrame.new(0, state.lift * unit, 0)
+        * CFrame.Angles(0, 0, state.shake)
+    for name, parts in pairs(groups) do
+        local delta = CFrame.identity
+        if name == "WingL" or name == "WingR" then
+            local sign = name == "WingL" and -1 or 1
+            local hinge = hinges[name]
+            delta = hinge * CFrame.Angles(0, 0, sign * state.wing) * hinge:Inverse()
+        elseif name == "Lid" then
+            local hinge = hinges.Lid
+            delta = CFrame.new(0, state.lid * 1.55 * unit, 0) * hinge
+                * CFrame.Angles(math.rad(-12) * state.lid, math.rad(18) * state.lid, 0)
+                * hinge:Inverse()
+        end
+        for _, part in ipairs(parts) do part.CFrame = base * delta * offsets[part] end
+    end
+end
+
+local attachment = Instance.new("Attachment")
+attachment.Name = "SkybrickInteraction"
+attachment.Position = center
+attachment.Parent = root
+local prompt = Instance.new("ProximityPrompt")
+prompt.ActionText = "Открыть"
+prompt.ObjectText = "Небесный лаки-блок"
+prompt.KeyboardKeyCode = Enum.KeyCode.E
+prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+prompt.HoldDuration = 0.35
+prompt.MaxActivationDistance = math.max(10, 3.8 * unit)
+prompt.RequiresLineOfSight = false
+prompt.Parent = attachment
+
+local opened = model:FindFirstChild("Opened")
+if not opened then
+    opened = Instance.new("BindableEvent")
+    opened.Name = "Opened"
+    opened.Parent = model
+end
+assert(opened:IsA("BindableEvent"), "Opened must be a BindableEvent")
+
+local random = Random.new()
+local busy = false
+local clock = 0
+local activeEffects = nil
+local current = {lift = 0, shake = 0, wing = 0, lid = 0}
+local function transition(target, duration, style)
+    local from = table.clone(current)
+    local value = Instance.new("NumberValue")
+    local connection = value.Changed:Connect(function(alpha)
+        for key, initial in pairs(from) do
+            current[key] = initial + (target[key] - initial) * alpha
+        end
+        pose(current)
+    end)
+    local tween = TweenService:Create(value, TweenInfo.new(duration, style or Enum.EasingStyle.Sine,
+        Enum.EasingDirection.InOut), {Value = 1})
+    tween:Play()
+    tween.Completed:Wait()
+    connection:Disconnect()
+    value:Destroy()
+    current = table.clone(target)
+    pose(current)
+end
+
+local function burst()
+    local fx = Instance.new("Folder")
+    fx.Name = "SkybrickOpeningFX"
+    fx.Parent = workspace
+    activeEffects = fx
+    Debris:AddItem(fx, 5)
+    local origin = root.CFrame * CFrame.new(center.X, high.Y + 0.2 * unit, center.Z)
+    local emitterPart = Instance.new("Part")
+    emitterPart.Size = Vector3.one * 0.1
+    emitterPart.CFrame = origin
+    emitterPart.Transparency = 1
+    emitterPart.Anchored = true
+    emitterPart.CanCollide = false
+    emitterPart.CanTouch = false
+    emitterPart.CanQuery = false
+    emitterPart.Parent = fx
+    local a = Instance.new("Attachment")
+    a.Parent = emitterPart
+    local sparks = Instance.new("ParticleEmitter")
+    sparks.Name = "GoldenBurst"
+    sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    sparks.Rate = 0
+    sparks.Lifetime = NumberRange.new(0.8, 1.8)
+    sparks.Speed = NumberRange.new(4 * unit, 8 * unit)
+    sparks.Drag = 1.7
+    sparks.SpreadAngle = Vector2.new(160, 160)
+    sparks.Acceleration = Vector3.new(0, -4 * unit, 0)
+    sparks.LightEmission = 1
+    sparks.Rotation = NumberRange.new(0, 360)
+    sparks.RotSpeed = NumberRange.new(-110, 110)
+    sparks.Color = ColorSequence.new(Color3.fromRGB(255, 241, 168), Color3.fromRGB(255, 168, 30))
+    sparks.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.3 * unit),
+        NumberSequenceKeypoint.new(0.25, 0.2 * unit), NumberSequenceKeypoint.new(1, 0)})
+    sparks.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.65, 0.1), NumberSequenceKeypoint.new(1, 1)})
+    sparks.Parent = a
+    sparks:Emit(75)
+    local mist = sparks:Clone()
+    mist.Name = "AquaStars"
+    mist.Color = ColorSequence.new(Color3.fromRGB(120, 255, 249), Color3.fromRGB(238, 255, 255))
+    mist.Speed = NumberRange.new(2 * unit, 5 * unit)
+    mist.Parent = a
+    mist:Emit(35)
+    local light = Instance.new("PointLight")
+    light.Color = Color3.fromRGB(255, 226, 141)
+    light.Range = 15 * unit
+    light.Brightness = 5
+    light.Shadows = false
+    light.Parent = emitterPart
+    TweenService:Create(light, TweenInfo.new(0.9), {Brightness = 0}):Play()
+
+    -- Expanding horizontal neon halo, made from geometry (no texture upload).
+    for i = 1, 28 do
+        local angle = i * math.pi * 2 / 28
+        local radial = CFrame.Angles(0, angle, 0)
+        local part = Instance.new("Part")
+        part.Name = "HaloSegment"
+        part.Anchored = true
+        part.CanCollide = false
+        part.CanTouch = false
+        part.CanQuery = false
+        part.Material = Enum.Material.Neon
+        part.Color = Color3.fromRGB(255, 225, 132)
+        part.Size = Vector3.new(0.4, 0.04, 0.07) * unit
+        part.CFrame = origin * radial * CFrame.new(0, 0, 1.8 * unit)
+        part.Parent = fx
+        TweenService:Create(part, TweenInfo.new(0.75, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            CFrame = origin * radial * CFrame.new(0, 0, 5.3 * unit),
+            Size = Vector3.new(1.2, 0.02, 0.04) * unit,
+            Transparency = 1,
+        }):Play()
+    end
+    -- Tiny flying brick confetti. Anchored and tweened: no physics ownership.
+    for i = 1, 24 do
+        local brick = Instance.new("Part")
+        brick.Name = "BrickConfetti"
+        brick.Anchored = true
+        brick.CanCollide = false
+        brick.CanTouch = false
+        brick.CanQuery = false
+        brick.Material = Enum.Material.SmoothPlastic
+        brick.Color = ({Color3.fromRGB(255, 198, 44), Color3.fromRGB(255, 249, 221),
+            Color3.fromRGB(73, 216, 212)})[i % 3 + 1]
+        brick.Size = Vector3.new(0.14, 0.11, 0.23) * unit
+        brick.CFrame = origin * CFrame.Angles(random:NextNumber(), random:NextNumber(), 0)
+        brick.Parent = fx
+        local angle = random:NextNumber(0, math.pi * 2)
+        local radius = random:NextNumber(1.5, 4.2) * unit
+        local apex = origin * CFrame.new(math.cos(angle) * radius, random:NextNumber(1.5, 3.6) * unit,
+            math.sin(angle) * radius) * CFrame.Angles(random:NextNumber(0, 6), random:NextNumber(0, 6), 1)
+        local up = TweenService:Create(brick, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = apex})
+        up:Play()
+        task.delay(0.5, function()
+            if brick.Parent then
+                TweenService:Create(brick, TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    CFrame = apex * CFrame.new(0, -4 * unit, 0), Transparency = 1,
+                    Size = brick.Size * 0.3,
+                }):Play()
+            end
+        end)
+    end
+end
+
+local idleConnection = RunService.Heartbeat:Connect(function(dt)
+    clock = clock + dt
+    if not busy and IDLE then
+        current = {lift = math.sin(clock * 1.8) * 0.09, shake = 0,
+            wing = math.sin(clock * 2.4) * math.rad(2.5), lid = 0}
+        pose(current)
+    end
+end)
+
+prompt.Triggered:Connect(function(player)
+    if busy then return end
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid or humanoid.Health <= 0 then return end
+    if (hrp.Position - attachment.WorldPosition).Magnitude > prompt.MaxActivationDistance + 3 then return end
+    busy = true
+    prompt.Enabled = false
+    local ok, err = pcall(function()
+        transition({lift = -0.1, shake = 0, wing = math.rad(-8), lid = 0}, 0.3)
+        for i = 1, 6 do
+            transition({lift = 0.06, shake = math.rad(i % 2 == 0 and 4 or -4),
+                wing = math.rad(-8), lid = 0}, 0.065)
+        end
+        transition({lift = 0.55, shake = 0, wing = math.rad(22), lid = 1}, 0.4, Enum.EasingStyle.Back)
+        burst()
+        opened:Fire(player) -- Optional server reward hook; no rewards are granted by this asset.
+        task.wait(1.7)
+        transition({lift = 0.35, shake = 0, wing = math.rad(12), lid = 0}, 0.6)
+        transition(zero, 0.65)
+        task.wait(1)
+    end)
+    current = table.clone(zero)
+    pose(current)
+    if not ok then
+        warn("Skybrick opening failed: " .. tostring(err))
+        if activeEffects then activeEffects:Destroy() end
+    end
+    activeEffects = nil
+    busy = false
+    prompt.Enabled = true
+end)
+
+script.Destroying:Connect(function()
+    idleConnection:Disconnect()
+    if activeEffects then activeEffects:Destroy() end
+    if model.Parent then pose(zero) end
+    attachment:Destroy()
+end)

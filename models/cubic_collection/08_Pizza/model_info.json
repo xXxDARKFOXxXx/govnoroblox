@@ -1,0 +1,27 @@
+{
+  "id": "08_Pizza",
+  "preset": "Pizza",
+  "label": "EXTRA CHEESE",
+  "meshes": [
+    "Body_Pizza",
+    "LegL_Pizza",
+    "LegR_Pizza"
+  ],
+  "triangles": 5592,
+  "vertices": 11184,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_08_Pizza_v2.fbx",
+    "glb": "LB_08_Pizza_v2.glb",
+    "blend": "LB_08_Pizza.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

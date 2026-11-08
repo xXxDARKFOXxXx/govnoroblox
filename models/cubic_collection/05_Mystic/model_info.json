@@ -1,0 +1,28 @@
+{
+  "id": "05_Mystic",
+  "preset": "Mystic",
+  "label": "ABYSS",
+  "meshes": [
+    "Body_Mystic",
+    "Glow_Mystic",
+    "ClawL_Mystic",
+    "ClawR_Mystic"
+  ],
+  "triangles": 4060,
+  "vertices": 8120,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_05_Mystic_v2.fbx",
+    "glb": "LB_05_Mystic_v2.glb",
+    "blend": "LB_05_Mystic.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

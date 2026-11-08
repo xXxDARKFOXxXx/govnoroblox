@@ -1,0 +1,29 @@
+{
+  "id": "01_Toilet",
+  "preset": "Toilet",
+  "label": "PORCELAIN",
+  "meshes": [
+    "Body_Toilet",
+    "Glow_Toilet",
+    "Bubble01_Toilet",
+    "Bubble02_Toilet",
+    "Bubble03_Toilet"
+  ],
+  "triangles": 1076,
+  "vertices": 2152,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_01_Toilet_v2.fbx",
+    "glb": "LB_01_Toilet_v2.glb",
+    "blend": "LB_01_Toilet.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

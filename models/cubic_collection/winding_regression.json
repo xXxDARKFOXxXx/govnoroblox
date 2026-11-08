@@ -1,0 +1,11 @@
+{
+  "broken_v1_toilet": {
+    "outward": 196,
+    "inward": 771,
+    "internal": 109,
+    "ambiguous": 0
+  },
+  "baseline_sha256": "721ba1b4b4537ed0dd66ea6500dacd61f58c6dce1712132e4c1c0d516fcd1f54",
+  "regression_rejects_v1": true,
+  "method": "solid occupancy probes on both sides of triangle normals"
+}

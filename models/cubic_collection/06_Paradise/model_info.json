@@ -1,0 +1,32 @@
+{
+  "id": "06_Paradise",
+  "preset": "Paradise",
+  "label": "AUREOLE",
+  "meshes": [
+    "Body_Paradise",
+    "WingL_Paradise",
+    "WingR_Paradise",
+    "Halo_Paradise",
+    "Glow_Paradise",
+    "Cloud01_Paradise",
+    "Cloud02_Paradise",
+    "Cloud03_Paradise"
+  ],
+  "triangles": 4852,
+  "vertices": 9704,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_06_Paradise_v2.fbx",
+    "glb": "LB_06_Paradise_v2.glb",
+    "blend": "LB_06_Paradise.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}

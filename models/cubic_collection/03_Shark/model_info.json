@@ -1,0 +1,32 @@
+{
+  "id": "03_Shark",
+  "preset": "Shark",
+  "label": "TIDAL",
+  "meshes": [
+    "Body_Shark",
+    "FinL_Shark",
+    "FinR_Shark",
+    "Dorsal_Shark",
+    "Tail_Shark",
+    "Bubble01_Shark",
+    "Bubble02_Shark",
+    "Bubble03_Shark"
+  ],
+  "triangles": 4080,
+  "vertices": 8160,
+  "roblox_target_size": [
+    4,
+    3.8,
+    3.4
+  ],
+  "format_version": 2,
+  "files": {
+    "fbx": "LB_03_Shark_v2.fbx",
+    "glb": "LB_03_Shark_v2.glb",
+    "blend": "LB_03_Shark.blend"
+  },
+  "outward_winding": true,
+  "no_lid": true,
+  "flat_shaded": true,
+  "surface": "orthogonal cuboids + nearest-filtered pixel atlas"
+}
