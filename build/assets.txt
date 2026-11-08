@@ -1,0 +1,10 @@
+LB_01_Toilet_v2 | tier 2 | new blocks/LB_01_Toilet_v2.glb
+LB_02_Crab_v2 | tier 2 | new blocks/LB_02_Crab_v2.glb
+LB_03_Shark_v2 | tier 2 | new blocks/LB_03_Shark_v2.glb
+LB_04_Frog_v2 | tier 1 | new blocks/LB_04_Frog_v2.glb
+LB_05_Mystic_v2 | tier 4 | new blocks/LB_05_Mystic_v2.glb
+LB_06_Paradise_v2 | tier 4 | new blocks/LB_06_Paradise_v2.glb
+LB_07_Pumpkin_v2 | tier 3 | new blocks/LB_07_Pumpkin_v2.glb
+LB_08_Pizza_v2 | tier 1 | new blocks/LB_08_Pizza_v2.glb
+LB_09_Chicken_v2 | tier 1 | new blocks/LB_09_Chicken_v2.glb
+LB_10_Glitch_v2 | tier 5 | new blocks/LB_10_Glitch_v2.glb

@@ -1,0 +1,97 @@
+{
+  "revision": 4,
+  "water": {
+    "transparency": 1,
+    "reflectance": 0,
+    "color": [
+      126,
+      170,
+      176
+    ],
+    "editorPreviewTransparency": 0.94
+  },
+  "spawn": {
+    "width": 288,
+    "previousWidth": 192,
+    "length": 160,
+    "floorY": 4,
+    "palette": "sand floor / dark teal walls"
+  },
+  "corridor": {
+    "width": 128,
+    "length": 960,
+    "waterY": 0,
+    "sectionCount": 5,
+    "floorLevels": [
+      4,
+      -20,
+      -44,
+      -76,
+      -116,
+      -164
+    ]
+  },
+  "sections": [
+    {
+      "name": "01_Lagoon",
+      "fromZ": 0,
+      "toZ": 192,
+      "floorStart": 4,
+      "floorEnd": -20
+    },
+    {
+      "name": "02_Reef",
+      "fromZ": 192,
+      "toZ": 384,
+      "floorStart": -20,
+      "floorEnd": -44
+    },
+    {
+      "name": "03_Bluewater",
+      "fromZ": 384,
+      "toZ": 576,
+      "floorStart": -44,
+      "floorEnd": -76
+    },
+    {
+      "name": "04_Twilight",
+      "fromZ": 576,
+      "toZ": 768,
+      "floorStart": -76,
+      "floorEnd": -116
+    },
+    {
+      "name": "05_Abyss",
+      "fromZ": 768,
+      "toZ": 960,
+      "floorStart": -116,
+      "floorEnd": -164
+    }
+  ],
+  "visibleParts": 18661,
+  "xmlBytes": 20164819,
+  "seabed": {
+    "patches": 222,
+    "patchesPerSection": [
+      36,
+      48,
+      48,
+      48,
+      42
+    ],
+    "SeabedShell": 278,
+    "SeabedStarfish": 74,
+    "KelpBlade": 402,
+    "SeabedCoral": 37,
+    "SeabedPebbles": 222
+  },
+  "decor": {
+    "KelpBlade": 249,
+    "BubbleSource": 93,
+    "WallStarfish": 34,
+    "WallShell": 39,
+    "WallBaseCoral": 54,
+    "WallWave": 13,
+    "BubbleWallRelief": 30
+  }
+}

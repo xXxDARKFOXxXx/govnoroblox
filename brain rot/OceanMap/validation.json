@@ -1,0 +1,17 @@
+{
+  "binaryBytes": 350730,
+  "partCount": 18755,
+  "passed": true,
+  "scriptCount": 5,
+  "seabedCoverage": [
+    831,
+    1168,
+    1133,
+    1192,
+    1025
+  ],
+  "seabedParts": 5349,
+  "sectionCount": 5,
+  "spawnFloorTiles": 720,
+  "spawnWidth": 288
+}

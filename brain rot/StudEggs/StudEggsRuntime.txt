@@ -1,0 +1,968 @@
+-- StudEggsRuntime — install as a separate LocalScript in StarterPlayerScripts.
+-- Recognizes only StudEgg rigs.
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local square = "rbxasset://textures/particles/SquareParticle.png"
+local sparkle = "rbxasset://textures/sparkle.png"
+local ring = "rbxassetid://1266170131"
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+
+local eggs = {
+	StudEgg_01_Tide = {
+		period = 4.5,
+		bob = 0.075,
+		roll = 1.7,
+		pitch = 1.4,
+		twist = 2,
+		tracks = {},
+		spin = {},
+		measure = 3.37,
+		joints = {"EggTopFX", "EggCoreFX"},
+		fx = {
+			{
+				name = "TideBubbles",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 4,
+				first = rgb(238, 255, 244),
+				last = rgb(132, 221, 209),
+				size = 0.19,
+				speed = {0.29, 0.68},
+				life = {0.68, 1.32},
+				spread = 38,
+			},
+		},
+		lights = {
+			{
+				color = rgb(131, 231, 224),
+				strength = 0.34,
+				range = 3.4,
+				pulse = 0.09,
+				at = "EggCoreFX",
+			},
+		},
+	},
+	StudEgg_02_Lagoon = {
+		period = 4.25,
+		bob = 0.09,
+		roll = 2.1,
+		pitch = 1.6,
+		twist = 3.6,
+		tracks = {
+			EggSprig = {
+				{8, 0, 9, 2, 0.35},
+			},
+		},
+		spin = {},
+		measure = 3.505,
+		joints = {"EggTopFX", "EggCoreFX", "EggSprig"},
+		fx = {
+			{
+				name = "LagoonRings",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 5,
+				first = rgb(232, 255, 204),
+				last = rgb(113, 229, 183),
+				size = 0.23,
+				speed = {0.4, 1.05},
+				life = {0.68, 1.32},
+				spread = 54,
+			},
+			{
+				name = "PollenPixels",
+				texture = square,
+				at = "EggTopFX",
+				rate = 3,
+				first = rgb(201, 255, 151),
+				last = rgb(52, 202, 133),
+				size = 0.1,
+				speed = {0.46, 1.42},
+				life = {0.5, 1.22},
+				spread = 61,
+			},
+		},
+		lights = {
+			{
+				color = rgb(124, 255, 173),
+				strength = 0.53,
+				range = 3.7,
+				pulse = 0.14,
+				at = "EggCoreFX",
+			},
+		},
+	},
+	StudEgg_03_Coral = {
+		period = 4,
+		bob = 0.11,
+		roll = 2.6,
+		pitch = 1.8,
+		twist = 4,
+		tracks = {
+			EggCoralR = {
+				{-9, -5, 6, 1, -0.47},
+			},
+			EggCoralL = {
+				{9, 5, 6, 1, 0.47},
+			},
+		},
+		spin = {},
+		measure = 3.6050000000000004,
+		joints = {"EggTopFX", "EggCoreFX", "EggCoralR", "EggCoralL"},
+		fx = {
+			{
+				name = "CoralPetals",
+				texture = square,
+				at = "EggTopFX",
+				rate = 8,
+				first = rgb(255, 212, 180),
+				last = rgb(248, 112, 153),
+				size = 0.145,
+				speed = {0.46, 1.42},
+				life = {0.64, 1.31},
+				spread = 80,
+			},
+			{
+				name = "ReefGlints",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 5,
+				first = rgb(255, 241, 200),
+				last = rgb(255, 155, 132),
+				size = 0.18,
+				speed = {0.35, 1.35},
+				life = {0.53, 1.19},
+				spread = 79,
+			},
+		},
+		lights = {
+			{
+				color = rgb(255, 158, 151),
+				strength = 0.66,
+				range = 4.2,
+				pulse = 0.18,
+				at = "EggCoreFX",
+			},
+		},
+	},
+	StudEgg_04_Pearl = {
+		period = 4.9,
+		bob = 0.105,
+		roll = 1.6,
+		pitch = 1.4,
+		twist = 4.8,
+		tracks = {
+			EggValveR = {
+				{-6, -5, 5, 2, -0.5},
+			},
+			EggValveL = {
+				{6, 5, 5, 2, 0.5},
+			},
+		},
+		spin = {},
+		measure = 3.6300000000000003,
+		joints = {"EggTopFX", "EggCoreFX", "EggValveR", "EggValveL"},
+		fx = {
+			{
+				name = "PearlHalos",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 8,
+				first = rgb(255, 248, 252),
+				last = rgb(182, 151, 236),
+				size = 0.27,
+				speed = {0.4, 1.05},
+				life = {0.7, 1.45},
+				spread = 61,
+			},
+			{
+				name = "NacreStars",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 9,
+				first = rgb(255, 253, 243),
+				last = rgb(215, 186, 255),
+				size = 0.2,
+				speed = {0.35, 1.35},
+				life = {0.53, 1.19},
+				spread = 90,
+				burst = 6,
+			},
+		},
+		lights = {
+			{
+				color = rgb(230, 208, 255),
+				strength = 0.83,
+				range = 4.5,
+				pulse = 0.2,
+				at = "EggCoreFX",
+			},
+		},
+	},
+	StudEgg_05_Glacier = {
+		period = 4.15,
+		bob = 0.12,
+		roll = 2,
+		pitch = 1.7,
+		twist = 5.2,
+		tracks = {
+			EggShard0 = {
+				{6.364812960290928, 5, -4.846561253147702, 2, 0},
+			},
+			EggShard1 = {
+				{-6.731767878463172, 5, -4.322418446945118, 2, 0.64},
+			},
+			EggShard2 = {
+				{4.124010974571713, 5, 6.855110026951579, 2, 1.28},
+			},
+			EggShard3 = {
+				{-6.90567493319099, 5, 4.038768836798861, 2, 1.92},
+			},
+		},
+		spin = {},
+		measure = 3.7959999999999994,
+		joints = {"EggTopFX", "EggCoreFX", "EggShard0", "EggShard1", "EggShard2", "EggShard3"},
+		fx = {
+			{
+				name = "FrostChips",
+				texture = square,
+				at = "EggTopFX",
+				rate = 11,
+				first = rgb(232, 255, 255),
+				last = rgb(117, 200, 240),
+				size = 0.13,
+				speed = {0.6, 1.4},
+				life = {0.5, 1.22},
+				spread = 97,
+				burst = 8,
+				accel = -0.45,
+			},
+			{
+				name = "IceFlare",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 10,
+				first = rgb(241, 255, 255),
+				last = rgb(104, 155, 255),
+				size = 0.25,
+				speed = {0.35, 1.35},
+				life = {0.42, 1.1},
+				spread = 79,
+				burst = 7,
+			},
+		},
+		lights = {
+			{
+				color = rgb(141, 234, 255),
+				strength = 1.04,
+				range = 4.8,
+				pulse = 0.26,
+				at = "EggCoreFX",
+			},
+		},
+	},
+	StudEgg_06_Jelly = {
+		period = 4.8,
+		bob = 0.165,
+		roll = 2.6,
+		pitch = 2,
+		twist = 5.8,
+		tracks = {
+			EggTassel0 = {
+				{3.5655393964070186, 7, -13.598731647928416, 2, 0},
+			},
+			EggTasselTip0 = {
+				{4.754052528542692, -9, -18.455421522188562, 2, -0.46},
+			},
+			EggTassel1 = {
+				{14.400820126439326, 7, -3.9173746415136774, 2, 0.65},
+			},
+			EggTasselTip1 = {
+				{19.201093501919104, -9, -5.316437013482848, 2, 0.19},
+			},
+			EggTassel2 = {
+				{10.835280730032313, 7, 9.681357006414734, 2, 1.3},
+			},
+			EggTasselTip2 = {
+				{14.447040973376417, -9, 13.138984508705711, 2, 0.8400000000000001},
+			},
+			EggTassel3 = {
+				{-3.5655393964070203, 7, 13.598731647928414, 2, 1.9500000000000002},
+			},
+			EggTasselTip3 = {
+				{-4.754052528542694, -9, 18.455421522188562, 2, 1.4900000000000002},
+			},
+			EggTassel4 = {
+				{-14.400820126439326, 7, 3.917374641513679, 2, 2.6},
+			},
+			EggTasselTip4 = {
+				{-19.201093501919104, -9, 5.31643701348285, 2, 2.14},
+			},
+			EggTassel5 = {
+				{-10.835280730032304, 7, -9.681357006414741, 2, 3.25},
+			},
+			EggTasselTip5 = {
+				{-14.447040973376406, -9, -13.13898450870572, 2, 2.79},
+			},
+		},
+		spin = {
+			EggOrbit = 1,
+		},
+		measure = 3.9259999999999997,
+		joints = {"EggTopFX", "EggCoreFX", "EggTassel0", "EggTasselTip0", "EggTassel1", "EggTasselTip1", "EggTassel2", "EggTasselTip2", "EggTassel3", "EggTasselTip3", "EggTassel4", "EggTasselTip4", "EggTassel5", "EggTasselTip5", "EggOrbit"},
+		fx = {
+			{
+				name = "JellyRings",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 9,
+				first = rgb(255, 222, 250),
+				last = rgb(182, 110, 238),
+				size = 0.3,
+				speed = {0.4, 1.05},
+				life = {0.68, 1.32},
+				spread = 83,
+				burst = 7,
+			},
+			{
+				name = "LanternLustre",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 11,
+				first = rgb(255, 241, 255),
+				last = rgb(226, 128, 243),
+				size = 0.26,
+				speed = {0.35, 1.35},
+				life = {0.53, 1.19},
+				spread = 79,
+				burst = 9,
+			},
+			{
+				name = "JellyMotes",
+				texture = square,
+				at = "EggCoreFX",
+				rate = 7,
+				first = rgb(182, 255, 236),
+				last = rgb(91, 193, 241),
+				size = 0.14,
+				speed = {0.46, 1.42},
+				life = {0.6, 1.48},
+				spread = 67,
+			},
+		},
+		lights = {
+			{
+				color = rgb(255, 165, 237),
+				strength = 1.2,
+				range = 5.1,
+				pulse = 0.32,
+				at = "EggCoreFX",
+			},
+			{
+				color = rgb(167, 255, 229),
+				strength = 0.36,
+				range = 3.1,
+				pulse = 0.14,
+				at = "EggTopFX",
+			},
+		},
+	},
+	StudEgg_07_Storm = {
+		period = 4.1,
+		bob = 0.13,
+		roll = 3.8,
+		pitch = 2.7,
+		twist = 6.8,
+		tracks = {
+			EggBoltR = {
+				{-4.7900793014461245, 4, -1.4335760481597775, 2, -1.28},
+			},
+			EggBoltL = {
+				{4.7289199972476945, 4, -1.623981422193881, 2, 1.24},
+			},
+			EggBoltRear = {
+				{0.5070899315830093, 4, 4.974219516797297, 2, 3.04},
+			},
+		},
+		spin = {
+			EggSparks = -1,
+		},
+		measure = 4.072,
+		joints = {"EggTopFX", "EggCoreFX", "EggBoltR", "EggBoltL", "EggBoltRear", "EggSparks"},
+		fx = {
+			{
+				name = "ThunderSparks",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 14,
+				first = rgb(230, 255, 255),
+				last = rgb(89, 153, 255),
+				size = 0.2,
+				speed = {0.6, 1.8},
+				life = {0.37, 0.94},
+				spread = 113,
+				burst = 13,
+			},
+			{
+				name = "StormShards",
+				texture = square,
+				at = "EggCoreFX",
+				rate = 11,
+				first = rgb(189, 255, 255),
+				last = rgb(56, 111, 255),
+				size = 0.16,
+				speed = {0.46, 1.42},
+				life = {0.5, 1.22},
+				spread = 95,
+				burst = 8,
+			},
+			{
+				name = "PressureWaves",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 6,
+				first = rgb(200, 251, 255),
+				last = rgb(88, 151, 238),
+				size = 0.36,
+				speed = {0.4, 1.05},
+				life = {0.68, 1.32},
+				spread = 86,
+				burst = 4,
+			},
+		},
+		lights = {
+			{
+				color = rgb(130, 232, 255),
+				strength = 1.47,
+				range = 5.9,
+				pulse = 0.38,
+				at = "EggCoreFX",
+			},
+			{
+				color = rgb(129, 139, 255),
+				strength = 0.48,
+				range = 3.5,
+				pulse = 0.21,
+				at = "EggTopFX",
+			},
+		},
+	},
+	StudEgg_08_Kraken = {
+		period = 5.2,
+		bob = 0.16,
+		roll = 2.1,
+		pitch = 2.2,
+		twist = 7.5,
+		tracks = {
+			EggTentacle0_1 = {
+				{4.841491245888316, 8, -6.368670388392447, 1, 0},
+			},
+			EggTentacle0_2 = {
+				{5.955034232442629, 9.84, -7.83346457772271, 1, -0.7},
+			},
+			EggTentacle0_3 = {
+				{5.955034232442629, 9.84, -7.83346457772271, 1, -1.4},
+			},
+			EggTentacle1_1 = {
+				{6.368670388392447, 8, 4.8414912458883155, 1, 0.72},
+			},
+			EggTentacle1_2 = {
+				{7.83346457772271, 9.84, 5.955034232442628, 1, 0.020000000000000018},
+			},
+			EggTentacle1_3 = {
+				{7.83346457772271, 9.84, 5.955034232442628, 1, -0.6799999999999999},
+			},
+			EggTentacle2_1 = {
+				{-4.8414912458883155, 8, 6.368670388392448, 1, 1.44},
+			},
+			EggTentacle2_2 = {
+				{-5.955034232442628, 9.84, 7.833464577722711, 1, 0.74},
+			},
+			EggTentacle2_3 = {
+				{-5.955034232442628, 9.84, 7.833464577722711, 1, 0.040000000000000036},
+			},
+			EggTentacle3_1 = {
+				{-6.368670388392446, 8, -4.841491245888317, 1, 2.16},
+			},
+			EggTentacle3_2 = {
+				{-7.833464577722708, 9.84, -5.95503423244263, 1, 1.4600000000000002},
+			},
+			EggTentacle3_3 = {
+				{-7.833464577722708, 9.84, -5.95503423244263, 1, 0.7600000000000002},
+			},
+		},
+		spin = {
+			EggSeals = -1,
+		},
+		measure = 4.274,
+		joints = {"EggTopFX", "EggCoreFX", "EggTentacle0_1", "EggTentacle0_2", "EggTentacle0_3", "EggTentacle1_1", "EggTentacle1_2", "EggTentacle1_3", "EggTentacle2_1", "EggTentacle2_2", "EggTentacle2_3", "EggTentacle3_1", "EggTentacle3_2", "EggTentacle3_3", "EggSeals"},
+		fx = {
+			{
+				name = "AbyssStars",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 16,
+				first = rgb(242, 225, 255),
+				last = rgb(157, 84, 237),
+				size = 0.27,
+				speed = {0.35, 1.35},
+				life = {0.53, 1.19},
+				spread = 112,
+				burst = 14,
+			},
+			{
+				name = "KrakenRunes",
+				texture = square,
+				at = "EggCoreFX",
+				rate = 11,
+				first = rgb(199, 255, 240),
+				last = rgb(74, 221, 198),
+				size = 0.17,
+				speed = {0.46, 1.42},
+				life = {0.5, 1.22},
+				spread = 106,
+				burst = 10,
+			},
+			{
+				name = "DeepPearl",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 7,
+				first = rgb(239, 250, 255),
+				last = rgb(182, 151, 255),
+				size = 0.3,
+				speed = {0.4, 1.05},
+				life = {0.75, 1.54},
+				spread = 56,
+			},
+			{
+				name = "SealPulse",
+				texture = sparkle,
+				at = "EggCoreFX",
+				rate = 5,
+				first = rgb(214, 255, 241),
+				last = rgb(152, 110, 233),
+				size = 0.38,
+				speed = {0.21, 0.7},
+				life = {0.53, 1.19},
+				spread = 129,
+				burst = 6,
+			},
+		},
+		lights = {
+			{
+				color = rgb(187, 128, 255),
+				strength = 1.65,
+				range = 6.6,
+				pulse = 0.52,
+				at = "EggCoreFX",
+			},
+			{
+				color = rgb(127, 255, 224),
+				strength = 0.73,
+				range = 4.8,
+				pulse = 0.26,
+				at = "EggTopFX",
+			},
+		},
+	},
+	StudEgg_09_Vent = {
+		period = 4.65,
+		bob = 0.13,
+		roll = 2.7,
+		pitch = 2.4,
+		twist = 5.9,
+		tracks = {
+			EggVent0 = {
+				{6.329514772803691, 4, -4.976394766085941, 2, 0.78},
+			},
+			EggVent1 = {
+				{-6.580312467542062, 4, -4.775548451013295, 2, -0.82},
+			},
+			EggVent2 = {
+				{4.248274871608944, 4, 6.171075371148001, 2, 2.65},
+			},
+			EggVent3 = {
+				{-7.532089117186479, 4, 3.831503658361897, 2, -2.15},
+			},
+		},
+		spin = {
+			EggEmbers = 1,
+		},
+		measure = 4.386,
+		joints = {"EggTopFX", "EggCoreFX", "EggVent0", "EggVent1", "EggVent2", "EggVent3", "EggEmbers"},
+		fx = {
+			{
+				name = "ThermalEmbers",
+				texture = square,
+				at = "EggTopFX",
+				rate = 19,
+				first = rgb(255, 240, 155),
+				last = rgb(248, 73, 36),
+				size = 0.2,
+				speed = {0.85, 2.4},
+				life = {0.44, 1.17},
+				spread = 112,
+				burst = 19,
+				accel = 0.2,
+			},
+			{
+				name = "VolcanicAsh",
+				texture = square,
+				at = "EggTopFX",
+				rate = 12,
+				first = rgb(165, 155, 180),
+				last = rgb(78, 58, 86),
+				size = 0.17,
+				speed = {0.53, 1.58},
+				life = {0.78, 1.51},
+				spread = 86,
+				burst = 8,
+				emission = 0.16,
+			},
+			{
+				name = "HeatFlare",
+				texture = sparkle,
+				at = "EggCoreFX",
+				rate = 9,
+				first = rgb(255, 237, 186),
+				last = rgb(255, 152, 61),
+				size = 0.32,
+				speed = {0.35, 1.35},
+				life = {0.53, 1.19},
+				spread = 104,
+				burst = 10,
+			},
+			{
+				name = "VentRings",
+				texture = ring,
+				at = "EggTopFX",
+				rate = 7,
+				first = rgb(255, 233, 172),
+				last = rgb(231, 129, 69),
+				size = 0.34,
+				speed = {0.56, 1.51},
+				life = {0.68, 1.32},
+				spread = 57,
+				burst = 5,
+			},
+		},
+		lights = {
+			{
+				color = rgb(255, 140, 82),
+				strength = 1.95,
+				range = 7.1,
+				pulse = 0.68,
+				at = "EggCoreFX",
+			},
+			{
+				color = rgb(255, 215, 145),
+				strength = 1.03,
+				range = 5.1,
+				pulse = 0.38,
+				at = "EggTopFX",
+			},
+		},
+	},
+	StudEgg_10_OceanCrown = {
+		period = 5.4,
+		bob = 0.18,
+		roll = 2,
+		pitch = 2.2,
+		twist = 6.7,
+		tracks = {
+			EggWingR = {
+				{-11, -8, 6, 1, -0.37},
+			},
+			EggWingL = {
+				{11, 8, 6, 1, 0.37},
+			},
+			EggTrident = {
+				{5, 7, 4, 1, 0.33},
+			},
+		},
+		spin = {
+			EggOceanHalo = 1,
+			EggCrownHalo = -1,
+		},
+		measure = 4.72,
+		joints = {"EggTopFX", "EggCoreFX", "EggWingR", "EggWingL", "EggTrident", "EggOceanHalo", "EggCrownHalo"},
+		fx = {
+			{
+				name = "GoldenCrownStars",
+				texture = sparkle,
+				at = "EggTopFX",
+				rate = 19,
+				first = rgb(255, 245, 197),
+				last = rgb(229, 170, 86),
+				size = 0.32,
+				speed = {0.67, 1.74},
+				life = {0.53, 1.19},
+				spread = 115,
+				burst = 20,
+			},
+			{
+				name = "OceanFragments",
+				texture = square,
+				at = "EggCoreFX",
+				rate = 15,
+				first = rgb(193, 255, 242),
+				last = rgb(56, 214, 209),
+				size = 0.18,
+				speed = {0.46, 1.42},
+				life = {0.5, 1.22},
+				spread = 119,
+				burst = 16,
+			},
+			{
+				name = "RoyalPearls",
+				texture = ring,
+				at = "EggCoreFX",
+				rate = 10,
+				first = rgb(227, 255, 253),
+				last = rgb(119, 235, 255),
+				size = 0.34,
+				speed = {0.4, 1.05},
+				life = {0.8, 1.68},
+				spread = 88,
+				burst = 8,
+			},
+			{
+				name = "OceanFlare",
+				texture = sparkle,
+				at = "EggCoreFX",
+				rate = 9,
+				first = rgb(224, 255, 249),
+				last = rgb(122, 255, 216),
+				size = 0.43,
+				speed = {0.28, 1.05},
+				life = {0.53, 1.19},
+				spread = 130,
+				burst = 9,
+			},
+			{
+				name = "CrownRain",
+				texture = square,
+				at = "EggTopFX",
+				rate = 7,
+				first = rgb(255, 233, 160),
+				last = rgb(255, 178, 103),
+				size = 0.15,
+				speed = {0.46, 1.42},
+				life = {0.53, 1.17},
+				spread = 133,
+				burst = 8,
+				accel = -1.6,
+			},
+		},
+		lights = {
+			{
+				color = rgb(128, 255, 223),
+				strength = 2.35,
+				range = 8.4,
+				pulse = 0.64,
+				at = "EggCoreFX",
+			},
+			{
+				color = rgb(255, 218, 142),
+				strength = 1.3,
+				range = 6.3,
+				pulse = 0.55,
+				at = "EggTopFX",
+			},
+		},
+	},
+}
+
+local rigs = {}
+local pending = {}
+local tau = 2 * math.pi
+local sin, cos, rad = math.sin, math.cos, math.rad
+
+local function makeEmitter(attachment, style, scale)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = style.name
+	emitter.Enabled = false
+	emitter.Texture = style.texture
+	emitter.Rate = style.rate
+	emitter.Lifetime = NumberRange.new(style.life[1], style.life[2])
+	emitter.Speed = NumberRange.new(style.speed[1] * scale, style.speed[2] * scale)
+	emitter.SpreadAngle = Vector2.new(style.spread, style.spread)
+	emitter.EmissionDirection = Enum.NormalId.Top
+	emitter.Color = ColorSequence.new(style.first, style.last)
+	emitter.LightInfluence = 0
+	emitter.LightEmission = style.emission or 0.66
+	emitter.Drag = 0.65
+	emitter.Acceleration = Vector3.new(0, (style.accel or 0.48) * scale, 0)
+	emitter.Rotation = NumberRange.new(-180, 180)
+	emitter.RotSpeed = NumberRange.new(-58, 58)
+	local size = style.size * scale
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, size * 0.50),
+		NumberSequenceKeypoint.new(0.24, size),
+		NumberSequenceKeypoint.new(1, size * 0.65),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.13, 0.08),
+		NumberSequenceKeypoint.new(0.56, 0.22),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Parent = attachment
+	return emitter
+end
+
+local function register(root)
+	local style = eggs[root.Name]
+	local mesh = root:FindFirstAncestorWhichIsA("MeshPart")
+	if not style or not mesh or rigs[root] or not root:IsDescendantOf(Workspace) then
+		return
+	end
+	local bones = {}
+	for _, name in style.joints do
+		local bone = root:FindFirstChild(name, true)
+		if not bone or not bone:IsA("Bone") then
+			return
+		end
+		bones[name] = bone
+	end
+	local up = root.WorldCFrame:VectorToObjectSpace(Vector3.yAxis)
+	local scale = (bones.EggTopFX.WorldPosition - root.WorldPosition).Magnitude / style.measure
+	scale = math.clamp(scale, 0.08, 16)
+	local visualScale = math.clamp(scale, 0.25, 5)
+	local anchors, emitters, lights = {}, {}, {}
+	for _, name in {"EggCoreFX", "EggTopFX"} do
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "StudEggEffects_" .. name
+		attachment.Parent = mesh
+		attachment.WorldCFrame = CFrame.new(bones[name].WorldPosition)
+		anchors[name] = attachment
+	end
+	for i, config in style.fx do
+		emitters[i] = makeEmitter(anchors[config.at], config, visualScale)
+	end
+	for i, config in style.lights do
+		local light = Instance.new("PointLight")
+		light.Name = "StudEggLight"
+		light.Enabled = false
+		light.Color = config.color
+		light.Range = math.clamp(config.range * visualScale, 1, 26)
+		light.Parent = anchors[config.at]
+		lights[i] = light
+	end
+	local p = root.WorldPosition
+	rigs[root] = {
+		mesh = mesh,
+		bones = bones,
+		style = style,
+		anchors = anchors,
+		emitters = emitters,
+		lights = lights,
+		up = up,
+		scale = scale,
+		phase = (p.X * 0.17 + p.Z * 0.13) % 1,
+		visible = false,
+	}
+end
+
+local function consider(instance)
+	local current = instance
+	while current and current:IsA("Bone") do
+		if eggs[current.Name] then
+			local root = current
+			if not rigs[root] and not pending[root] then
+				pending[root] = true
+				task.defer(function()
+					pending[root] = nil
+					register(root)
+				end)
+			end
+			return
+		end
+		current = current.Parent
+	end
+end
+
+Workspace.DescendantAdded:Connect(consider)
+for _, instance in Workspace:GetDescendants() do
+	consider(instance)
+end
+
+local function setVisible(rig, visible)
+	rig.visible = visible
+	rig.lastCycle = nil
+	for _, emitter in rig.emitters do
+		emitter.Enabled = visible
+		if not visible then
+			emitter:Clear()
+		end
+	end
+	for _, light in rig.lights do
+		light.Enabled = visible
+	end
+end
+
+local function animate(root, rig, seconds)
+	local style, bones = rig.style, rig.bones
+	local cycle = seconds / style.period + rig.phase
+	local whole = math.floor(cycle)
+	local t = (cycle - whole) * tau
+	local height = style.bob * rig.scale * (0.5 - 0.5 * cos(t))
+	root.Transform = CFrame.new(rig.up * height) * CFrame.Angles(
+		rad(style.roll * sin(t + 0.36)), rad(style.twist * sin(t - 0.4)), rad(style.pitch * sin(t - 0.2))
+	)
+	for name, tracks in style.tracks do
+		local x, y, z = 0, 0, 0
+		for _, wave in tracks do
+			local amplitude = sin(wave[4] * t + wave[5])
+			x += wave[1] * amplitude
+			y += wave[2] * amplitude
+			z += wave[3] * amplitude
+		end
+		bones[name].Transform = CFrame.Angles(rad(x), rad(y), rad(z))
+	end
+	for name, turns in style.spin do
+		bones[name].Transform = CFrame.Angles(0, t * turns, 0)
+	end
+	for name, anchor in rig.anchors do
+		anchor.WorldCFrame = CFrame.new(bones[name].TransformedWorldCFrame.Position)
+	end
+	for i, light in rig.lights do
+		local config = style.lights[i]
+		light.Brightness = config.strength + config.pulse * sin(t * 2 - 0.55 + i * 0.46)
+	end
+	if rig.lastCycle and whole ~= rig.lastCycle then
+		for i, config in style.fx do
+			if config.burst then
+				rig.emitters[i]:Emit(config.burst)
+			end
+		end
+	end
+	rig.lastCycle = whole
+end
+
+RunService.PreRender:Connect(function()
+	local camera = Workspace.CurrentCamera
+	local time = Workspace:GetServerTimeNow()
+	for root, rig in rigs do
+		if not root:IsDescendantOf(Workspace) or not root:IsDescendantOf(rig.mesh) then
+			for _, attachment in rig.anchors do
+				attachment:Destroy()
+			end
+			rigs[root] = nil
+			consider(root)
+			continue
+		end
+		local visible = camera ~= nil
+			and (camera.CFrame.Position - root.WorldPosition).Magnitude <= 145 * math.max(1, rig.scale)
+		if visible ~= rig.visible then
+			setVisible(rig, visible)
+		end
+		if visible then
+			animate(root, rig, time)
+		end
+	end
+end)
+

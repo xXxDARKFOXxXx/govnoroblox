@@ -1,0 +1,3360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<roblox version="4">
+  <External>null</External>
+  <External>nil</External>
+  <Item class="LocalScript" referent="RBX_StudfishRuntime">
+    <Properties>
+      <string name="Name">StudfishRuntime</string>
+      <bool name="Disabled">false</bool>
+      <ProtectedString name="Source"><![CDATA[-- Put this LocalScript in StarterPlayer > StarterPlayerScripts.
+-- The exported rigs are recognized by their root bone, so model names can change.
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local square = "rbxasset://textures/particles/SquareParticle.png"
+local sparkle = "rbxasset://textures/sparkle.png"
+local ring = "rbxassetid://1266170131"
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+
+local species = {
+	StudFish_Shark = {
+		period = 3.4, bob = 0.105, roll = 2.6, pitch = 3.2,
+		tail = 16, tip = 12, fin = 13, crest = 3.5, tailDistance = 2.04,
+		fx = {
+			{ name = "ReefBubbles", texture = ring, rate = 6, size = 0.21,
+			  speed = {0.55, 1.15}, life = {0.75, 1.55}, spread = 25,
+			  first = rgb(237, 255, 255), last = rgb(83, 201, 255) },
+			{ name = "SeaGlints", texture = sparkle, rate = 2, size = 0.12,
+			  speed = {0.4, 0.7}, life = {0.35, 0.65}, spread = 40,
+			  first = rgb(229, 255, 255), last = rgb(80, 168, 243) },
+		},
+	},
+	StudFish_Clown = {
+		period = 2.6, bob = 0.13, roll = 4.4, pitch = 3.8,
+		tail = 21, tip = 16, fin = 20, crest = 6.5, tailDistance = 1.502,
+		fx = {
+			{ name = "TangerineConfetti", texture = square, rate = 8, size = 0.105,
+			  speed = {0.6, 1.3}, life = {0.5, 1}, spread = 51,
+			  first = rgb(255, 240, 154), last = rgb(255, 109, 78) },
+			{ name = "SugarGlints", texture = sparkle, rate = 4, size = 0.19,
+			  speed = {0.4, 0.85}, life = {0.5, 0.8}, spread = 54,
+			  first = rgb(255, 247, 210), last = rgb(255, 171, 73) },
+		},
+	},
+	StudFish_Puffer = {
+		period = 4.2, bob = 0.135, roll = 2.1, pitch = 2.7,
+		tail = 14, tip = 11, fin = 25, crest = 7.5, tailDistance = 1.341,
+		fx = {
+			{ name = "LimeFizz", texture = square, rate = 5, burst = 11, size = 0.14,
+			  speed = {0.7, 1.45}, life = {0.5, 1.15}, spread = 72,
+			  first = rgb(246, 255, 146), last = rgb(109, 245, 87) },
+			{ name = "PuffRings", texture = ring, rate = 2, burst = 4, size = 0.29,
+			  speed = {0.3, 0.85}, life = {0.65, 1.25}, spread = 52,
+			  first = rgb(224, 255, 169), last = rgb(102, 224, 106) },
+		},
+	},
+	StudFish_Angler = {
+		period = 3.7, bob = 0.095, roll = 2.8, pitch = 3.4,
+		tail = 14, tip = 11, fin = 14, crest = 4.5, tailDistance = 1.61,
+		lure = 7.2, bulb = 12, light = rgb(104, 255, 216),
+		fx = {
+			{ name = "LanternGlints", texture = sparkle, rate = 8, size = 0.22,
+			  speed = {0.18, 0.72}, life = {0.6, 1.22}, spread = 94,
+			  first = rgb(210, 255, 235), last = rgb(80, 227, 211) },
+			{ name = "DeepSeaPixels", texture = square, rate = 5, size = 0.095,
+			  speed = {0.25, 0.73}, life = {0.65, 1.15}, spread = 110,
+			  first = rgb(176, 169, 255), last = rgb(113, 78, 235) },
+		},
+	},
+}
+
+-- Idle and effects for the expansion models.
+species.StudFish_Jelly = {
+	period = 3.8,
+	bob = 0.231,
+	tracks = {
+		StudFish_Jelly = {
+			{1.9, 0, 0, 1, 0.4},
+			{0, 0, 1.7, 1, -0.25},
+		},
+		FishHem0 = {
+			{0, 0, -18, 2, 0},
+		},
+		FishRibbon0_1 = {
+			{0, 5, -13, 2, 0},
+		},
+		FishRibbon0_2 = {
+			{0, 6.75, -17.55, 2, -0.7},
+		},
+		FishRibbon0_3 = {
+			{0, 6.75, -17.55, 2, -1.4},
+		},
+		FishHem1 = {
+			{15.588457268119894, 0, -9.000000000000002, 2, 0.32},
+		},
+		FishRibbon1_1 = {
+			{9.526279441628825, 5, -6.500000000000002, 2, 0.74},
+		},
+		FishRibbon1_2 = {
+			{12.860477246198915, 6.75, -8.775000000000002, 2, 0.040000000000000036},
+		},
+		FishRibbon1_3 = {
+			{12.860477246198915, 6.75, -8.775000000000002, 2, -0.6599999999999999},
+		},
+		FishHem2 = {
+			{15.588457268119896, 0, 8.999999999999996, 2, 0.64},
+		},
+		FishRibbon2_1 = {
+			{9.526279441628827, 5, 6.499999999999997, 2, 1.48},
+		},
+		FishRibbon2_2 = {
+			{12.860477246198917, 6.75, 8.774999999999997, 2, 0.78},
+		},
+		FishRibbon2_3 = {
+			{12.860477246198917, 6.75, 8.774999999999997, 2, 0.08000000000000007},
+		},
+		FishHem3 = {
+			{2.204364238465236e-15, 0, 18, 2, 0.96},
+		},
+		FishRibbon3_1 = {
+			{1.3471114790620886e-15, 5, 13, 2, 2.2199999999999998},
+		},
+		FishRibbon3_2 = {
+			{1.8186004967338196e-15, 6.75, 17.55, 2, 1.5199999999999998},
+		},
+		FishRibbon3_3 = {
+			{1.8186004967338196e-15, 6.75, 17.55, 2, 0.8199999999999998},
+		},
+		FishHem4 = {
+			{-15.588457268119893, 0, 9.000000000000007, 2, 1.28},
+		},
+		FishRibbon4_1 = {
+			{-9.526279441628823, 5, 6.500000000000005, 2, 2.96},
+		},
+		FishRibbon4_2 = {
+			{-12.860477246198911, 6.75, 8.775000000000007, 2, 2.26},
+		},
+		FishRibbon4_3 = {
+			{-12.860477246198911, 6.75, 8.775000000000007, 2, 1.56},
+		},
+		FishHem5 = {
+			{-15.588457268119894, 0, -9.000000000000002, 2, 1.6},
+		},
+		FishRibbon5_1 = {
+			{-9.526279441628825, 5, -6.500000000000002, 2, 3.7},
+		},
+		FishRibbon5_2 = {
+			{-12.860477246198915, 6.75, -8.775000000000002, 2, 3},
+		},
+		FishRibbon5_3 = {
+			{-12.860477246198915, 6.75, -8.775000000000002, 2, 2.3000000000000003},
+		},
+	},
+	moves = {
+		FishHem0 = {
+			{0, 0.10500000000000001, 0, 2, 0},
+		},
+		FishHem1 = {
+			{0, 0.10500000000000001, 0, 2, 0.32},
+		},
+		FishHem2 = {
+			{0, 0.10500000000000001, 0, 2, 0.64},
+		},
+		FishHem3 = {
+			{0, 0.10500000000000001, 0, 2, 0.96},
+		},
+		FishHem4 = {
+			{0, 0.10500000000000001, 0, 2, 1.28},
+		},
+		FishHem5 = {
+			{0, 0.10500000000000001, 0, 2, 1.6},
+		},
+	},
+	joints = {"FishFX", "FishHem0", "FishRibbon0_1", "FishRibbon0_2", "FishRibbon0_3", "FishHem1", "FishRibbon1_1", "FishRibbon1_2", "FishRibbon1_3", "FishHem2", "FishRibbon2_1", "FishRibbon2_2", "FishRibbon2_3", "FishHem3", "FishRibbon3_1", "FishRibbon3_2", "FishRibbon3_3", "FishHem4", "FishRibbon4_1", "FishRibbon4_2", "FishRibbon4_3", "FishHem5", "FishRibbon5_1", "FishRibbon5_2", "FishRibbon5_3"},
+	measureName = "FishFX",
+	measureDistance = 1.5365916829138444,
+	fx = {
+		{
+			name = "PearlRings",
+			texture = ring,
+			first = rgb(255, 240, 250),
+			last = rgb(247, 144, 231),
+			rate = 5,
+			size = 0.29,
+			spread = 44,
+			speed = {0.32, 0.95},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "VeilGlints",
+			texture = sparkle,
+			first = rgb(234, 255, 251),
+			last = rgb(169, 150, 255),
+			rate = 7,
+			size = 0.2,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+	light = rgb(255, 166, 232),
+	lightRange = 3.5,
+	lightBase = 1,
+	lightPulse = 0.45,
+}
+
+species.StudFish_Octopus = {
+	period = 3.5,
+	bob = 0.15680000000000002,
+	tracks = {
+		StudFish_Octopus = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2, 1, -0.25},
+		},
+		FishArm0_1 = {
+			{2.182296230808693, 7, -11.710769391967267, 1, 0},
+		},
+		FishArm0_2 = {
+			{3.2734443462130396, 10.5, -17.5661540879509, 1, -0.7},
+		},
+		FishArm0_3 = {
+			{3.2734443462130396, 10.5, -17.5661540879509, 1, -1.4},
+		},
+		FishArm1_1 = {
+			{8.443753505005933, 7, -6.429024693936713, 1, 0.72},
+		},
+		FishArm1_2 = {
+			{12.6656302575089, 10.5, -9.64353704090507, 1, 0.020000000000000018},
+		},
+		FishArm1_3 = {
+			{12.6656302575089, 10.5, -9.64353704090507, 1, -0.6799999999999999},
+		},
+		FishArm2_1 = {
+			{9.758974493306056, 7, 2.618755476970431, 1, 1.44},
+		},
+		FishArm2_2 = {
+			{14.638461739959084, 10.5, 3.928133215455646, 1, 0.74},
+		},
+		FishArm2_3 = {
+			{14.638461739959084, 10.5, 3.928133215455646, 1, 0.040000000000000036},
+		},
+		FishArm3_1 = {
+			{5.357520578280592, 7, 10.13250420600712, 1, 2.16},
+		},
+		FishArm3_2 = {
+			{8.036280867420889, 10.5, 15.19875630901068, 1, 1.4600000000000002},
+		},
+		FishArm3_3 = {
+			{8.036280867420889, 10.5, 15.19875630901068, 1, 0.7600000000000002},
+		},
+		FishArm4_1 = {
+			{-2.182296230808694, 7, 11.710769391967267, 1, 2.88},
+		},
+		FishArm4_2 = {
+			{-3.273444346213041, 10.5, 17.5661540879509, 1, 2.1799999999999997},
+		},
+		FishArm4_3 = {
+			{-3.273444346213041, 10.5, 17.5661540879509, 1, 1.48},
+		},
+		FishArm5_1 = {
+			{-8.443753505005931, 7, 6.429024693936716, 1, 3.5999999999999996},
+		},
+		FishArm5_2 = {
+			{-12.665630257508898, 10.5, 9.643537040905073, 1, 2.8999999999999995},
+		},
+		FishArm5_3 = {
+			{-12.665630257508898, 10.5, 9.643537040905073, 1, 2.1999999999999997},
+		},
+		FishArm6_1 = {
+			{-9.758974493306056, 7, -2.618755476970427, 1, 4.32},
+		},
+		FishArm6_2 = {
+			{-14.638461739959084, 10.5, -3.9281332154556403, 1, 3.62},
+		},
+		FishArm6_3 = {
+			{-14.638461739959084, 10.5, -3.9281332154556403, 1, 2.9200000000000004},
+		},
+		FishArm7_1 = {
+			{-5.357520578280597, 7, -10.132504206007116, 1, 5.04},
+		},
+		FishArm7_2 = {
+			{-8.036280867420896, 10.5, -15.198756309010674, 1, 4.34},
+		},
+		FishArm7_3 = {
+			{-8.036280867420896, 10.5, -15.198756309010674, 1, 3.64},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishArm0_1", "FishArm0_2", "FishArm0_3", "FishArm1_1", "FishArm1_2", "FishArm1_3", "FishArm2_1", "FishArm2_2", "FishArm2_3", "FishArm3_1", "FishArm3_2", "FishArm3_3", "FishArm4_1", "FishArm4_2", "FishArm4_3", "FishArm5_1", "FishArm5_2", "FishArm5_3", "FishArm6_1", "FishArm6_2", "FishArm6_3", "FishArm7_1", "FishArm7_2", "FishArm7_3"},
+	measureName = "FishFX",
+	measureDistance = 1.8700981792408653,
+	fx = {
+		{
+			name = "CoralSpangles",
+			texture = sparkle,
+			first = rgb(255, 231, 184),
+			last = rgb(250, 117, 137),
+			rate = 6,
+			size = 0.19,
+			spread = 65,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "CoralBubbles",
+			texture = ring,
+			first = rgb(255, 232, 223),
+			last = rgb(249, 160, 190),
+			rate = 4,
+			size = 0.22,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Kraken = {
+	period = 5.4,
+	bob = 0.272,
+	tracks = {
+		StudFish_Kraken = {
+			{1.2, 0, 0, 1, 0.4},
+			{0, 0, 1.4, 1, -0.25},
+		},
+		FishCrown = {
+			{6, 0, 2, 1, 0.33},
+		},
+		FishHornR = {
+			{-9, 0, 3, 1, -1},
+		},
+		FishHornL = {
+			{9, 0, 3, 1, 1},
+		},
+		FishArm0_1 = {
+			{2.182296230808693, 10, -11.710769391967267, 1, 0},
+		},
+		FishArm0_2 = {
+			{3.2734443462130396, 15, -17.5661540879509, 1, -0.7},
+		},
+		FishArm0_3 = {
+			{3.2734443462130396, 15, -17.5661540879509, 1, -1.4},
+		},
+		FishArm1_1 = {
+			{8.443753505005933, 10, -6.429024693936713, 1, 0.72},
+		},
+		FishArm1_2 = {
+			{12.6656302575089, 15, -9.64353704090507, 1, 0.020000000000000018},
+		},
+		FishArm1_3 = {
+			{12.6656302575089, 15, -9.64353704090507, 1, -0.6799999999999999},
+		},
+		FishArm2_1 = {
+			{9.758974493306056, 10, 2.618755476970431, 1, 1.44},
+		},
+		FishArm2_2 = {
+			{14.638461739959084, 15, 3.928133215455646, 1, 0.74},
+		},
+		FishArm2_3 = {
+			{14.638461739959084, 15, 3.928133215455646, 1, 0.040000000000000036},
+		},
+		FishArm3_1 = {
+			{5.357520578280592, 10, 10.13250420600712, 1, 2.16},
+		},
+		FishArm3_2 = {
+			{8.036280867420889, 15, 15.19875630901068, 1, 1.4600000000000002},
+		},
+		FishArm3_3 = {
+			{8.036280867420889, 15, 15.19875630901068, 1, 0.7600000000000002},
+		},
+		FishArm4_1 = {
+			{-2.182296230808694, 10, 11.710769391967267, 1, 2.88},
+		},
+		FishArm4_2 = {
+			{-3.273444346213041, 15, 17.5661540879509, 1, 2.1799999999999997},
+		},
+		FishArm4_3 = {
+			{-3.273444346213041, 15, 17.5661540879509, 1, 1.48},
+		},
+		FishArm5_1 = {
+			{-8.443753505005931, 10, 6.429024693936716, 1, 3.5999999999999996},
+		},
+		FishArm5_2 = {
+			{-12.665630257508898, 15, 9.643537040905073, 1, 2.8999999999999995},
+		},
+		FishArm5_3 = {
+			{-12.665630257508898, 15, 9.643537040905073, 1, 2.1999999999999997},
+		},
+		FishArm6_1 = {
+			{-9.758974493306056, 10, -2.618755476970427, 1, 4.32},
+		},
+		FishArm6_2 = {
+			{-14.638461739959084, 15, -3.9281332154556403, 1, 3.62},
+		},
+		FishArm6_3 = {
+			{-14.638461739959084, 15, -3.9281332154556403, 1, 2.9200000000000004},
+		},
+		FishArm7_1 = {
+			{-5.357520578280597, 10, -10.132504206007116, 1, 5.04},
+		},
+		FishArm7_2 = {
+			{-8.036280867420896, 15, -15.198756309010674, 1, 4.34},
+		},
+		FishArm7_3 = {
+			{-8.036280867420896, 15, -15.198756309010674, 1, 3.64},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishCrown", "FishHornR", "FishHornL", "FishArm0_1", "FishArm0_2", "FishArm0_3", "FishArm1_1", "FishArm1_2", "FishArm1_3", "FishArm2_1", "FishArm2_2", "FishArm2_3", "FishArm3_1", "FishArm3_2", "FishArm3_3", "FishArm4_1", "FishArm4_2", "FishArm4_3", "FishArm5_1", "FishArm5_2", "FishArm5_3", "FishArm6_1", "FishArm6_2", "FishArm6_3", "FishArm7_1", "FishArm7_2", "FishArm7_3"},
+	measureName = "FishFX",
+	measureDistance = 4.059584338328247,
+	fx = {
+		{
+			name = "AbyssRunes",
+			texture = square,
+			first = rgb(212, 255, 243),
+			last = rgb(152, 116, 255),
+			rate = 5,
+			size = 0.24,
+			spread = 105,
+			speed = {0.45, 1.12},
+			life = {0.8, 1.5},
+			burst = 14,
+		},
+		{
+			name = "CrownFlash",
+			texture = sparkle,
+			first = rgb(173, 255, 233),
+			last = rgb(22, 182, 168),
+			rate = 9,
+			size = 0.29,
+			spread = 80,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.55},
+		},
+	},
+	light = rgb(89, 255, 204),
+	lightRange = 7,
+	lightBase = 1.25,
+	lightPulse = 0.7,
+}
+
+species.StudFish_Whale = {
+	period = 6,
+	bob = 0.2822,
+	tracks = {
+		StudFish_Whale = {
+			{1.7, 0, 0, 1, 0.4},
+			{0, 0, 2.1, 1, -0.25},
+		},
+		FishTail = {
+			{0, 0, 13, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 0, 10, 2, -0.64},
+		},
+		FishFinR = {
+			{-10, 0, 0, 2, 1},
+		},
+		FishFinL = {
+			{10, 0, 0, 2, 0.35},
+		},
+		FishCrest = {
+			{3.3, 0, 0, 2, -0.45},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 5.2124,
+	fx = {
+		{
+			name = "BlowholeSpout",
+			texture = square,
+			first = rgb(255, 255, 255),
+			last = rgb(114, 216, 255),
+			rate = 1,
+			size = 0.26,
+			spread = 22,
+			speed = {2.4, 5.6},
+			life = {0.6, 1.42},
+			burst = 30,
+			accel = -4.3,
+		},
+		{
+			name = "OceanFoam",
+			texture = ring,
+			first = rgb(217, 255, 255),
+			last = rgb(71, 140, 219),
+			rate = 3,
+			size = 0.29,
+			spread = 39,
+			speed = {0.55, 1.44},
+			life = {0.65, 1.4},
+			burst = 7,
+		},
+	},
+}
+
+species.StudFish_Orca = {
+	period = 4.4,
+	bob = 0.1408,
+	tracks = {
+		StudFish_Orca = {
+			{2, 0, 0, 1, 0.4},
+			{0, 0, 2.5, 1, -0.25},
+		},
+		FishTail = {
+			{0, 0, 20, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 0, 14, 2, -0.64},
+		},
+		FishFinR = {
+			{-14, 0, 0, 2, 1},
+		},
+		FishFinL = {
+			{14, 0, 0, 2, 0.35},
+		},
+		FishCrest = {
+			{5, 0, 0, 2, -0.45},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 3.3664,
+	fx = {
+		{
+			name = "FoamSpray",
+			texture = square,
+			first = rgb(255, 255, 255),
+			last = rgb(135, 191, 255),
+			rate = 4,
+			size = 0.19,
+			spread = 42,
+			speed = {1.1, 2.8},
+			life = {0.65, 1.25},
+			burst = 13,
+			accel = -2.5,
+		},
+		{
+			name = "SurfaceRings",
+			texture = ring,
+			first = rgb(238, 254, 255),
+			last = rgb(104, 142, 233),
+			rate = 4,
+			size = 0.26,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Manta = {
+	period = 4.7,
+	bob = 0.1666,
+	tracks = {
+		StudFish_Manta = {
+			{2.7, 0, 0, 1, 0.4},
+			{0, 0, 2.2, 1, -0.25},
+		},
+		FishWingR = {
+			{22, 0, 0, 1, 0.39},
+		},
+		FishHornR = {
+			{-11, 0, 6, 2, -0.3},
+		},
+		FishWingL = {
+			{-22, 0, 0, 1, 0.39},
+		},
+		FishHornL = {
+			{11, 0, 6, 2, 0.3},
+		},
+		FishTail = {
+			{0, 16, 8, 1, 0.1},
+		},
+		FishTailTip = {
+			{0, 19, 9, 1, -0.62},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishWingR", "FishHornR", "FishWingL", "FishHornL", "FishTail", "FishTailTip"},
+	measureName = "FishTail",
+	measureDistance = 2.2729,
+	fx = {
+		{
+			name = "VelvetDust",
+			texture = square,
+			first = rgb(228, 219, 255),
+			last = rgb(130, 118, 246),
+			rate = 6,
+			size = 0.14,
+			spread = 77,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "KiteGleam",
+			texture = sparkle,
+			first = rgb(160, 255, 240),
+			last = rgb(76, 169, 227),
+			rate = 5,
+			size = 0.2,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Seahorse = {
+	period = 3.55,
+	bob = 0.1568,
+	tracks = {
+		StudFish_Seahorse = {
+			{3.1, 0, 0, 1, 0.4},
+			{0, 0, 3.5, 1, -0.25},
+		},
+		FishCrest = {
+			{7, 0, 3, 2, 0.24},
+		},
+		FishFinR = {
+			{-24, 0, 0, 2, 0.89},
+		},
+		FishFinL = {
+			{24, 0, 0, 2, 0.24},
+		},
+		FishBackFin = {
+			{17, 0, 0, 2, -0.45},
+		},
+		FishCoil1 = {
+			{0, 4, 8, 1, 0},
+		},
+		FishCoil2 = {
+			{0, 2.161209223472559, 9.8, 1, -0.48},
+		},
+		FishCoil3 = {
+			{0, -1.6645873461885696, 11.6, 1, -0.96},
+		},
+		FishCoil4 = {
+			{0, -3.9599699864017817, 13.4, 1, -1.44},
+		},
+		FishCoil5 = {
+			{0, -2.6145744834544478, 15.2, 1, -1.92},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishCrest", "FishFinR", "FishFinL", "FishBackFin", "FishCoil1", "FishCoil2", "FishCoil3", "FishCoil4", "FishCoil5"},
+	measureName = "FishCoil1",
+	measureDistance = 0.9532231847788848,
+	fx = {
+		{
+			name = "HoneyDust",
+			texture = sparkle,
+			first = rgb(255, 244, 182),
+			last = rgb(255, 158, 84),
+			rate = 6,
+			size = 0.17,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "CoilBubbles",
+			texture = ring,
+			first = rgb(255, 255, 222),
+			last = rgb(250, 193, 97),
+			rate = 3,
+			size = 0.23,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Eel = {
+	period = 3.3,
+	bob = 0.1298,
+	tracks = {
+		StudFish_Eel = {
+			{2.9, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishWave1 = {
+			{0, 9.85, 2.8, 2, 0.25},
+		},
+		FishWave2 = {
+			{0, 10.7, 2.8, 2, -0.44999999999999996},
+		},
+		FishWave3 = {
+			{0, 11.55, 2.8, 2, -1.1499999999999997},
+		},
+		FishWave4 = {
+			{0, 12.4, 2.8, 2, -1.8499999999999999},
+		},
+		FishWave5 = {
+			{0, 13.25, 2.8, 2, -2.55},
+		},
+		FishFinR = {
+			{-14, 0, 0, 2, 1.04},
+		},
+		FishFinL = {
+			{14, 0, 0, 2, 0.39},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishWave1", "FishWave2", "FishWave3", "FishWave4", "FishWave5", "FishFinR", "FishFinL"},
+	measureName = "FishWave1",
+	measureDistance = 0.44839999999999997,
+	fx = {
+		{
+			name = "Voltage",
+			texture = sparkle,
+			first = rgb(237, 255, 181),
+			last = rgb(75, 253, 155),
+			rate = 10,
+			size = 0.19,
+			spread = 86,
+			speed = {0.7, 1.6},
+			life = {0.29, 0.67},
+			burst = 7,
+		},
+		{
+			name = "ElectricBits",
+			texture = square,
+			first = rgb(255, 254, 183),
+			last = rgb(115, 214, 41),
+			rate = 5,
+			size = 0.1,
+			spread = 85,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+	light = rgb(162, 251, 100),
+	lightRange = 3,
+	lightBase = 0.55,
+	lightPulse = 0.32,
+}
+
+species.StudFish_Swordfish = {
+	period = 2.9,
+	bob = 0.11399999999999999,
+	tracks = {
+		StudFish_Swordfish = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 23, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 16, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-19, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{19, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{8.5, 0, 0, 2, -0.55},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 2.5308,
+	fx = {
+		{
+			name = "SilverRush",
+			texture = sparkle,
+			first = rgb(244, 255, 255),
+			last = rgb(145, 216, 255),
+			rate = 7,
+			size = 0.18,
+			spread = 44,
+			speed = {0.8, 1.65},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "SprintBits",
+			texture = square,
+			first = rgb(219, 255, 255),
+			last = rgb(68, 155, 243),
+			rate = 6,
+			size = 0.095,
+			spread = 35,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Hammerhead = {
+	period = 3.9,
+	bob = 0.123,
+	tracks = {
+		StudFish_Hammerhead = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 15, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 13, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-12, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{12, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{4.5, 0, 0, 2, -0.55},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 2.7429,
+	fx = {
+		{
+			name = "DoubleRings",
+			texture = ring,
+			first = rgb(239, 255, 255),
+			last = rgb(102, 189, 213),
+			rate = 4,
+			size = 0.24,
+			spread = 55,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+			burst = 7,
+		},
+		{
+			name = "AquaFlash",
+			texture = sparkle,
+			first = rgb(197, 255, 249),
+			last = rgb(84, 229, 231),
+			rate = 6,
+			size = 0.17,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Goldfish = {
+	period = 2.4,
+	bob = 0.12299999999999998,
+	tracks = {
+		StudFish_Goldfish = {
+			{5, 0, 0, 1, 0.4},
+			{0, 0, 4, 1, -0.25},
+		},
+		FishTail = {
+			{0, 19, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 21, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-24, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{24, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{10.5, 0, 0, 2, -0.55},
+		},
+		FishRibbonR = {
+			{-11, -10, 6, 2, -0.37},
+		},
+		FishRibbonL = {
+			{11, 10, 6, 2, 0.37},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishRibbonR", "FishRibbonL"},
+	measureName = "FishTail",
+	measureDistance = 1.2382,
+	fx = {
+		{
+			name = "GoldFlakes",
+			texture = sparkle,
+			first = rgb(255, 246, 178),
+			last = rgb(255, 177, 46),
+			rate = 8,
+			size = 0.19,
+			spread = 62,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "GoldBubbles",
+			texture = ring,
+			first = rgb(255, 254, 219),
+			last = rgb(255, 198, 99),
+			rate = 4,
+			size = 0.24,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Betta = {
+	period = 4.25,
+	bob = 0.09100000000000001,
+	tracks = {
+		StudFish_Betta = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 15, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 22, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-17, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{17, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{14, 0, 0, 2, -0.55},
+		},
+		FishVeil = {
+			{15, 0, 0, 2, -0.4},
+		},
+		FishThreadR = {
+			{-14, 0, 13, 2, -0.4},
+		},
+		FishThreadL = {
+			{14, 0, 13, 2, 0.4},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishVeil", "FishThreadR", "FishThreadL"},
+	measureName = "FishTail",
+	measureDistance = 1.5652,
+	fx = {
+		{
+			name = "SilkPetals",
+			texture = square,
+			first = rgb(255, 212, 236),
+			last = rgb(228, 68, 161),
+			rate = 8,
+			size = 0.14,
+			spread = 81,
+			speed = {0.45, 1.12},
+			life = {0.66, 1.33},
+		},
+		{
+			name = "VelvetGlints",
+			texture = sparkle,
+			first = rgb(255, 231, 242),
+			last = rgb(173, 131, 255),
+			rate = 6,
+			size = 0.19,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Koi = {
+	period = 4.4,
+	bob = 0.10900000000000001,
+	tracks = {
+		StudFish_Koi = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 13, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 15, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-12, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{12, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.55},
+		},
+		FishWhiskerR = {
+			{-12, -10, 6, 2, -0.38},
+		},
+		FishWhiskerL = {
+			{12, 10, 6, 2, 0.38},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishWhiskerR", "FishWhiskerL"},
+	measureName = "FishTail",
+	measureDistance = 2.6051,
+	fx = {
+		{
+			name = "LanternPetals",
+			texture = square,
+			first = rgb(255, 211, 189),
+			last = rgb(237, 126, 113),
+			rate = 7,
+			size = 0.17,
+			spread = 68,
+			speed = {0.45, 1.12},
+			life = {0.74, 1.48},
+		},
+		{
+			name = "LanternWarmth",
+			texture = sparkle,
+			first = rgb(255, 243, 199),
+			last = rgb(255, 174, 104),
+			rate = 5,
+			size = 0.19,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Discus = {
+	period = 3.05,
+	bob = 0.094,
+	tracks = {
+		StudFish_Discus = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 14, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-20, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{20, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{6, 0, 0, 2, -0.55},
+		},
+		FishAnalFin = {
+			{7, 0, 0, 2, 0.42},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishAnalFin"},
+	measureName = "FishTail",
+	measureDistance = 1.3065999999999998,
+	fx = {
+		{
+			name = "DialHalos",
+			texture = ring,
+			first = rgb(255, 243, 191),
+			last = rgb(255, 200, 95),
+			rate = 4,
+			size = 0.23,
+			spread = 43,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "AquaTiles",
+			texture = square,
+			first = rgb(184, 255, 245),
+			last = rgb(72, 194, 208),
+			rate = 7,
+			size = 0.13,
+			spread = 67,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Lionfish = {
+	period = 4.6,
+	bob = 0.10400000000000001,
+	tracks = {
+		StudFish_Lionfish = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 16, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 15, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-14, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{14, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{8, 0, 0, 2, -0.55},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 1.7264,
+	fx = {
+		{
+			name = "SpineSparks",
+			texture = sparkle,
+			first = rgb(255, 241, 182),
+			last = rgb(255, 132, 94),
+			rate = 8,
+			size = 0.23,
+			spread = 71,
+			speed = {0.55, 1.33},
+			life = {0.52, 1.15},
+			burst = 9,
+		},
+		{
+			name = "EmberFins",
+			texture = square,
+			first = rgb(255, 210, 161),
+			last = rgb(210, 69, 104),
+			rate = 6,
+			size = 0.15,
+			spread = 66,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+	},
+}
+
+species.StudFish_Tetra = {
+	period = 2.1,
+	bob = 0.05639999999999999,
+	tracks = {
+		StudFish_Tetra = {
+			{5, 0, 0, 1, 0.4},
+			{0, 0, 4, 1, -0.25},
+		},
+		FishTail = {
+			{0, 23, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 18, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-21, 0, 0, 2, 1.01},
+		},
+		FishFinL = {
+			{21, 0, 0, 2, 0.36},
+		},
+		FishCrest = {
+			{9, 0, 0, 2, -0.55},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 0.7002999999999999,
+	fx = {
+		{
+			name = "NeonBits",
+			texture = square,
+			first = rgb(213, 255, 246),
+			last = rgb(33, 239, 207),
+			rate = 7,
+			size = 0.105,
+			spread = 58,
+			speed = {0.45, 1.12},
+			life = {0.52, 1.15},
+		},
+		{
+			name = "TetraTwinkle",
+			texture = sparkle,
+			first = rgb(191, 250, 255),
+			last = rgb(97, 152, 255),
+			rate = 4,
+			size = 0.13,
+			spread = 44,
+			speed = {0.45, 1.12},
+			life = {0.28, 0.62},
+		},
+	},
+}
+
+-- Idle and effects for the 30 additional models.
+species.StudFish_RegalTang = {
+	period = 3.25,
+	bob = 0.1224,
+	tracks = {
+		StudFish_RegalTang = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 18, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-17, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{17, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+		FishKeel = {
+			{8, 0, 0, 2, 0.75},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishKeel"},
+	measureName = "FishTail",
+	measureDistance = 1.53,
+	fx = {
+		{
+			name = "RegalTangAura",
+			texture = ring,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "RegalTangGlints",
+			texture = sparkle,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Butterflyfish = {
+	period = 2.72,
+	bob = 0.0996,
+	tracks = {
+		StudFish_Butterflyfish = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 16, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-17, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{17, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{9, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 1.2449999999999999,
+	fx = {
+		{
+			name = "ButterflyfishAura",
+			texture = square,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 50,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "ButterflyfishGlints",
+			texture = ring,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_MoorishIdol = {
+	period = 4.17,
+	bob = 0.1248,
+	tracks = {
+		StudFish_MoorishIdol = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 16, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+		FishPennant_1 = {
+			{11, 2, 9, 1, 0.2},
+		},
+		FishPennant_2 = {
+			{14.08, 2.56, 11.52, 1, -0.49999999999999994},
+		},
+		FishPennant_3 = {
+			{14.08, 2.56, 11.52, 1, -1.2},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishPennant_1", "FishPennant_2", "FishPennant_3"},
+	measureName = "FishTail",
+	measureDistance = 1.56,
+	fx = {
+		{
+			name = "MoorishIdolAura",
+			texture = ring,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "MoorishIdolGlints",
+			texture = sparkle,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Mandarin = {
+	period = 2.62,
+	bob = 0.0852,
+	tracks = {
+		StudFish_Mandarin = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 22, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-24, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{24, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 1.0508,
+	fx = {
+		{
+			name = "MandarinAura",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "MandarinGlints",
+			texture = ring,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Salmon = {
+	period = 3.62,
+	bob = 0.13440000000000002,
+	tracks = {
+		StudFish_Salmon = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 18, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-17, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{17, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+		FishAdipose = {
+			{7, 0, 0, 2, 0.9},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishAdipose"},
+	measureName = "FishTail",
+	measureDistance = 2.8448,
+	fx = {
+		{
+			name = "SalmonAura",
+			texture = ring,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "SalmonGlints",
+			texture = sparkle,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_RibbonTrout = {
+	period = 3.02,
+	bob = 0.11879999999999999,
+	tracks = {
+		StudFish_RibbonTrout = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 22, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-22, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{22, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 2.5146,
+	fx = {
+		{
+			name = "RibbonTroutAura",
+			texture = square,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 6,
+			size = 0.18,
+			spread = 50,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "RibbonTroutGlints",
+			texture = ring,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_PygmyGoby = {
+	period = 2.33,
+	bob = 0.045899999999999996,
+	tracks = {
+		StudFish_PygmyGoby = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 22, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-26, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{26, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 0.7548,
+	fx = {
+		{
+			name = "PygmyGobyAura",
+			texture = sparkle,
+			first = rgb(232, 255, 174),
+			last = rgb(123, 230, 90),
+			rate = 6,
+			size = 0.18,
+			spread = 57,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "PygmyGobyGlints",
+			texture = square,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Parrotfish = {
+	period = 3.38,
+	bob = 0.126,
+	tracks = {
+		StudFish_Parrotfish = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 16, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-17, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{17, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 1.554,
+	fx = {
+		{
+			name = "ParrotfishAura",
+			texture = sparkle,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.18,
+			spread = 50,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "ParrotfishGlints",
+			texture = square,
+			first = rgb(232, 255, 174),
+			last = rgb(123, 230, 90),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Catfish = {
+	period = 4.4,
+	bob = 0.1404,
+	tracks = {
+		StudFish_Catfish = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 13, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-12, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{12, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+		FishWhiskerR = {
+			{-13, -10, 8, 2, -0.42},
+		},
+		FishWhiskerL = {
+			{13, 10, 8, 2, 0.42},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishWhiskerR", "FishWhiskerL"},
+	measureName = "FishTail",
+	measureDistance = 2.8197,
+	fx = {
+		{
+			name = "CatfishAura",
+			texture = ring,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 6,
+			size = 0.18,
+			spread = 64,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "CatfishGlints",
+			texture = sparkle,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Sardine = {
+	period = 2.36,
+	bob = 0.0732,
+	tracks = {
+		StudFish_Sardine = {
+			{3.3, 0, 0, 1, 0.4},
+			{0, 0, 2.8, 1, -0.25},
+		},
+		FishTail = {
+			{0, 23, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-21, 0, 0, 2, 1.06},
+		},
+		FishFinL = {
+			{21, 0, 0, 2, 0.41},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.57},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest"},
+	measureName = "FishTail",
+	measureDistance = 1.5493999999999999,
+	fx = {
+		{
+			name = "SardineAura",
+			texture = ring,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "SardineGlints",
+			texture = sparkle,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Flounder = {
+	period = 3.8,
+	bob = 0.096,
+	tracks = {
+		StudFish_Flounder = {
+			{3.1, 0, 0, 1, 0.4},
+			{0, 0, 2.1, 1, -0.25},
+		},
+		FishTail = {
+			{0, 0, 12, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 0, 9, 2, -0.64},
+		},
+		FishRuffleR = {
+			{-16, 0, 0, 2, -0.48},
+		},
+		FishRuffleL = {
+			{16, 0, 0, 2, 0.48},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishTailTip", "FishRuffleR", "FishRuffleL"},
+	measureName = "FishTail",
+	measureDistance = 1.68,
+	fx = {
+		{
+			name = "FlounderAura",
+			texture = square,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "FlounderGlints",
+			texture = ring,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Sunfish = {
+	period = 5.05,
+	bob = 0.129,
+	tracks = {
+		StudFish_Sunfish = {
+			{2.7, 0, 0, 1, 0.4},
+			{0, 0, 2.1, 1, -0.25},
+		},
+		FishRear = {
+			{0, 13, 0, 2, 0.19},
+		},
+		FishKeel = {
+			{-19, 0, 0, 2, 0.53},
+		},
+		FishSail = {
+			{19, 0, 0, 2, 0.53},
+		},
+		FishFinR = {
+			{-16, 0, 0, 2, 0.98},
+		},
+		FishFinL = {
+			{16, 0, 0, 2, 0.33},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishRear", "FishKeel", "FishSail", "FishFinR", "FishFinL"},
+	measureName = "FishRear",
+	measureDistance = 1.4192345260738273,
+	fx = {
+		{
+			name = "SunfishAura",
+			texture = ring,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 6,
+			size = 0.18,
+			spread = 64,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "SunfishGlints",
+			texture = sparkle,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_SeaTurtle = {
+	period = 4.65,
+	bob = 0.2368,
+	tracks = {
+		StudFish_SeaTurtle = {
+			{2.2, 0, 0, 1, 0.4},
+			{0, 0, 2.5, 1, -0.25},
+		},
+		FishHead = {
+			{0, 7, 5, 1, 0.22},
+		},
+		FishFlipperR = {
+			{-24, 0, -3, 1, 0.4},
+		},
+		FishRearR = {
+			{-17, 0, 0, 1, -0.43},
+		},
+		FishFlipperL = {
+			{24, 0, 3, 1, 0.4},
+		},
+		FishRearL = {
+			{17, 0, 0, 1, -0.43},
+		},
+		FishTail = {
+			{0, 18, 5, 2, 0.45},
+		},
+	},
+	moves = {},
+	joints = {"FishHead", "FishFX", "FishFlipperR", "FishRearR", "FishFlipperL", "FishRearL", "FishTail"},
+	measureName = "FishTail",
+	measureDistance = 2.320911820815259,
+	fx = {
+		{
+			name = "SeaTurtleAura",
+			texture = ring,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "SeaTurtleGlints",
+			texture = sparkle,
+			first = rgb(232, 255, 174),
+			last = rgb(123, 230, 90),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_HermitCrab = {
+	period = 3.6,
+	bob = 0.11399999999999999,
+	tracks = {
+		StudFish_HermitCrab = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.4, 1, -0.25},
+		},
+		FishStalkR = {
+			{-8, -7, 9, 2, -0.55},
+		},
+		FishClawR = {
+			{-8, -13, 8, 1, -0.26999999999999996},
+		},
+		FishPincerR = {
+			{0, -18, 3, 2, -0.43},
+		},
+		FishStalkL = {
+			{8, 7, 9, 2, 0.55},
+		},
+		FishClawL = {
+			{8, 13, 8, 1, 0.6699999999999999},
+		},
+		FishPincerL = {
+			{0, 18, 3, 2, 0.8300000000000001},
+		},
+		FishLegR0 = {
+			{-16, -8, 0, 2, -0.57},
+		},
+		FishLegR1 = {
+			{-16, -8, 0, 2, 0.59},
+		},
+		FishLegR2 = {
+			{-16, -8, 0, 2, 1.75},
+		},
+		FishLegL0 = {
+			{16, 8, 0, 2, 0.57},
+		},
+		FishLegL1 = {
+			{16, 8, 0, 2, 1.73},
+		},
+		FishLegL2 = {
+			{16, 8, 0, 2, 2.8899999999999997},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishStalkR", "FishClawR", "FishPincerR", "FishStalkL", "FishClawL", "FishPincerL", "FishLegR0", "FishLegR1", "FishLegR2", "FishLegL0", "FishLegL1", "FishLegL2"},
+	measureName = "FishFX",
+	measureDistance = 1.574508574127178,
+	fx = {
+		{
+			name = "HermitCrabAura",
+			texture = sparkle,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 57,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "HermitCrabGlints",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Lobster = {
+	period = 4.18,
+	bob = 0.128,
+	tracks = {
+		StudFish_Lobster = {
+			{2.4, 0, 0, 1, 0.4},
+			{0, 0, 2, 1, -0.25},
+		},
+		FishTail = {
+			{0, 10, 17, 2, 0.24},
+		},
+		FishClawR = {
+			{-8, -15, 8, 1, -0.26999999999999996},
+		},
+		FishPincerR = {
+			{0, -18, 3, 2, -0.43},
+		},
+		FishAntennaR_1 = {
+			{-10, -6, 10, 2, -0.43},
+		},
+		FishAntennaR_2 = {
+			{-12.4, -7.4399999999999995, 12.4, 2, -1.13},
+		},
+		FishClawL = {
+			{8, 15, 8, 1, 0.6699999999999999},
+		},
+		FishPincerL = {
+			{0, 18, 3, 2, 0.8300000000000001},
+		},
+		FishAntennaL_1 = {
+			{10, 6, 10, 2, 0.43},
+		},
+		FishAntennaL_2 = {
+			{12.4, 7.4399999999999995, 12.4, 2, -0.26999999999999996},
+		},
+		FishLegR0 = {
+			{-16, -8, 0, 2, -0.57},
+		},
+		FishLegR1 = {
+			{-16, -8, 0, 2, 0.59},
+		},
+		FishLegR2 = {
+			{-16, -8, 0, 2, 1.75},
+		},
+		FishLegR3 = {
+			{-16, -8, 0, 2, 2.9099999999999997},
+		},
+		FishLegL0 = {
+			{16, 8, 0, 2, 0.57},
+		},
+		FishLegL1 = {
+			{16, 8, 0, 2, 1.73},
+		},
+		FishLegL2 = {
+			{16, 8, 0, 2, 2.8899999999999997},
+		},
+		FishLegL3 = {
+			{16, 8, 0, 2, 4.05},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTail", "FishClawR", "FishPincerR", "FishAntennaR_1", "FishAntennaR_2", "FishClawL", "FishPincerL", "FishAntennaL_1", "FishAntennaL_2", "FishLegR0", "FishLegR1", "FishLegR2", "FishLegR3", "FishLegL0", "FishLegL1", "FishLegL2", "FishLegL3"},
+	measureName = "FishTail",
+	measureDistance = 1.5872,
+	fx = {
+		{
+			name = "LobsterAura",
+			texture = sparkle,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 6,
+			size = 0.18,
+			spread = 57,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "LobsterGlints",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Nautilus = {
+	period = 4.25,
+	bob = 0.18359999999999999,
+	tracks = {
+		StudFish_Nautilus = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.1, 1, -0.25},
+		},
+		FishTendril0_1 = {
+			{9, 7, 15, 2, 0},
+		},
+		FishTendril0_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, -0.7},
+		},
+		FishTendril1_1 = {
+			{9, 7, 15, 2, 0.75},
+		},
+		FishTendril1_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, 0.050000000000000044},
+		},
+		FishTendril2_1 = {
+			{9, 7, 15, 2, 1.5},
+		},
+		FishTendril2_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, 0.8},
+		},
+		FishTendril3_1 = {
+			{9, 7, 15, 2, 2.25},
+		},
+		FishTendril3_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, 1.55},
+		},
+		FishTendril4_1 = {
+			{9, 7, 15, 2, 3},
+		},
+		FishTendril4_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, 2.3},
+		},
+		FishTendril5_1 = {
+			{9, 7, 15, 2, 3.75},
+		},
+		FishTendril5_2 = {
+			{12.15, 9.450000000000001, 20.25, 2, 3.05},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishTendril0_1", "FishTendril0_2", "FishTendril1_1", "FishTendril1_2", "FishTendril2_1", "FishTendril2_2", "FishTendril3_1", "FishTendril3_2", "FishTendril4_1", "FishTendril4_2", "FishTendril5_1", "FishTendril5_2"},
+	measureName = "FishFX",
+	measureDistance = 1.7989341844547844,
+	fx = {
+		{
+			name = "NautilusAura",
+			texture = ring,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "NautilusGlints",
+			texture = sparkle,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Starfish = {
+	period = 3.25,
+	bob = 0.1408,
+	tracks = {
+		StudFish_Starfish = {
+			{4.4, 0, 0, 1, 0.4},
+			{0, 0, 3.2, 1, -0.25},
+		},
+		FishRay0_1 = {
+			{8.228993532094623, 4, -13.753288904374106, 1, 0},
+		},
+		FishRay0_2 = {
+			{10.533111721081118, 5.12, -17.604209797598855, 1, -0.7},
+		},
+		FishRay0_3 = {
+			{10.533111721081118, 5.12, -17.604209797598855, 1, -1.4},
+		},
+		FishRay1_1 = {
+			{13.314791228132151, 4, 5.253288904374105, 1, 0.85},
+		},
+		FishRay1_2 = {
+			{17.042932772009152, 5.12, 6.724209797598855, 1, 0.15000000000000002},
+		},
+		FishRay1_3 = {
+			{17.042932772009152, 5.12, 6.724209797598855, 1, -0.5499999999999999},
+		},
+		FishRay2_1 = {
+			{1.7145055188062944e-15, 4, 17, 1, 1.7},
+		},
+		FishRay2_2 = {
+			{2.194567064072057e-15, 5.12, 21.76, 1, 1},
+		},
+		FishRay2_3 = {
+			{2.194567064072057e-15, 5.12, 21.76, 1, 0.30000000000000004},
+		},
+		FishRay3_1 = {
+			{-13.31479122813215, 4, 5.2532889043741084, 1, 2.55},
+		},
+		FishRay3_2 = {
+			{-17.042932772009152, 5.12, 6.724209797598859, 1, 1.8499999999999999},
+		},
+		FishRay3_3 = {
+			{-17.042932772009152, 5.12, 6.724209797598859, 1, 1.15},
+		},
+		FishRay4_1 = {
+			{-8.228993532094627, 4, -13.753288904374104, 1, 3.4},
+		},
+		FishRay4_2 = {
+			{-10.533111721081124, 5.12, -17.604209797598852, 1, 2.7},
+		},
+		FishRay4_3 = {
+			{-10.533111721081124, 5.12, -17.604209797598852, 1, 2},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishRay0_1", "FishRay0_2", "FishRay0_3", "FishRay1_1", "FishRay1_2", "FishRay1_3", "FishRay2_1", "FishRay2_2", "FishRay2_3", "FishRay3_1", "FishRay3_2", "FishRay3_3", "FishRay4_1", "FishRay4_2", "FishRay4_3"},
+	measureName = "FishFX",
+	measureDistance = 0.6873019714797857,
+	fx = {
+		{
+			name = "StarfishAura",
+			texture = sparkle,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 6,
+			size = 0.18,
+			spread = 50,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "StarfishGlints",
+			texture = square,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_SeaUrchin = {
+	period = 3.9,
+	bob = 0.07800000000000001,
+	tracks = {
+		StudFish_SeaUrchin = {
+			{4, 0, 0, 1, 0.4},
+			{0, 0, 3.4, 1, -0.25},
+		},
+		FishNeedles0 = {
+			{0, 4, -13, 2, 0},
+		},
+		FishNeedles1 = {
+			{8.48528137423857, 4, -9.19238815542512, 2, 0.61},
+		},
+		FishNeedles2 = {
+			{12, 4, -7.960204194457795e-16, 2, 1.22},
+		},
+		FishNeedles3 = {
+			{8.485281374238571, 4, 9.192388155425117, 2, 1.83},
+		},
+		FishNeedles4 = {
+			{1.4695761589768238e-15, 4, 13, 2, 2.44},
+		},
+		FishNeedles5 = {
+			{-8.48528137423857, 4, 9.19238815542512, 2, 3.05},
+		},
+		FishNeedles6 = {
+			{-12, 4, 2.3880612583373385e-15, 2, 3.66},
+		},
+		FishNeedles7 = {
+			{-8.485281374238571, 4, -9.192388155425116, 2, 4.27},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishNeedles0", "FishNeedles1", "FishNeedles2", "FishNeedles3", "FishNeedles4", "FishNeedles5", "FishNeedles6", "FishNeedles7"},
+	measureName = "FishFX",
+	measureDistance = 0.9794824960151153,
+	fx = {
+		{
+			name = "SeaUrchinAura",
+			texture = sparkle,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 6,
+			size = 0.18,
+			spread = 57,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "SeaUrchinGlints",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Shrimp = {
+	period = 2.98,
+	bob = 0.0897,
+	tracks = {
+		StudFish_Shrimp = {
+			{4, 0, 0, 1, 0.4},
+			{0, 0, 3, 1, -0.25},
+		},
+		FishAntennaR_1 = {
+			{-12, -6, 12, 2, -0.43},
+		},
+		FishAntennaR_2 = {
+			{-14.879999999999999, -7.4399999999999995, 14.879999999999999, 2, -1.13},
+		},
+		FishAntennaL_1 = {
+			{12, 6, 12, 2, 0.43},
+		},
+		FishAntennaL_2 = {
+			{14.879999999999999, 7.4399999999999995, 14.879999999999999, 2, -0.26999999999999996},
+		},
+		FishSegment0 = {
+			{0, 5, 13, 2, 0.24},
+		},
+		FishSegment1 = {
+			{0, 5.8, 16, 2, -0.25},
+		},
+		FishSegment2 = {
+			{0, 6.6, 19, 2, -0.74},
+		},
+		FishSegment3 = {
+			{0, 7.4, 22, 2, -1.23},
+		},
+		FishLegR0 = {
+			{-16, -8, 0, 2, -0.57},
+		},
+		FishLegR1 = {
+			{-16, -8, 0, 2, 0.59},
+		},
+		FishLegR2 = {
+			{-16, -8, 0, 2, 1.75},
+		},
+		FishLegR3 = {
+			{-16, -8, 0, 2, 2.9099999999999997},
+		},
+		FishLegL0 = {
+			{16, 8, 0, 2, 0.57},
+		},
+		FishLegL1 = {
+			{16, 8, 0, 2, 1.73},
+		},
+		FishLegL2 = {
+			{16, 8, 0, 2, 2.8899999999999997},
+		},
+		FishLegL3 = {
+			{16, 8, 0, 2, 4.05},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishAntennaR_1", "FishAntennaR_2", "FishAntennaL_1", "FishAntennaL_2", "FishSegment0", "FishSegment1", "FishSegment2", "FishSegment3", "FishLegR0", "FishLegR1", "FishLegR2", "FishLegR3", "FishLegL0", "FishLegL1", "FishLegL2", "FishLegL3"},
+	measureName = "FishSegment0",
+	measureDistance = 0.5222620893765888,
+	fx = {
+		{
+			name = "ShrimpAura",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.18,
+			spread = 50,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "ShrimpGlints",
+			texture = ring,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Cuttlefish = {
+	period = 4.15,
+	bob = 0.14840000000000003,
+	tracks = {
+		StudFish_Cuttlefish = {
+			{3, 0, 0, 1, 0.4},
+			{0, 0, 2.4, 1, -0.25},
+		},
+		FishMantleR = {
+			{-14, 0, 0, 2, 0.32},
+			{-4, 0, -4, 1, -0.43},
+		},
+		FishMantleL = {
+			{14, 0, 0, 2, 0.32},
+			{4, 0, 4, 1, -0.43},
+		},
+		FishFeelers0_1 = {
+			{8, 11, 12, 2, 0},
+		},
+		FishFeelers0_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, -0.7},
+		},
+		FishFeelers1_1 = {
+			{8, 11, 12, 2, 0.59},
+		},
+		FishFeelers1_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, -0.10999999999999999},
+		},
+		FishFeelers2_1 = {
+			{8, 11, 12, 2, 1.18},
+		},
+		FishFeelers2_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, 0.48},
+		},
+		FishFeelers3_1 = {
+			{8, 11, 12, 2, 1.77},
+		},
+		FishFeelers3_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, 1.07},
+		},
+		FishFeelers4_1 = {
+			{8, 11, 12, 2, 2.36},
+		},
+		FishFeelers4_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, 1.66},
+		},
+		FishFeelers5_1 = {
+			{8, 11, 12, 2, 2.9499999999999997},
+		},
+		FishFeelers5_2 = {
+			{10.8, 14.850000000000001, 16.200000000000003, 2, 2.25},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishMantleR", "FishMantleL", "FishFeelers0_1", "FishFeelers0_2", "FishFeelers1_1", "FishFeelers1_2", "FishFeelers2_1", "FishFeelers2_2", "FishFeelers3_1", "FishFeelers3_2", "FishFeelers4_1", "FishFeelers4_2", "FishFeelers5_1", "FishFeelers5_2"},
+	measureName = "FishFX",
+	measureDistance = 2.136524598501033,
+	fx = {
+		{
+			name = "CuttlefishAura",
+			texture = square,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 6,
+			size = 0.18,
+			spread = 43,
+			speed = {0.36, 1.05},
+			life = {0.57, 1.3},
+		},
+		{
+			name = "CuttlefishGlints",
+			texture = ring,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Fangtooth = {
+	period = 3.7,
+	bob = 0.11770000000000001,
+	tracks = {
+		StudFish_Fangtooth = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 10, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 17, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 14, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishCrown = {
+			{7, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishCrown"},
+	measureName = "FishTail",
+	measureDistance = 1.819,
+	fx = {
+		{
+			name = "FangtoothAura",
+			texture = ring,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 11,
+		},
+		{
+			name = "FangtoothGlints",
+			texture = sparkle,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Dragonfish = {
+	period = 3.9,
+	bob = 0.1199,
+	tracks = {
+		StudFish_Dragonfish = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 8, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 19, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 17, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishBarbel = {
+			{12, 9, 14, 2, 0.25},
+		},
+	},
+	moves = {},
+	joints = {"FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishBarbel", "FishFX"},
+	measureName = "FishTail",
+	measureDistance = 3.2591000000000006,
+	fx = {
+		{
+			name = "DragonfishAura",
+			texture = sparkle,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 13,
+		},
+		{
+			name = "DragonfishGlints",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+	light = rgb(252, 87, 123),
+	lightRange = 3.4,
+	lightBase = 1.05,
+	lightPulse = 0.45,
+}
+
+species.StudFish_Moray = {
+	period = 4.25,
+	bob = 0.1474,
+	tracks = {
+		StudFish_Moray = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishWave1 = {
+			{0, 6.95, 2.5, 2, 0.13},
+		},
+		FishWave2 = {
+			{0, 7.9, 2.5, 2, -0.48},
+		},
+		FishWave3 = {
+			{0, 8.85, 2.5, 2, -1.09},
+		},
+		FishJaw = {
+			{0, 0, 7.5, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 16, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 21, 0, 2, -0.64},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishWave1", "FishWave2", "FishWave3", "FishJaw", "FishTail", "FishTailTip"},
+	measureName = "FishTail",
+	measureDistance = 4.006600000000001,
+	fx = {
+		{
+			name = "MorayAura",
+			texture = square,
+			first = rgb(232, 255, 174),
+			last = rgb(123, 230, 90),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 9,
+		},
+		{
+			name = "MorayGlints",
+			texture = ring,
+			first = rgb(232, 255, 174),
+			last = rgb(123, 230, 90),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_GoblinShark = {
+	period = 4.35,
+	bob = 0.1375,
+	tracks = {
+		StudFish_GoblinShark = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 9, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 19, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 17, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishFinSpines = {
+			{6, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishFinSpines"},
+	measureName = "FishTail",
+	measureDistance = 3.2375,
+	fx = {
+		{
+			name = "GoblinSharkAura",
+			texture = square,
+			first = rgb(255, 229, 240),
+			last = rgb(251, 117, 158),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 12,
+		},
+		{
+			name = "GoblinSharkGlints",
+			texture = ring,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_FrilledShark = {
+	period = 4.56,
+	bob = 0.1474,
+	tracks = {
+		StudFish_FrilledShark = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishWave1 = {
+			{0, 6.95, 2.5, 2, 0.13},
+		},
+		FishWave2 = {
+			{0, 7.9, 2.5, 2, -0.48},
+		},
+		FishWave3 = {
+			{0, 8.85, 2.5, 2, -1.09},
+		},
+		FishJaw = {
+			{0, 0, 8, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 14, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 19, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishFrillR0 = {
+			{-13, -7, 5, 2, -0.26},
+		},
+		FishFrillL0 = {
+			{13, 7, 5, 2, 0.26},
+		},
+		FishFrillR1 = {
+			{-13, -7, 5, 2, 0.39},
+		},
+		FishFrillL1 = {
+			{13, 7, 5, 2, 0.91},
+		},
+		FishFrillR2 = {
+			{-13, -7, 5, 2, 1.04},
+		},
+		FishFrillL2 = {
+			{13, 7, 5, 2, 1.56},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishWave1", "FishWave2", "FishWave3", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishFrillR0", "FishFrillL0", "FishFrillR1", "FishFrillL1", "FishFrillR2", "FishFrillL2"},
+	measureName = "FishTail",
+	measureDistance = 4.006600000000001,
+	fx = {
+		{
+			name = "FrilledSharkAura",
+			texture = ring,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 8,
+		},
+		{
+			name = "FrilledSharkGlints",
+			texture = sparkle,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Sawfish = {
+	period = 4.21,
+	bob = 0.1397,
+	tracks = {
+		StudFish_Sawfish = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 7, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 17, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 14, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishRearSpines = {
+			{6, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishRearSpines"},
+	measureName = "FishTail",
+	measureDistance = 2.8448,
+	fx = {
+		{
+			name = "SawfishAura",
+			texture = sparkle,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 10,
+		},
+		{
+			name = "SawfishGlints",
+			texture = square,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Wolffish = {
+	period = 4.05,
+	bob = 0.12869999999999998,
+	tracks = {
+		StudFish_Wolffish = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 9.5, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 17, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 14, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishIceBrow = {
+			{6, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishIceBrow"},
+	measureName = "FishTail",
+	measureDistance = 2.3634,
+	fx = {
+		{
+			name = "WolffishAura",
+			texture = ring,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 8,
+		},
+		{
+			name = "WolffishGlints",
+			texture = sparkle,
+			first = rgb(232, 251, 255),
+			last = rgb(89, 184, 251),
+			rate = 4,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_GulperEel = {
+	period = 4.9,
+	bob = 0.1386,
+	tracks = {
+		StudFish_GulperEel = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 8, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 14, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 20, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishBackSpines = {
+			{6, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishBackSpines"},
+	measureName = "FishTail",
+	measureDistance = 4.1958,
+	fx = {
+		{
+			name = "GulperEelAura",
+			texture = square,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 12,
+		},
+		{
+			name = "GulperEelGlints",
+			texture = ring,
+			first = rgb(244, 221, 255),
+			last = rgb(169, 122, 255),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+	light = rgb(204, 124, 249),
+	lightRange = 3,
+	lightBase = 0.65,
+	lightPulse = 0.34,
+}
+
+species.StudFish_Stonefish = {
+	period = 4.7,
+	bob = 0.132,
+	tracks = {
+		StudFish_Stonefish = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 6.6, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 17, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 12, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-13, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{13, 0, 0, 2, 0.52},
+		},
+		FishStoneSpines = {
+			{7, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishStoneSpines"},
+	measureName = "FishTail",
+	measureDistance = 1.62,
+	fx = {
+		{
+			name = "StonefishAura",
+			texture = square,
+			first = rgb(255, 246, 191),
+			last = rgb(255, 177, 92),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 9,
+		},
+		{
+			name = "StonefishGlints",
+			texture = ring,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 5,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+species.StudFish_Piranha = {
+	period = 2.8,
+	bob = 0.0957,
+	tracks = {
+		StudFish_Piranha = {
+			{2.8, 0, 0, 1, 0.4},
+			{0, 0, 2.3, 1, -0.25},
+		},
+		FishJaw = {
+			{0, 0, 11, 2, 0.52},
+			{0, 0, 2.3, 1, -0.37},
+		},
+		FishTail = {
+			{0, 23, 0, 2, 0.2},
+		},
+		FishTailTip = {
+			{0, 14, 0, 2, -0.64},
+		},
+		FishFinR = {
+			{-21, 0, 0, 2, 1.17},
+		},
+		FishFinL = {
+			{21, 0, 0, 2, 0.52},
+		},
+		FishCrest = {
+			{7, 0, 0, 2, -0.59},
+		},
+		FishAnalSpines = {
+			{10, 0, 3, 2, 0.36},
+		},
+	},
+	moves = {},
+	joints = {"FishFX", "FishJaw", "FishTail", "FishTailTip", "FishFinR", "FishFinL", "FishCrest", "FishAnalSpines"},
+	measureName = "FishTail",
+	measureDistance = 1.2876,
+	fx = {
+		{
+			name = "PiranhaAura",
+			texture = sparkle,
+			first = rgb(255, 224, 161),
+			last = rgb(244, 83, 88),
+			rate = 5,
+			size = 0.24,
+			spread = 85,
+			speed = {0.62, 1.7},
+			life = {0.48, 1.18},
+			burst = 10,
+		},
+		{
+			name = "PiranhaGlints",
+			texture = square,
+			first = rgb(217, 255, 240),
+			last = rgb(91, 225, 196),
+			rate = 6,
+			size = 0.135,
+			spread = 61,
+			speed = {0.45, 1.12},
+			life = {0.41, 0.89},
+		},
+	},
+}
+
+local active = {}
+local pending = {}
+local maxDistance = 150
+local tau = math.pi * 2
+local sin, cos, rad = math.sin, math.cos, math.rad
+local childNames = {
+	"FishTail", "FishTailTip", "FishFinL", "FishFinR", "FishCrest", "FishLure", "FishFX",
+}
+
+local function makeEmitter(anchor, style, scale)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = style.name
+	emitter.Enabled = false
+	emitter.Texture = style.texture
+	emitter.Rate = style.rate
+	emitter.Lifetime = NumberRange.new(style.life[1], style.life[2])
+	emitter.Speed = NumberRange.new(style.speed[1] * scale, style.speed[2] * scale)
+	emitter.SpreadAngle = Vector2.new(style.spread, style.spread)
+	emitter.EmissionDirection = Enum.NormalId.Top
+	emitter.LightInfluence = 0
+	emitter.LightEmission = style.emission or 0.55
+	emitter.Drag = 0.7
+	emitter.Acceleration = Vector3.new(0, (style.accel or 0.65) * scale, 0)
+	emitter.Rotation = NumberRange.new(-180, 180)
+	emitter.RotSpeed = NumberRange.new(-80, 80)
+	emitter.Color = ColorSequence.new(style.first, style.last)
+	local size = style.size * scale
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, size * 0.48),
+		NumberSequenceKeypoint.new(0.23, size),
+		NumberSequenceKeypoint.new(1, size * 0.68),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.13, 0.12),
+		NumberSequenceKeypoint.new(0.62, 0.24),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Parent = anchor
+	return emitter
+end
+
+local function register(root)
+	local config = species[root.Name]
+	local mesh = root:FindFirstAncestorWhichIsA("MeshPart")
+	if not config or not mesh or active[root] or not root:IsDescendantOf(Workspace) then
+		return
+	end
+
+	local bones = {}
+	for _, name in config.joints or childNames do
+		local bone = root:FindFirstChild(name, true)
+		if bone and bone:IsA("Bone") then
+			bones[name] = bone
+		elseif config.joints or name ~= "FishLure" or config.lure then
+			return
+		end
+	end
+
+	local measureBone = bones[config.measureName or "FishTail"]
+	local measureDistance = config.measureDistance or config.tailDistance
+	local scale = (measureBone.WorldPosition - root.WorldPosition).Magnitude / measureDistance
+	scale = math.clamp(scale, 0.08, 16)
+	local particleScale = math.clamp(scale, 0.25, 5)
+	local up = root.WorldCFrame:VectorToObjectSpace(Vector3.yAxis)
+	local anchor = Instance.new("Attachment")
+	anchor.Name = "StudFishEffects"
+	anchor.Parent = mesh
+	anchor.WorldCFrame = CFrame.new(bones.FishFX.WorldPosition)
+	local emitters = {}
+	for index, style in config.fx do
+		emitters[index] = makeEmitter(anchor, style, particleScale)
+	end
+
+	local light
+	if config.light then
+		light = Instance.new("PointLight")
+		light.Name = "LureLight"
+		light.Enabled = false
+		light.Color = config.light
+		light.Range = math.clamp((config.lightRange or 4.2) * scale, 2, 18)
+		light.Parent = anchor
+	end
+
+	local p = root.WorldPosition
+	active[root] = {
+		mesh = mesh,
+		config = config,
+		bones = bones,
+		scale = scale,
+		up = up,
+		phase = (p.X * 0.17 + p.Z * 0.13) % 1,
+		anchor = anchor,
+		emitters = emitters,
+		light = light,
+		visible = false,
+	}
+end
+
+local function consider(instance)
+	if not instance:IsA("Bone") then
+		return
+	end
+	local candidate = instance
+	while candidate and candidate:IsA("Bone") do
+		if species[candidate.Name] then
+			local root = candidate
+			if not active[root] and not pending[root] then
+				pending[root] = true
+				task.defer(function()
+					pending[root] = nil
+					register(root)
+				end)
+			end
+			return
+		end
+		candidate = candidate.Parent
+	end
+end
+
+Workspace.DescendantAdded:Connect(consider)
+for _, instance in Workspace:GetDescendants() do
+	consider(instance)
+end
+
+local function setVisible(rig, visible)
+	rig.visible = visible
+	for _, emitter in rig.emitters do
+		emitter.Enabled = visible
+		if not visible then
+			emitter:Clear()
+		end
+	end
+	if rig.light then
+		rig.light.Enabled = visible
+	end
+end
+
+local function sumMotion(terms, time)
+	local x, y, z = 0, 0, 0
+	for _, wave in terms do
+		local amplitude = sin(wave[4] * time + wave[5])
+		x += wave[1] * amplitude
+		y += wave[2] * amplitude
+		z += wave[3] * amplitude
+	end
+	return x, y, z
+end
+
+local function animateTracks(root, rig, t, bob)
+	local config = rig.config
+	for name, track in config.tracks do
+		local bone = rig.bones[name] or root
+		local x, y, z = sumMotion(track, t)
+		local rotation = CFrame.Angles(rad(x), rad(y), rad(z))
+		local move = config.moves[name]
+		if bone == root then
+			bone.Transform = CFrame.new(rig.up * bob) * rotation
+		elseif move then
+			local dx, dy, dz = sumMotion(move, t)
+			bone.Transform = CFrame.new(Vector3.new(dx, dy, dz) * rig.scale) * rotation
+		else
+			bone.Transform = rotation
+		end
+	end
+end
+
+local function animateClassic(root, rig, t, y)
+	local config, bones = rig.config, rig.bones
+	local fast = 2 * t
+	root.Transform = CFrame.new(rig.up * y)
+		* CFrame.Angles(rad(config.roll * sin(t + 0.4)), 0, rad(config.pitch * sin(t - 0.25)))
+	bones.FishTail.Transform = CFrame.Angles(0, rad(config.tail * sin(fast + 0.23)), 0)
+	bones.FishTailTip.Transform = CFrame.Angles(0, rad(config.tip * sin(fast - 0.66)), 0)
+	bones.FishFinL.Transform = CFrame.Angles(rad(config.fin * sin(fast + 0.3)), 0, 0)
+	bones.FishFinR.Transform = CFrame.Angles(rad(-config.fin * sin(fast + 0.9)), 0, 0)
+	bones.FishCrest.Transform = CFrame.Angles(rad(config.crest * sin(fast - 0.55)), 0, 0)
+	if config.lure then
+		bones.FishLure.Transform = CFrame.Angles(
+			rad(config.lure * sin(t + 0.1)), 0, rad(config.lure * 0.65 * sin(fast - 0.35))
+		)
+		bones.FishFX.Transform = CFrame.Angles(rad(config.bulb * sin(fast - 0.65)), 0, 0)
+	end
+end
+
+local function animate(root, rig, time)
+	local config, bones = rig.config, rig.bones
+	local cycle = time / config.period + rig.phase
+	local whole = math.floor(cycle)
+	local t = (cycle - whole) * tau
+	local fast = 2 * t
+	local y = config.bob * rig.scale * (0.5 - 0.5 * cos(t))
+	if config.tracks then
+		animateTracks(root, rig, t, y)
+	else
+		animateClassic(root, rig, t, y)
+	end
+	if rig.light then
+		rig.light.Brightness = (config.lightBase or 1.4) + (config.lightPulse or 0.65) * sin(fast - 0.65)
+	end
+
+	rig.anchor.WorldCFrame = CFrame.new(bones.FishFX.TransformedWorldCFrame.Position)
+	if rig.lastCycle and whole ~= rig.lastCycle then
+		for index, style in config.fx do
+			if style.burst then
+				rig.emitters[index]:Emit(style.burst)
+			end
+		end
+	end
+	rig.lastCycle = whole
+end
+
+RunService.PreRender:Connect(function()
+	local camera = Workspace.CurrentCamera
+	local time = Workspace:GetServerTimeNow()
+	for root, rig in active do
+		if not root:IsDescendantOf(Workspace) or not root:IsDescendantOf(rig.mesh) then
+			rig.anchor:Destroy()
+			active[root] = nil
+			consider(root)
+			continue
+		end
+		local visible = camera ~= nil
+			and (camera.CFrame.Position - root.WorldPosition).Magnitude <= maxDistance * math.max(1, rig.scale)
+		if visible ~= rig.visible then
+			setVisible(rig, visible)
+			rig.lastCycle = nil
+		end
+		if visible then
+			animate(root, rig, time)
+		end
+	end
+end)
+]]></ProtectedString>
+    </Properties>
+  </Item>
+</roblox>

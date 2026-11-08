@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="utf-8"?>
+<roblox version="4">
+  <External>null</External>
+  <External>nil</External>
+  <Item class="LocalScript" referent="RBX_StudPredatorsRuntime">
+    <Properties>
+      <string name="Name">StudPredatorsRuntime</string>
+      <bool name="Disabled">false</bool>
+      <ProtectedString name="Source"><![CDATA[-- StudPredatorsRuntime
+-- Add this separate LocalScript under StarterPlayer > StarterPlayerScripts.
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local textures = {
+	ring = "rbxassetid://1266170131",
+	square = "rbxasset://textures/particles/SquareParticle.png",
+	spark = "rbxasset://textures/sparkle.png",
+	streak = "rbxasset://textures/sparkle.png",
+	bolt = "rbxasset://textures/particles/SquareParticle.png",
+	dust = "rbxasset://textures/particles/smoke_main.dds",
+}
+
+local species = {
+	StudPredator_01_Barracuda = {
+		period = 2.85,
+		bob = 0.18629999999999997,
+		tracks = {
+			StudPredator_01_Barracuda = {
+				{3.4, 0, 0, 1, 0.4},
+				{0, 0, 2.1, 1, -0.25},
+			},
+			PredSpine = {
+				{0, 8, 0.9, 2, 0.6},
+			},
+			PredTail = {
+				{0, 16, 0, 2, -0.28},
+			},
+			PredFluke = {
+				{0, 12, 0, 2, -1.13},
+			},
+			PredJaw = {
+				{0, 0, -3.96, 1, 0.12},
+				{0, 0, -1.8, 2, -0.63},
+			},
+			PredCrest = {
+				{4, 0, 1.4, 2, -0.48},
+			},
+			FishFinR = {
+				{-13, 0, 0, 2, 0.87},
+			},
+			FishFinL = {
+				{13, 0, 0, 2, 0.22},
+			},
+			PredRearFin = {
+				{3, 0, 0, 2, -0.8},
+			},
+		},
+		joints = {"PredSpine", "PredTail", "PredFluke", "PredJaw", "PredCrest", "FishFinR", "FishFinL", "PredRearFin"},
+		measureDistance = 1.7801999999999998,
+		anchors = {
+			Wake = {
+				bone = "PredFluke",
+				offset = {-1.3041, 0, 0},
+			},
+			GillL = {
+				bone = "StudPredator_01_Barracuda",
+				offset = {2.2769999999999997, 0, 1.5524999999999998},
+			},
+		},
+		patrol = {
+			length = 21,
+			width = 11,
+			depth = 0.7,
+			seconds = 20,
+			weave = 0.11,
+			surge = 0,
+			bank = 7,
+		},
+		snap = {
+			seconds = 9.3,
+			phase = 0.33,
+			angle = 8,
+		},
+		effects = {
+			{
+				anchor = "Wake",
+				name = "AmberBubbles",
+				texture = "ring",
+				a = Color3.fromRGB(255, 243, 191),
+				b = Color3.fromRGB(97, 198, 191),
+				rate = 8,
+				size = 0.35,
+				speed = {1.5, 3.7},
+				life = {0.7, 1.4},
+				spread = 24,
+				rear = true,
+			},
+			{
+				anchor = "GillL",
+				name = "SiltPixels",
+				texture = "square",
+				a = Color3.fromRGB(232, 204, 129),
+				b = Color3.fromRGB(70, 157, 137),
+				rate = 3,
+				size = 0.16,
+				speed = {0.5, 1.7},
+				life = {0.4, 0.9},
+				spread = 82,
+			},
+		},
+		lights = {
+			{
+				anchor = "GillL",
+				color = Color3.fromRGB(154, 229, 186),
+				range = 6,
+				base = 0.22,
+				pulse = 0.12,
+			},
+		},
+	},
+	StudPredator_02_TigerShark = {
+		period = 3.15,
+		bob = 0.2115,
+		tracks = {
+			StudPredator_02_TigerShark = {
+				{4, 0, 0, 1, 0.4},
+				{0, 0, 2.1, 1, -0.25},
+			},
+			PredSpine = {
+				{0, 8, 0.9, 2, 0.6},
+			},
+			PredTail = {
+				{0, 19, 0, 2, -0.28},
+			},
+			PredFluke = {
+				{0, 16, 0, 2, -1.13},
+			},
+			PredJaw = {
+				{0, 0, -5.72, 1, 0.12},
+				{0, 0, -2.6, 2, -0.63},
+			},
+			PredCrest = {
+				{5, 0, 1.4, 2, -0.48},
+			},
+			FishFinR = {
+				{-12, 0, 0, 2, 0.87},
+			},
+			FishFinL = {
+				{12, 0, 0, 2, 0.22},
+			},
+			PredSecondDorsal = {
+				{3, 0, 0, 2, -0.75},
+			},
+		},
+		joints = {"PredSpine", "PredTail", "PredFluke", "PredJaw", "PredCrest", "FishFinR", "FishFinL", "PredSecondDorsal"},
+		measureDistance = 2.3265000000000002,
+		anchors = {
+			Wake = {
+				bone = "PredFluke",
+				offset = {-2.397000000000002, 0, 0},
+			},
+			Mouth = {
+				bone = "PredJaw",
+				offset = {3.8916, 0.6761655000000001, 0},
+			},
+		},
+		patrol = {
+			length = 25,
+			width = 15,
+			depth = 1.4,
+			seconds = 18,
+			weave = 0.22,
+			surge = 0.22,
+			bank = 12,
+		},
+		snap = {
+			seconds = 8.6,
+			phase = 0.22,
+			angle = 14,
+		},
+		effects = {
+			{
+				anchor = "Wake",
+				name = "WhiteFoam",
+				texture = "ring",
+				a = Color3.fromRGB(239, 255, 255),
+				b = Color3.fromRGB(120, 199, 255),
+				rate = 12,
+				size = 0.49,
+				speed = {2, 5.4},
+				life = {0.6, 1.2},
+				spread = 35,
+				rear = true,
+				burst = 9,
+				event = "surge",
+			},
+			{
+				anchor = "Wake",
+				name = "FastWake",
+				texture = "streak",
+				a = Color3.fromRGB(221, 243, 255),
+				b = Color3.fromRGB(52, 143, 231),
+				rate = 9,
+				size = 0.41,
+				speed = {3.2, 7.7},
+				life = {0.29, 0.68},
+				spread = 15,
+				rear = true,
+			},
+			{
+				anchor = "Mouth",
+				name = "JawSpray",
+				texture = "square",
+				a = Color3.fromRGB(255, 255, 255),
+				b = Color3.fromRGB(154, 202, 250),
+				rate = 0,
+				size = 0.34,
+				speed = {2.6, 5.7},
+				life = {0.36, 0.75},
+				spread = 59,
+				burst = 12,
+				event = "snap",
+			},
+		},
+		lights = {
+			{
+				anchor = "Mouth",
+				color = Color3.fromRGB(152, 207, 255),
+				range = 8,
+				base = 0.33,
+				pulse = 0.17,
+			},
+		},
+	},
+	StudPredator_03_Viperfish = {
+		period = 3.6,
+		bob = 0.24209999999999998,
+		tracks = {
+			StudPredator_03_Viperfish = {
+				{6, 0, 0, 1, 0.4},
+				{0, 0, 2.1, 1, -0.25},
+			},
+			PredSpine = {
+				{0, 13, 0.9, 2, 0.6},
+			},
+			PredTail = {
+				{0, 23, 0, 2, -0.28},
+			},
+			PredFluke = {
+				{0, 19, 0, 2, -1.13},
+			},
+			PredJaw = {
+				{0, 0, -6.16, 1, 0.12},
+				{0, 0, -2.8000000000000003, 2, -0.63},
+			},
+			PredCrest = {
+				{8, 0, 1.4, 2, -0.48},
+			},
+			FishFinR = {
+				{-20, 0, 0, 2, 0.87},
+			},
+			FishFinL = {
+				{20, 0, 0, 2, 0.22},
+			},
+		},
+		joints = {"PredSpine", "PredTail", "PredFluke", "PredJaw", "PredCrest", "FishFinR", "FishFinL"},
+		measureDistance = 1.7485,
+		anchors = {
+			Crown = {
+				bone = "PredCrest",
+				offset = {6.1331999999999995, 4.3578, 0},
+			},
+			Wake = {
+				bone = "PredFluke",
+				offset = {-1.8829999999999991, 0, 0},
+			},
+			Mouth = {
+				bone = "PredJaw",
+				offset = {5.42304, 1.0403037, 0},
+			},
+		},
+		patrol = {
+			length = 27,
+			width = 14,
+			depth = 3.4,
+			seconds = 23,
+			weave = 0.48,
+			surge = 0.12,
+			bank = 15,
+		},
+		snap = {
+			seconds = 7.5,
+			phase = 0.31,
+			angle = 21,
+		},
+		effects = {
+			{
+				anchor = "Crown",
+				name = "LanternFlare",
+				texture = "spark",
+				a = Color3.fromRGB(255, 246, 183),
+				b = Color3.fromRGB(255, 68, 141),
+				rate = 10,
+				size = 0.41,
+				speed = {0.4, 2.5},
+				life = {0.42, 0.9},
+				spread = 105,
+			},
+			{
+				anchor = "Wake",
+				name = "RoseWake",
+				texture = "square",
+				a = Color3.fromRGB(255, 147, 189),
+				b = Color3.fromRGB(147, 45, 131),
+				rate = 12,
+				size = 0.22,
+				speed = {1.8, 5.4},
+				life = {0.64, 1.26},
+				spread = 35,
+				rear = true,
+			},
+			{
+				anchor = "Mouth",
+				name = "JawRings",
+				texture = "ring",
+				a = Color3.fromRGB(255, 182, 157),
+				b = Color3.fromRGB(245, 70, 147),
+				rate = 3,
+				size = 0.66,
+				speed = {1.6, 4.2},
+				life = {0.42, 0.9},
+				spread = 39,
+				burst = 14,
+				event = "snap",
+			},
+		},
+		lights = {
+			{
+				anchor = "Crown",
+				color = Color3.fromRGB(255, 88, 142),
+				range = 12,
+				base = 0.96,
+				pulse = 0.55,
+			},
+		},
+	},
+	StudPredator_04_Reefbreaker = {
+		period = 4.45,
+		bob = 0.2835,
+		tracks = {
+			StudPredator_04_Reefbreaker = {
+				{4, 0, 0, 1, 0.4},
+				{0, 0, 2.1, 1, -0.25},
+			},
+			PredSpine = {
+				{0, 6, 0.9, 2, 0.6},
+			},
+			PredTail = {
+				{0, 14, 0, 2, -0.28},
+			},
+			PredFluke = {
+				{0, 11, 0, 2, -1.13},
+			},
+			PredJaw = {
+				{0, 0, -5.28, 1, 0.12},
+				{0, 0, -2.4000000000000004, 2, -0.63},
+			},
+			PredCrest = {
+				{3, 0, 1.4, 2, -0.48},
+			},
+			FishFinR = {
+				{-11, 0, 0, 2, 0.87},
+			},
+			FishFinL = {
+				{11, 0, 0, 2, 0.22},
+			},
+		},
+		joints = {"PredSpine", "PredTail", "PredFluke", "PredJaw", "PredCrest", "FishFinR", "FishFinL"},
+		measureDistance = 4.0635,
+		anchors = {
+			Mouth = {
+				bone = "PredJaw",
+				offset = {6.350399999999999, 1.2181994999999999, 0},
+			},
+			Wake = {
+				bone = "PredFluke",
+				offset = {-2.9610000000000003, 0, 0},
+			},
+			Crown = {
+				bone = "PredCrest",
+				offset = {-0.3780000000000001, 1.4489999999999998, 0},
+			},
+		},
+		patrol = {
+			length = 27,
+			width = 17,
+			depth = 2.25,
+			seconds = 29,
+			weave = 0.14,
+			surge = 0.17,
+			bank = 9,
+		},
+		snap = {
+			seconds = 10,
+			phase = 0.46,
+			angle = 19,
+		},
+		effects = {
+			{
+				anchor = "Mouth",
+				name = "AmberShock",
+				texture = "ring",
+				a = Color3.fromRGB(255, 241, 176),
+				b = Color3.fromRGB(242, 135, 64),
+				rate = 2,
+				size = 1.05,
+				speed = {2.3, 5.6},
+				life = {0.48, 0.98},
+				spread = 57,
+				burst = 19,
+				event = "snap",
+			},
+			{
+				anchor = "Mouth",
+				name = "ArmorSparks",
+				texture = "spark",
+				a = Color3.fromRGB(255, 245, 172),
+				b = Color3.fromRGB(250, 107, 50),
+				rate = 6,
+				size = 0.44,
+				speed = {1.9, 5.8},
+				life = {0.31, 0.72},
+				spread = 96,
+				burst = 16,
+				event = "snap",
+			},
+			{
+				anchor = "Wake",
+				name = "HeavySilt",
+				texture = "dust",
+				a = Color3.fromRGB(223, 162, 124),
+				b = Color3.fromRGB(96, 64, 90),
+				rate = 13,
+				size = 0.88,
+				speed = {0.8, 2.7},
+				life = {0.95, 1.7},
+				spread = 38,
+				rear = true,
+			},
+			{
+				anchor = "Crown",
+				name = "VentEmbers",
+				texture = "square",
+				a = Color3.fromRGB(255, 208, 116),
+				b = Color3.fromRGB(207, 75, 64),
+				rate = 5,
+				size = 0.27,
+				speed = {1.4, 3.7},
+				life = {0.45, 1.06},
+				spread = 57,
+			},
+		},
+		lights = {
+			{
+				anchor = "Mouth",
+				color = Color3.fromRGB(255, 159, 81),
+				range = 16,
+				base = 1.15,
+				pulse = 0.75,
+			},
+			{
+				anchor = "Crown",
+				color = Color3.fromRGB(255, 133, 75),
+				range = 11,
+				base = 0.6,
+				pulse = 0.36,
+			},
+		},
+	},
+	StudPredator_05_Leviathan = {
+		period = 5,
+		bob = 0.31949999999999995,
+		tracks = {
+			StudPredator_05_Leviathan = {
+				{6.5, 0, 0, 1, 0.4},
+				{0, 0, 2.1, 1, -0.25},
+			},
+			PredSpine = {
+				{0, 9, 0.9, 2, 0.6},
+			},
+			PredTail = {
+				{0, 21, 0, 2, -0.28},
+			},
+			PredFluke = {
+				{0, 17, 0, 2, -1.13},
+			},
+			PredJaw = {
+				{0, 0, -7.04, 1, 0.12},
+				{0, 0, -3.2, 2, -0.63},
+			},
+			PredCrest = {
+				{6, 0, 1.4, 2, -0.48},
+			},
+			FishFinR = {
+				{-14, 0, 0, 2, 0.87},
+			},
+			FishFinL = {
+				{14, 0, 0, 2, 0.22},
+			},
+		},
+		joints = {"PredSpine", "PredTail", "PredFluke", "PredJaw", "PredCrest", "FishFinR", "FishFinL"},
+		measureDistance = 4.26,
+		anchors = {
+			Mouth = {
+				bone = "PredJaw",
+				offset = {8.4348, 1.7243414999999997, 0},
+			},
+			Wake = {
+				bone = "PredFluke",
+				offset = {-3.869500000000002, 0, 0},
+			},
+			GillL = {
+				bone = "StudPredator_05_Leviathan",
+				offset = {9.017, 1.2779999999999998, 4.5085},
+			},
+			GillR = {
+				bone = "StudPredator_05_Leviathan",
+				offset = {9.017, 1.2779999999999998, -4.5085},
+			},
+			Crown = {
+				bone = "PredCrest",
+				offset = {12.0345, 3.443499999999999, 0},
+			},
+		},
+		patrol = {
+			length = 29,
+			width = 19,
+			depth = 5.1,
+			seconds = 33,
+			weave = 0.58,
+			surge = 0.29,
+			bank = 18,
+		},
+		snap = {
+			seconds = 8.8,
+			phase = 0.35,
+			angle = 29,
+		},
+		effects = {
+			{
+				anchor = "Mouth",
+				name = "AbyssShock",
+				texture = "ring",
+				a = Color3.fromRGB(195, 255, 246),
+				b = Color3.fromRGB(69, 141, 244),
+				rate = 6,
+				size = 1.33,
+				speed = {3, 7.2},
+				life = {0.52, 1.07},
+				spread = 69,
+				burst = 23,
+				event = "snap",
+			},
+			{
+				anchor = "Mouth",
+				name = "AbyssArc",
+				texture = "bolt",
+				a = Color3.fromRGB(239, 255, 252),
+				b = Color3.fromRGB(159, 101, 251),
+				rate = 10,
+				size = 0.75,
+				speed = {2.5, 6.8},
+				life = {0.27, 0.67},
+				spread = 104,
+				burst = 23,
+				event = "snap",
+			},
+			{
+				anchor = "Wake",
+				name = "LongRift",
+				texture = "streak",
+				a = Color3.fromRGB(178, 255, 239),
+				b = Color3.fromRGB(148, 89, 238),
+				rate = 16,
+				size = 0.63,
+				speed = {2.5, 7.4},
+				life = {0.58, 1.24},
+				spread = 26,
+				rear = true,
+				burst = 19,
+				event = "surge",
+			},
+			{
+				anchor = "GillL",
+				name = "BioPixelL",
+				texture = "square",
+				a = Color3.fromRGB(109, 255, 226),
+				b = Color3.fromRGB(69, 147, 223),
+				rate = 8,
+				size = 0.33,
+				speed = {1.2, 4},
+				life = {0.65, 1.23},
+				spread = 96,
+			},
+			{
+				anchor = "GillR",
+				name = "BioPixelR",
+				texture = "square",
+				a = Color3.fromRGB(109, 255, 226),
+				b = Color3.fromRGB(150, 92, 242),
+				rate = 8,
+				size = 0.33,
+				speed = {1.2, 4},
+				life = {0.65, 1.23},
+				spread = 96,
+			},
+			{
+				anchor = "Crown",
+				name = "CrownFlare",
+				texture = "spark",
+				a = Color3.fromRGB(223, 255, 243),
+				b = Color3.fromRGB(130, 99, 252),
+				rate = 10,
+				size = 0.61,
+				speed = {1.1, 4.5},
+				life = {0.46, 0.91},
+				spread = 118,
+				burst = 13,
+				event = "surge",
+			},
+		},
+		lights = {
+			{
+				anchor = "Mouth",
+				color = Color3.fromRGB(88, 255, 223),
+				range = 21,
+				base = 1.75,
+				pulse = 1.1,
+			},
+			{
+				anchor = "Crown",
+				color = Color3.fromRGB(158, 116, 255),
+				range = 18,
+				base = 1.3,
+				pulse = 0.72,
+			},
+			{
+				anchor = "GillR",
+				color = Color3.fromRGB(92, 187, 255),
+				range = 13,
+				base = 0.69,
+				pulse = 0.42,
+			},
+		},
+	},
+}
+
+local sin, cos, rad = math.sin, math.cos, math.rad
+local tau = 2 * math.pi
+local active, pending = {}, {}
+
+local function readNumber(mesh, name, fallback, minimum, maximum)
+	local current = mesh
+	while current and current ~= Workspace do
+		local value = current:GetAttribute(name)
+		if typeof(value) == "number" and value == value then
+			return math.clamp(value, minimum, maximum)
+		end
+		current = current.Parent
+	end
+	return fallback
+end
+
+local function makeEmitter(anchor, style, scale)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = style.name
+	emitter.Enabled = false
+	emitter.Texture = textures[style.texture]
+	emitter.EmissionDirection = if style.rear then Enum.NormalId.Back
+		elseif style.anchor == "Mouth" then Enum.NormalId.Front else Enum.NormalId.Top
+	emitter.LockedToPart = false
+	emitter.LightInfluence = 0
+	emitter.LightEmission = if style.texture == "dust" then 0.14 else 0.68
+	emitter.Drag = 0.8
+	emitter.Color = ColorSequence.new(style.a, style.b)
+	emitter.Rate = style.rate
+	emitter.Speed = NumberRange.new(style.speed[1] * scale, style.speed[2] * scale)
+	emitter.Lifetime = NumberRange.new(style.life[1], style.life[2])
+	local spread = style.spread or 40
+	emitter.SpreadAngle = Vector2.new(spread, spread)
+	local size = style.size * scale
+	local streak = style.texture == "streak" or style.texture == "bolt"
+	if streak then
+		emitter.Orientation = Enum.ParticleOrientation.VelocityParallel
+		emitter.Squash = NumberSequence.new(if style.texture == "bolt" then 0.85 else 1.35)
+	else
+		emitter.Rotation = NumberRange.new(-180, 180)
+		emitter.RotSpeed = NumberRange.new(-75, 75)
+	end
+	if style.texture == "ring" or style.texture == "dust" then
+		emitter.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, size * 0.38),
+			NumberSequenceKeypoint.new(1, size * 1.42),
+		})
+	else
+		emitter.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, size),
+			NumberSequenceKeypoint.new(1, size * 0.24),
+		})
+	end
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.66),
+		NumberSequenceKeypoint.new(0.13, if style.texture == "dust" then 0.42 else 0.13),
+		NumberSequenceKeypoint.new(0.56, 0.32),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Parent = anchor
+	return emitter
+end
+
+local function register(root)
+	local config = species[root.Name]
+	local mesh = root:FindFirstAncestorWhichIsA("MeshPart")
+	if not config or not mesh or active[root] or not root:IsDescendantOf(Workspace) then
+		return
+	end
+	local bones = {[root.Name] = root}
+	for _, name in config.joints do
+		local bone = root:FindFirstChild(name, true)
+		if not bone or not bone:IsA("Bone") then
+			return
+		end
+		bones[name] = bone
+	end
+
+	local center = root.WorldPosition
+	local axis = center - bones.PredSpine.WorldPosition
+	if axis.Magnitude < 0.01 then
+		return
+	end
+	local scale = math.clamp(axis.Magnitude / config.measureDistance, 0.08, 16)
+	local particleScale = math.clamp(scale, 0.35, 3.5)
+	local forward = axis.Unit
+	local flat = Vector3.new(forward.X, 0, forward.Z)
+	if flat.Magnitude < 0.01 then
+		flat = Vector3.zAxis
+	end
+	local side = flat.Unit:Cross(Vector3.yAxis)
+	local up = side:Cross(forward)
+	local basis = CFrame.lookAlong(center, flat.Unit)
+	local rest = mesh:GetPivot()
+
+	local anchors = {}
+	for name, source in config.anchors do
+		local bone = bones[source.bone]
+		local offset = source.offset
+		local delta = (forward * offset[1] + up * offset[2] + side * offset[3]) * scale
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "StudPredator_" .. name
+		attachment.Parent = mesh
+		anchors[name] = {
+			part = attachment,
+			bone = bone,
+			localOffset = bone.WorldCFrame:VectorToObjectSpace(delta),
+		}
+	end
+
+	local emitters, lights = {}, {}
+	for _, style in config.effects do
+		table.insert(emitters, {object = makeEmitter(anchors[style.anchor].part, style, particleScale), style = style})
+	end
+	for _, style in config.lights do
+		local object = Instance.new("PointLight")
+		object.Name = "PredatorGlow"
+		object.Color = style.color
+		object.Range = math.clamp(style.range * particleScale, 2, 45)
+		object.Enabled = false
+		object.Parent = anchors[style.anchor].part
+		table.insert(lights, {object = object, style = style})
+	end
+
+	local route = config.patrol
+	local length = readNumber(mesh, "PatrolRadius", route.length * math.min(scale, 2), 0, 300)
+	local width = length * route.width / route.length
+	active[root] = {
+		mesh = mesh, bones = bones, config = config, scale = scale,
+		basis = basis, rest = rest, meshFromBasis = basis:ToObjectSpace(rest),
+		up = root.WorldCFrame:VectorToObjectSpace(up),
+		length = length, width = width,
+		depth = readNumber(mesh, "PatrolDepth", route.depth * math.min(scale, 2), 0, 100),
+		speed = readNumber(mesh, "PatrolSpeed", 1, 0.15, 4),
+		phase = (center.X * 0.037 + center.Z * 0.023 + center.Y * 0.019) % 1,
+		anchors = anchors, emitters = emitters, lights = lights, visible = false,
+	}
+end
+
+local function consider(instance)
+	local candidate = instance
+	while candidate and candidate:IsA("Bone") do
+		if species[candidate.Name] then
+			local root = candidate
+			if not active[root] and not pending[root] then
+				pending[root] = true
+				task.defer(function()
+					pending[root] = nil
+					register(root)
+				end)
+			end
+			return
+		end
+		candidate = candidate.Parent
+	end
+end
+
+local function setVisible(rig, visible)
+	rig.visible = visible
+	rig.snapEvent, rig.surgeEvent = nil, nil
+	for _, emitter in rig.emitters do
+		emitter.object.Enabled = visible and emitter.style.rate > 0
+		if not visible then
+			emitter.object:Clear()
+		end
+	end
+	for _, light in rig.lights do
+		light.object.Enabled = visible
+	end
+end
+
+local function patrol(rig, time)
+	local route = rig.config.patrol
+	local cycle = time * rig.speed / route.seconds + rig.phase
+	local surgeEvent = math.floor(cycle * 2 + 0.12)
+	if rig.length == 0 then
+		return rig.rest, rig.basis.Position, rig.basis.LookVector, surgeEvent
+	end
+	local t = (cycle % 1) * tau
+	local sway = 2 * t
+	local a = t + route.surge * sin(sway)
+	local d = 1 + 2 * route.surge * cos(sway)
+	local wave = sin(a + 0.45) + route.weave * 0.48 * sin(2 * a - 0.7)
+	local slope = cos(a + 0.45) + route.weave * 0.96 * cos(2 * a - 0.7)
+	local lateral = sin(a) + route.weave * 0.25 * sin(3 * a - 0.35)
+	local lateralSlope = cos(a) + route.weave * 0.75 * cos(3 * a - 0.35)
+	local pos = Vector3.new(rig.width * lateral, rig.depth * wave, -rig.length * cos(a))
+	local tangent = Vector3.new(rig.width * lateralSlope * d, rig.depth * slope * d, rig.length * sin(a) * d)
+	local location = rig.basis:PointToWorldSpace(pos)
+	local direction = rig.basis:VectorToWorldSpace(tangent.Unit)
+	local bank = rad(route.bank) * (0.55 + 0.45 * cos(2 * a))
+	local facing = CFrame.lookAlong(location, direction) * CFrame.Angles(0, 0, bank)
+	return facing * rig.meshFromBasis, location, direction, surgeEvent
+end
+
+local function animate(root, rig, time, heading, surgeEvent)
+	local config = rig.config
+	local t = ((time / config.period + rig.phase) % 1) * tau
+	local jawCycle = time / config.snap.seconds + rig.phase + config.snap.phase
+	local jawPhase = jawCycle % 1
+	local open = math.max(0, 1 - math.abs(jawPhase - 0.16) / 0.16) ^ 1.55
+	local flash = math.max(0, 1 - math.abs(jawPhase - 0.31) / 0.085)
+	local snapEvent = math.floor(jawCycle + 0.69)
+
+	for name, waves in config.tracks do
+		local x, y, z = 0, 0, 0
+		for _, wave in waves do
+			local amount = sin(wave[4] * t + wave[5])
+			x += wave[1] * amount
+			y += wave[2] * amount
+			z += wave[3] * amount
+		end
+		if name == "PredJaw" then
+			z -= config.snap.angle * open
+		end
+		local transform = CFrame.Angles(rad(x), rad(y), rad(z))
+		if name == root.Name then
+			local bob = config.bob * rig.scale * (0.5 - 0.5 * cos(t))
+			transform = CFrame.new(rig.up * bob) * transform
+		end
+		rig.bones[name].Transform = transform
+	end
+
+	for _, anchor in rig.anchors do
+		local location = anchor.bone.TransformedWorldCFrame:PointToWorldSpace(anchor.localOffset)
+		anchor.part.WorldCFrame = CFrame.lookAlong(location, heading)
+	end
+	for _, light in rig.lights do
+		local style = light.style
+		light.object.Brightness = style.base + style.pulse * (0.42 * sin(2 * t) + flash)
+	end
+	local snap = rig.snapEvent ~= nil and snapEvent ~= rig.snapEvent
+	local surge = rig.length > 0 and rig.surgeEvent ~= nil and surgeEvent ~= rig.surgeEvent
+	for _, emitter in rig.emitters do
+		local style = emitter.style
+		if style.burst and ((style.event == "snap" and snap) or (style.event == "surge" and surge)) then
+			emitter.object:Emit(style.burst)
+		end
+	end
+	rig.snapEvent, rig.surgeEvent = snapEvent, surgeEvent
+end
+
+Workspace.DescendantAdded:Connect(consider)
+for _, instance in Workspace:GetDescendants() do
+	consider(instance)
+end
+
+RunService.PreRender:Connect(function()
+	local camera = Workspace.CurrentCamera
+	local time = Workspace:GetServerTimeNow()
+	for root, rig in active do
+		if not root:IsDescendantOf(Workspace) or not root:IsDescendantOf(rig.mesh) then
+			for _, anchor in rig.anchors do
+				anchor.part:Destroy()
+			end
+			active[root] = nil
+			consider(root)
+			continue
+		end
+
+		local pivot, location, heading, surgeEvent = patrol(rig, time)
+		local visible = camera ~= nil and (camera.CFrame.Position - location).Magnitude < 215 * math.max(1, math.min(rig.scale, 2))
+		if visible ~= rig.visible then
+			setVisible(rig, visible)
+		end
+		if visible then
+			if rig.length > 0 then
+				rig.mesh:PivotTo(pivot)
+			end
+			animate(root, rig, time, heading, surgeEvent)
+		end
+	end
+end)
+
+
+]]></ProtectedString>
+    </Properties>
+  </Item>
+</roblox>
