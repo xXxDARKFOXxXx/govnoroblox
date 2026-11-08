@@ -1,80 +1,96 @@
-# Морской интерфейс OceanHUD
+# OceanHUD v3 — интерфейс игры
 
-Четыре кнопки слева: **Перерождение**, **Подарки**, **Магазин**, **Индекс**. Пятая кнопка не добавлена.
-Снизу слева — монеты и скорость с иконкой ласт. Снизу по центру — синяя шкала, уровень внутри и `XP / XPToNextLevel` над ней.
+![HUD в Roblox Studio](OceanHUD-preview.png)
 
-Иконки собраны из настоящих объёмных деталей с квадратными выступами и показаны через ViewportFrame. Загружать картинки на Roblox и заменять ID не нужно. Интерфейс имеет анимацию наведения, плавное заполнение, поддержку нажатий мышью, касанием и геймпадом. Он сохраняется после возрождения персонажа.
+Слева четыре кнопки: **Перерождение**, **Подарки**, **Магазин** и **Индекс**.
+Внизу слева — монеты и скорость, внизу по центру — шкала опыта: звезда с текущим уровнем и корона со следующим.
+Все иконки — PNG-картинки с прозрачным фоном, показанные через `ImageLabel`.
 
-## Самый простой запуск: готовая карта
+![Меню магазина](OceanHUD-menu-preview.png)
 
-1. Открой **OceanMap-with-HUD.rbxl** в Roblox Studio через **File → Open from File**.
-2. Нажми **Play / F5**. Интерфейс появляется при запуске игры.
+## Быстрый запуск в Studio
 
-Это отдельная копия твоей `OceanMap-v4` со встроенным LocalScript. Исходная карта сохранена без изменений.
-Без данных игрока интерфейс показывает 0 монет, 0 скорости, уровень 1 и `0 / 10000`.
-Числа `2.6K`, `155` и `3700 / 10000` на превью — только пример для показа оформления.
+1. Один раз выполни `tools\install-studio-textures.ps1`. Скрипт копирует иконки в папку Studio,
+   чтобы они показывались без загрузки на Roblox.
+2. Открой **OceanMap-with-HUD.rbxl** и нажми **Play (F5)**.
+   В Studio скрипт `OceanHUDTestData` сразу выставляет тестовые значения:
+   монеты 125,430, скорость 18, уровень 24, опыт 7,850 / 10,000.
 
-## Установка в свой режим
+Чтобы посмотреть анимации, во время игры выполни в **Command Bar** (переключатель Server):
 
-1. Открой **OceanHUD.txt** и скопируй весь код.
-2. В **Explorer** раскрой **StarterPlayer → StarterPlayerScripts**.
-3. Добавь **LocalScript**, назови его **OceanHUD** и замени его содержимое скопированным кодом.
-4. Нажми **Play / F5**.
+```lua
+local S = require(game.ServerScriptService.OceanHUDStats)
+local p = game.Players:GetPlayers()[1]
+S.addCoins(p, 5000)  S.addXP(p, 3000)  S.setSpeedLevel(p, 19)
+```
 
-Вместо копирования можно вставить **OceanHUD.rbxmx** через **Insert from File…** в `StarterPlayerScripts`, если эта команда доступна в твоей версии Studio. Устанавливай только один вариант. `OceanHUD.client.luau` — тот же исходный код для редактора.
+## Иконки для опубликованной игры (обязательно)
 
-## Подключение счётчиков и уровня
+Путь `rbxasset://textures/OceanHUD/...` работает **только в Studio на этом компьютере**.
+Чтобы иконки увидели другие игроки:
 
-Скрипт читает числовые **Attributes игрока**, а если атрибута нет — `IntValue` / `NumberValue` в папке **leaderstats**. Атрибуты имеют приоритет. Изменения отслеживаются автоматически, в том числе если leaderstats появился после интерфейса.
+1. В Studio открой **Window → Asset Manager → Bulk Import** и загрузи все PNG из папки `assets`:
+   `Rebirth`, `Gifts`, `Shop`, `Index`, `Coin`, `Speed`, `LevelStar`, `Crown`, `Sparkle`, `Stripes`.
+2. Скопируй ID каждой картинки и вставь его в `src/modules/UIAssets.luau` → `UIAssets.Uploaded`,
+   например `Coin = "rbxassetid://1234567890"`.
+3. Пересобери проект (см. ниже).
 
-| Значение | Основное имя | Дополнительные имена |
+Выдуманные ID в коде не используются: пока поле пустое, берётся локальная картинка.
+После обновления Studio ещё раз запусти `install-studio-textures.ps1`: у новой версии Studio своя папка.
+
+## Как устроено
+
+| Файл | Где в игре | Что делает |
 |---|---|---|
-| Монеты | `Coins` | `Money`, `Cash`, `Монеты`, `Деньги` |
-| Скорость | `Speed` | `Скорость` |
-| Уровень | `Level` | `Уровень` |
-| Опыт в текущем уровне | `XP` | `Experience`, `LevelProgress` |
-| Опыт, нужный для следующего уровня | `XPToNextLevel` | `RequiredXP`, `NextLevelXP` |
+| `src/OceanHUD.client.luau` | StarterPlayerScripts → **OceanHUD** (LocalScript) | HUDController: создаёт интерфейс один раз, раскладку и связь с данными |
+| `src/modules/UITheme.luau` | модуль внутри OceanHUD | цвета, размеры для экрана 1648×928, длительности анимаций |
+| `src/modules/UIAssets.luau` | модуль | все картинки и звук клика в одном месте |
+| `src/modules/UIComponents.luau` | модуль | объёмные плашки: тень, нижняя грань, градиент, блик, обводки |
+| `src/modules/UIAnimations.luau` | модуль | TweenService: наведение, нажатие, «подпрыгивание», вспышка, покачивание |
+| `src/modules/UIDataController.luau` | модуль | читает данные игрока и сообщает об изменениях |
+| `src/modules/MenuController.luau` | модуль | окна меню: появление через Scale + Fade, одно окно за раз |
+| `src/server/OceanHUDStats.luau` | ServerScriptService → **OceanHUDStats** | серверные методы `addCoins`, `addXP`, `setSpeedLevel`, `setLevel` |
+| `src/server/OceanHUDTestData.server.luau` | ServerScriptService | тестовые значения, работает **только в Studio** |
+| `tools/draw_icons.py` | — | рисует иконки в `assets` (Python + Pillow) |
 
-`XP` — накопленный прогресс **текущего** уровня. Над полоской показано текущее / нужное, как в запросе. При переходе на новый уровень сервер должен обновить `Level`, `XP` и `XPToNextLevel`. `Speed` отображается отдельно: его значение не подменяет опыт. При `XPToNextLevel <= 0` отображается «МАКС. УРОВЕНЬ».
+**Данные.** Сервер записывает атрибуты игрока: `Coins`, `SpeedLevel`, `Level`, `XP`, `XPRequired`.
+Если атрибута нет, используются одноимённые значения из `leaderstats`.
+Клиент ничего не начисляет, он только показывает данные. `OceanHUDStats.addXP` переносит остаток опыта на следующий уровень
+(уровню 24 нужно 10,000 XP, формула `1000 + уровень × 375`).
 
-Пример в **серверном** скрипте существующего режима:
+**Анимации.**
+- Кнопки: при наведении увеличиваются на 7 % и подсвечиваются (0,17 с), при нажатии сжимаются до 93 % и проигрывают звук.
+- Монеты: число плавно досчитывается до нового значения, монета подпрыгивает и вспыхивает.
+- Скорость: при повышении текст увеличивается, молния покачивается.
+- Опыт: шкала плавно заполняется. При новом уровне звезда подпрыгивает с вспышкой, шкала доходит до конца и начинается заново с остатком.
 
-```lua
-player:SetAttribute("Coins", 2600)
-player:SetAttribute("Speed", 155)
-player:SetAttribute("Level", 12)
-player:SetAttribute("XP", 3700)
-player:SetAttribute("XPToNextLevel", 10000)
+Постоянных циклов нет: анимации запускаются только при изменениях. При удалении интерфейса все соединения отключаются.
+
+**Меню.** Повторное нажатие той же кнопки закрывает меню. Закрыть можно также крестиком, кликом по фону или клавишей Esc.
+Своё содержимое добавляй в `ScrollingFrame` **Content**:
+`PlayerGui.OceanHUD.SafeArea.MenuBackdrop.ShopMenu.Panel.Body.Content`.
+Чтобы открывать свои окна вместо встроенных, задай атрибут `UseExternalMenus = true` у `PlayerGui.OceanHUD`
+и слушай событие `OpenMenu` (приходит `"Rebirth"`, `"Gifts"`, `"Shop"` или `"Index"`).
+
+**Экран.** Размеры заданы для 1648×928 и масштабируются под размер экрана с учётом безопасной зоны Roblox.
+На узких экранах счётчики встают над шкалой опыта. Элементы не перекрывают друг друга:
+это проверено на 10 размерах, от 360×580 до 1920×1140.
+
+## Сборка и проверка
+
+Из папки `brain rot\OceanHUD`:
+
+```powershell
+python tools/draw_icons.py assets
+..\..\tools\lune\lune.exe run tools/check.luau
+..\..\tools\lune\lune.exe run tools/build.luau
+.\tools\install-studio-textures.ps1
 ```
 
-## Что происходит при нажатии кнопок
+`build.luau` создаёт `OceanHUD.rbxmx` (клиентский LocalScript с модулями), `OceanHUD-Server.rbxmx`
+(серверные скрипты) и `OceanMap-with-HUD.rbxl` — копию `OceanMap-v4` с интерфейсом. Сами файлы OceanMap не меняются.
+`check.luau` прогоняет 96 офлайн-проверок: данные, анимации, меню, раскладку и серверный перенос опыта.
+Интерфейс также проверен вживую в Roblox Studio (скриншоты выше).
 
-По умолчанию открываются оформленные окна разделов с заголовком, иконкой и закрытием. Содержимое магазина, награды, каталог и правила перерождения нужно подключить к игровой логике твоего режима. Скрипт не выдаёт покупки, не начисляет деньги и не сохраняет данные.
-
-Для своих окон используй событие из другого **LocalScript**:
-
-```lua
-local player = game:GetService("Players").LocalPlayer
-local hud = player:WaitForChild("PlayerGui"):WaitForChild("OceanHUD")
-local menuEvent = hud:WaitForChild("OpenMenu")
-hud:SetAttribute("UseExternalMenus", true)
-
-menuEvent.Event:Connect(function(section)
-    -- section: "Rebirth", "Gifts", "Shop" или "Index"
-    -- Здесь открой соответствующее окно своего режима.
-end)
-```
-
-## Файлы и проверки
-
-- `OceanMap-with-HUD.rbxl` — готовая карта.
-- `OceanHUD.rbxmx` — импортируемый LocalScript.
-- `OceanHUD.txt` / `OceanHUD.client.luau` — код для копирования и редактирования.
-- `OceanHUD-preview.png` — превью компоновки на фоне существующей карты.
-- `OceanHUD-icons.png` — увеличенный показ шести иконок.
-- `OceanHUD-transparent-preview.png` — та же примерная компоновка на прозрачном фоне, для просмотра, не для импорта в игру.
-- `build-report.json`, `test-report.json` — результаты проверки файлов и клиентской логики.
-
-Проверены компиляция шести скриптов карты, повторное чтение RBXMX/RBXL и **51 автоматическая проверка**: реакция на данные, крайние значения шкалы, все четыре кнопки, подключение своих окон, защита от дублирования и компоновка на восьми размерах экрана. Превью построено из созданных скриптом элементов и геометрии; это **не скриншот Roblox Studio**. Визуальная проверка в запущенной игре не выполнена: инструмент захвата окна Studio вернул тайм-аут.
-
-Использованные возможности Roblox: [ViewportFrame](https://create.roblox.com/docs/ui/viewport-frames), [событие Activated](https://create.roblox.com/docs/reference/engine/classes/GuiButton), [анимации интерфейса](https://create.roblox.com/docs/ui/animation).
+Чтобы встроить интерфейс в другой плейс: вставь `OceanHUD.rbxmx` в **StarterPlayerScripts**,
+а `OceanHUD-Server.rbxmx` — в **ServerScriptService** (через **Insert from File…**).

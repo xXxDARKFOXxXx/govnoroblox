@@ -1,8 +1,14 @@
 {
   "compiled": true,
-  "modelRoundTrip": true,
-  "placeBytes": 362287,
+  "modules": [
+    "UITheme",
+    "UIAssets",
+    "UIComponents",
+    "UIAnimations",
+    "UIDataController",
+    "MenuController"
+  ],
+  "placeBytes": 370222,
   "placeRoundTrip": true,
-  "placeScriptCount": 6,
-  "sourceBytes": 23212
+  "placeScriptCount": 14
 }

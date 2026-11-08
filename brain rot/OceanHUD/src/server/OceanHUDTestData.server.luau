@@ -1,0 +1,18 @@
+-- OceanHUDTestData (Script, ServerScriptService): Studio-only starting values
+-- for checking the HUD. Does nothing on live servers.
+-- In Studio, while playing, run in the Command Bar (Server) to see animations:
+--   local S = require(game.ServerScriptService.OceanHUDStats)
+--   local p = game.Players:GetPlayers()[1]
+--   S.addCoins(p, 5000)  S.addXP(p, 3000)  S.setSpeedLevel(p, 19)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+if not RunService:IsStudio() then return end
+
+local Stats = require(script.Parent:WaitForChild("OceanHUDStats"))
+
+local function seed(player: Player)
+	if player:GetAttribute("Coins") ~= nil then return end
+	Stats.init(player, {Coins = 125430, SpeedLevel = 18, Level = 24, XP = 7850})
+end
+Players.PlayerAdded:Connect(seed)
+for _, player in Players:GetPlayers() do seed(player) end

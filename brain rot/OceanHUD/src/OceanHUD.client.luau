@@ -1,464 +1,292 @@
--- OCEAN HUD | Put this LocalScript in StarterPlayer > StarterPlayerScripts.
--- No uploaded images, external modules, or asset IDs are required.
--- Optional values: player attributes or leaderstats Coins, Speed, Level, XP, XPToNextLevel.
--- Menu integration: PlayerGui.OceanHUD.OpenMenu.Event receives Rebirth / Gifts / Shop / Index.
-
+-- OceanHUD (HUDController) | LocalScript in StarterPlayer > StarterPlayerScripts.
+-- Child ModuleScripts: UITheme, UIAssets, UIComponents, UIAnimations,
+-- UIDataController, MenuController.
+--
+-- Layout follows the 1648x928 reference: four candy buttons top-left,
+-- coins + speed bottom-left, XP panel bottom-centre. The ScreenGui is built
+-- once; data changes only update text, fills and animations.
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+
+local Theme = require(script.UITheme)
+local Assets = require(script.UIAssets)
+local C = require(script.UIComponents)
+local Anim = require(script.UIAnimations)
+local Data = require(script.UIDataController)
+local MenuController = require(script.MenuController)
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 if playerGui:FindFirstChild("OceanHUD") then return end
 
-local C = {
-	ink = Color3.fromRGB(7, 24, 36), navy = Color3.fromRGB(14, 49, 65),
-	sea = Color3.fromRGB(28, 96, 112), mint = Color3.fromRGB(111, 248, 219),
-	blue = Color3.fromRGB(19, 117, 245), cyan = Color3.fromRGB(63, 214, 255),
-	gold = Color3.fromRGB(255, 207, 69), coral = Color3.fromRGB(255, 93, 107),
-	white = Color3.fromRGB(241, 254, 255), muted = Color3.fromRGB(161, 211, 220),
-}
+local S = Theme.Size
 local connections = {}
-local alive = true
 local function connect(signal, callback)
 	local connection = signal:Connect(callback)
 	table.insert(connections, connection)
 	return connection
 end
-local function new(class, parent, props)
-	local object = Instance.new(class)
-	for k, v in pairs(props or {}) do object[k] = v end
-	object.Parent = parent
-	return object
-end
-local function corner(object, radius)
-	return new("UICorner", object, {CornerRadius = UDim.new(0, radius)})
-end
-local function stroke(object, color, thickness, transparency)
-	return new("UIStroke", object, {
-		Color = color or C.ink, Thickness = thickness or 3,
-		Transparency = transparency or 0, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-		LineJoinMode = Enum.LineJoinMode.Round,
-	})
-end
-local function gradient(object, top, bottom, rotation)
-	object.BackgroundColor3 = Color3.new(1, 1, 1)
-	return new("UIGradient", object, {Color = ColorSequence.new(top, bottom), Rotation = rotation or 90})
-end
-local function frame(parent, name, position, size, color, z)
-	return new("Frame", parent, {Name = name, Position = position, Size = size,
-		BackgroundColor3 = color or C.navy, BorderSizePixel = 0, ZIndex = z or 1})
-end
-local function transparent(parent, name, position, size, z)
-	local object = frame(parent, name, position, size, nil, z)
-	object.BackgroundTransparency = 1
-	return object
-end
-local function label(parent, name, text, position, size, fontSize, color, z)
-	local object = new("TextLabel", parent, {
-		Name = name, Text = text, Position = position, Size = size,
-		BackgroundTransparency = 1, BorderSizePixel = 0,
-		Font = Enum.Font.FredokaOne, TextSize = fontSize, TextColor3 = color or C.white,
-		TextStrokeColor3 = C.ink, TextStrokeTransparency = 0,
-		ZIndex = z or 5,
-	})
-	-- A real outline keeps large Cyrillic letters legible on bright maps.
-	new("UIStroke", object, {Color = C.ink, Thickness = 1.8, LineJoinMode = Enum.LineJoinMode.Round})
-	return object
-end
-local function tween(object, duration, props)
-	local t = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
-	t:Play()
-	return t
-end
 
--- Sculpted icon geometry. All studs are real small blocks, visible in ViewportFrame.
--- Icons face +Z; a slight camera angle reveals the thickness of the toy bricks.
-local function makeIcon(parent, kind, position, size, z)
-	local viewport = new("ViewportFrame", parent, {
-		Name = kind .. "Icon", Position = position, Size = size, BackgroundTransparency = 1,
-		BorderSizePixel = 0, ZIndex = z or 4, Ambient = Color3.fromRGB(180, 193, 205),
-		LightColor = Color3.fromRGB(255, 248, 224), LightDirection = Vector3.new(-1, -2, -4),
-	})
-	local camera = new("Camera", viewport, {FieldOfView = 30})
-	viewport.CurrentCamera = camera
-	local model = new("Model", viewport, {Name = kind .. "Bricks"})
-	local function block(name, xyz, whd, color, rz, ry)
-		local part = new("Part", model, {
-			Name = name, Size = Vector3.new(whd[1], whd[2], whd[3]),
-			CFrame = CFrame.new(xyz[1], xyz[2], xyz[3]) * CFrame.Angles(0, math.rad(ry or 0), math.rad(rz or 0)),
-			Color = color, Material = Enum.Material.SmoothPlastic,
-			Anchored = true, CanCollide = false, CanTouch = false, CanQuery = false, CastShadow = false,
-			TopSurface = Enum.SurfaceType.Smooth, BottomSurface = Enum.SurfaceType.Smooth,
-		})
-		return part
-	end
-	local function edged(name, xyz, whd, color, rz)
-		block(name .. "Outline", {xyz[1], xyz[2], xyz[3] - 0.06}, {whd[1] + 0.14, whd[2] + 0.14, whd[3] + 0.09}, C.ink, rz)
-		return block(name, xyz, whd, color, rz)
-	end
-	local function stud(x, y, zf, color, scale)
-		scale = scale or 0.22
-		block("SquareStud", {x, y, zf}, {scale, scale, 0.11}, color)
-		block("StudGlint", {x, y + scale * 0.4, zf + 0.06}, {scale * 0.72, 0.035, 0.025}, color:Lerp(C.white, 0.42))
-	end
-	local function grid(xs, ys, zf, color)
-		for _, x in xs do for _, y in ys do stud(x, y, zf, color) end end
-	end
-	if kind == "Index" then
-		edged("BackCover", {0, 0, -0.25}, {2.6, 3.05, 0.35}, C.blue, -7)
-		edged("Pages", {0.08, -0.02, 0.02}, {2.35, 2.78, 0.42}, Color3.fromRGB(255, 239, 191), -7)
-		for y = -1.15, 1.15, 0.23 do block("PageLine", {1.23, y, 0.12}, {0.03, 0.035, 0.32}, C.gold, -7) end
-		edged("FrontCover", {-0.03, 0.03, 0.39}, {2.63, 3.08, 0.24}, C.cyan, -7)
-		edged("Spine", {-1.14, 0.14, 0.58}, {0.43, 3.08, 0.18}, C.blue, -7)
-		grid({-0.55, 0.05, 0.65}, {-1.03, 1.05}, 0.59, Color3.fromRGB(103, 231, 255))
-		edged("BookPlate", {0.15, 0.05, 0.62}, {1.35, 1.25, 0.12}, Color3.fromRGB(5, 111, 166), -7)
-		-- A little golden anchor on the ocean field guide.
-		block("AnchorStem", {0.15, 0.07, 0.76}, {0.16, 0.79, 0.1}, C.gold)
-		block("AnchorCross", {0.15, 0.2, 0.76}, {0.62, 0.14, 0.1}, C.gold)
-		block("AnchorBase", {0.15, -0.32, 0.76}, {0.65, 0.14, 0.1}, C.gold)
-		for _, x in {-0.23, 0.53} do block("AnchorHook", {x, -0.21, 0.76}, {0.14, 0.32, 0.1}, C.gold) end
-		edged("Bookmark", {0.7, -1.57, 0.22}, {0.36, 0.65, 0.14}, C.coral, -7)
-	elseif kind == "Gifts" then
-		edged("Present", {0, -0.4, 0}, {2.65, 2.16, 0.95}, C.coral)
-		grid({-0.94, -0.5, 0.5, 0.94}, {-1.12, -0.63, -0.16, 0.29}, 0.54, Color3.fromRGB(255, 137, 142))
-		edged("Lid", {0, 0.74, 0.06}, {2.94, 0.47, 1.1}, Color3.fromRGB(255, 126, 132))
-		block("RibbonVertical", {0, -0.38, 0.63}, {0.43, 2.2, 0.16}, C.gold)
-		block("RibbonTop", {0, 0.8, 0.72}, {0.45, 0.52, 0.16}, C.gold)
-		edged("BowLeft", {-0.49, 1.3, 0.2}, {0.94, 0.49, 0.5}, C.gold, -32)
-		edged("BowRight", {0.49, 1.3, 0.2}, {0.94, 0.49, 0.5}, C.gold, 32)
-		edged("PearlKnot", {0, 1.15, 0.61}, {0.48, 0.48, 0.35}, C.mint)
-	elseif kind == "Shop" then
-		edged("BasketBottom", {0, -1.25, 0}, {1.95, 0.28, 0.95}, Color3.fromRGB(203, 49, 78))
-		edged("BasketBody", {0, -0.43, 0}, {2.52, 1.48, 0.95}, C.coral)
-		for _, x in {-0.88, -0.44, 0, 0.44, 0.88} do
-			block("BasketSlot", {x, -0.4, 0.51}, {0.19, 0.67, 0.09}, Color3.fromRGB(133, 29, 60))
-			stud(x, -0.99, 0.52, Color3.fromRGB(255, 142, 149), 0.18)
-		end
-		edged("BasketRim", {0, 0.38, 0.05}, {2.95, 0.35, 1.13}, Color3.fromRGB(255, 149, 155))
-		for _, x in {-0.97, 0.97} do edged("HandleUpright", {x, 1.09, 0}, {0.28, 1.54, 0.3}, C.cyan, x < 0 and -12 or 12) end
-		edged("HandleTop", {0, 1.81, 0}, {1.73, 0.3, 0.3}, C.cyan)
-		block("HandleHighlight", {-0.12, 1.86, 0.19}, {1.26, 0.07, 0.05}, C.white)
-	elseif kind == "Rebirth" then
-		local function arrow(startAngle, color)
-			-- Continuous polygonal half-ring with a visible gap before the next arrow.
-			for i = 0, 9 do
-				local angle = math.rad(startAngle + i * 13)
-				local x, y = math.cos(angle) * 1.2, math.sin(angle) * 1.2
-				block("RingOutline", {x, y, -0.08}, {0.72, 0.53, 0.55}, C.ink, math.deg(angle))
-			end
-			for i = 0, 9 do
-				local angle = math.rad(startAngle + i * 13)
-				local x, y = math.cos(angle) * 1.2, math.sin(angle) * 1.2
-				block("ArrowBrick", {x, y, 0.23}, {0.55, 0.49, 0.24}, color, math.deg(angle))
-				if i % 3 == 0 then stud(x, y, 0.4, color:Lerp(C.white, 0.24), 0.19) end
-			end
-			local angle = math.rad(startAngle + 130)
-			local origin = CFrame.new(math.cos(angle) * 1.2, math.sin(angle) * 1.2, 0.23) * CFrame.Angles(0, 0, angle)
-			-- Stepped toy-brick triangle points along the direction of travel.
-			for i = 0, 6 do
-				local localCF = origin * CFrame.new(0, -0.23 + i * 0.12, 0)
-				local p = localCF.Position
-				block("ArrowHeadOutline", {p.X, p.Y, 0.1}, {1.2 - i * 0.15, 0.18, 0.6}, C.ink, math.deg(angle))
-				block("ArrowHead", {p.X, p.Y, 0.44}, {1.04 - i * 0.15, 0.14, 0.16}, color, math.deg(angle))
-			end
-		end
-		arrow(-15, C.cyan)
-		arrow(165, C.coral)
-	elseif kind == "Coins" then
-		-- An eight-sided treasure coin; cylinders are deliberately avoided for the block style.
-		for _, layer in {{1.48, -0.12, C.ink}, {1.33, 0.12, Color3.fromRGB(231, 145, 25)}, {1.1, 0.32, C.gold}} do
-			for i = -6, 6 do
-				local y = i * layer[1] / 6.5
-				local halfWidth = math.min(layer[1], layer[1] * 1.4 - math.abs(y))
-				block("CoinOctagon", {0, y, layer[2]}, {halfWidth * 2, layer[1] / 6.5 + 0.02, 0.25}, layer[3])
-			end
-		end
-		block("CoinMarkStem", {0, 0, 0.5}, {0.22, 1.35, 0.15}, Color3.fromRGB(255, 245, 161))
-		block("CoinMarkCross", {0, 0.3, 0.5}, {0.85, 0.18, 0.15}, Color3.fromRGB(255, 245, 161))
-		block("CoinMarkBase", {0, -0.48, 0.5}, {0.78, 0.18, 0.15}, Color3.fromRGB(255, 245, 161))
-		for _, x in {-0.47, 0.47} do block("CoinHook", {x, -0.31, 0.5}, {0.18, 0.38, 0.15}, Color3.fromRGB(255, 245, 161)) end
-	elseif kind == "Speed" then
-		for _, x in {-0.72, 0.72} do
-			local flip = x < 0 and -12 or 12
-			edged("FlipperBlade", {x, -0.62, 0}, {1.05, 1.7, 0.35}, C.cyan, flip)
-			edged("FlipperFoot", {x, 0.69, -0.04}, {0.7, 1.11, 0.42}, C.blue, flip)
-			edged("FootOpening", {x, 0.87, 0.23}, {0.42, 0.58, 0.1}, C.ink, flip)
-			for _, dx in {-0.25, 0.25} do block("BladeRidge", {x + dx, -0.67, 0.23}, {0.08, 1.21, 0.09}, C.white, flip) end
-			stud(x, -0.2, 0.26, Color3.fromRGB(103, 235, 255), 0.26)
-		end
-	end
-	camera.CFrame = CFrame.lookAt(Vector3.new(2.0, 1.35, 8.0), Vector3.new(0, 0.08, 0))
-	return viewport
-end
-
-local gui = new("ScreenGui", playerGui, {
-	Name = "OceanHUD", ResetOnSpawn = false, DisplayOrder = 20,
+local gui = C.new("ScreenGui", playerGui, {
+	Name = "OceanHUD", ResetOnSpawn = false, DisplayOrder = 20, IgnoreGuiInset = false,
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling, ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 })
-gui:SetAttribute("Version", "1.0.0")
+gui:SetAttribute("Version", "3.0.0")
 gui:SetAttribute("UseExternalMenus", false)
-local openMenu = new("BindableEvent", gui, {Name = "OpenMenu"})
-local root = transparent(gui, "SafeArea", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
+local openMenuEvent = C.new("BindableEvent", gui, {Name = "OpenMenu"})
+local clickSound = C.new("Sound", gui, {Name = "ClickSound", SoundId = Assets.ClickSound, Volume = 0.6})
+local root = C.holder(gui, "SafeArea", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1))
 
--- Four compact portholes down the left edge.
-local sidebar = transparent(root, "Navigation", UDim2.new(0, 20, 0.5, -52), UDim2.fromOffset(132, 476))
-sidebar.AnchorPoint = Vector2.new(0, 0.5)
-local sideScale = new("UIScale", sidebar, {Scale = 1})
-local menuSpecs = {
-	{key = "Rebirth", title = "Перерождение", accent = C.mint},
-	{key = "Gifts", title = "Подарки", accent = C.gold},
-	{key = "Shop", title = "Магазин", accent = C.coral},
-	{key = "Index", title = "Индекс", accent = C.cyan},
-}
+local menus = MenuController.new(root, openMenuEvent, clickSound)
+
+---------------------------------------------------------------- left buttons
+local NAV_H = S.ButtonH * 4 + S.ButtonGap * 3
+local navigation = C.holder(root, "Navigation", UDim2.fromOffset(S.Left, S.Top), UDim2.fromOffset(S.ButtonW, NAV_H))
+local navScale = C.new("UIScale", navigation, {Scale = 1})
 local buttons = {}
-local showMenu
-for i, spec in menuSpecs do
-	local holder = transparent(sidebar, spec.key .. "Slot", UDim2.fromOffset(0, (i - 1) * 121), UDim2.fromOffset(132, 112))
-	local shadow = frame(holder, "Shadow", UDim2.fromOffset(3, 5), UDim2.fromOffset(126, 103), C.ink)
-	corner(shadow, 22)
-	local button = new("TextButton", holder, {
-		Name = spec.key, Text = "", AutoButtonColor = false, Size = UDim2.fromOffset(126, 103),
-		BackgroundColor3 = C.navy, BackgroundTransparency = 0.08, BorderSizePixel = 0,
-		Selectable = true, ZIndex = 2,
+for i, spec in Theme.Buttons do
+	local slot = C.holder(navigation, spec.key .. "Slot", UDim2.fromOffset(0, (i - 1) * (S.ButtonH + S.ButtonGap)), UDim2.fromOffset(S.ButtonW, S.ButtonH))
+	local scale = C.new("UIScale", slot, {Scale = 1})
+	local glow = C.frame(slot, "HoverGlow", {
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 18, 1, 18),
+		BackgroundColor3 = spec.glow, BackgroundTransparency = 1, ZIndex = 1,
 	})
-	corner(button, 21)
-	stroke(button, C.ink, 4)
-	gradient(button, Color3.fromRGB(33, 104, 119), Color3.fromRGB(12, 47, 65))
-	local inner = transparent(button, "PortholeRim", UDim2.fromOffset(6, 6), UDim2.new(1, -12, 1, -12), 3)
-	corner(inner, 16)
-	stroke(inner, spec.accent, 2, 0.44)
-	for _, x in {12, 109} do
-		local bolt = frame(button, "RimBolt", UDim2.fromOffset(x, 15), UDim2.fromOffset(5, 5), C.muted, 3)
-		corner(bolt, 2)
-	end
-	makeIcon(button, spec.key, UDim2.fromOffset(15, -8), UDim2.fromOffset(96, 96), 4)
-	label(button, "Caption", spec.title, UDim2.fromOffset(-9, 79), UDim2.fromOffset(144, 28), spec.key == "Rebirth" and 17 or 23, C.white, 6)
-	local pop = new("UIScale", button, {Scale = 1})
-	connect(button.MouseEnter, function() tween(pop, 0.13, {Scale = 1.045}) end)
-	connect(button.MouseLeave, function() tween(pop, 0.13, {Scale = 1}) end)
-	connect(button.SelectionGained, function() tween(pop, 0.13, {Scale = 1.045}) end)
-	connect(button.SelectionLost, function() tween(pop, 0.13, {Scale = 1}) end)
-	connect(button.Activated, function()
-		tween(pop, 0.09, {Scale = 1})
-		openMenu:Fire(spec.key)
-		if not gui:GetAttribute("UseExternalMenus") then showMenu(spec.key) end
-	end)
-	buttons[spec.key] = button
-end
-for i, spec in menuSpecs do
-	buttons[spec.key].NextSelectionUp = buttons[menuSpecs[(i - 2) % #menuSpecs + 1].key]
-	buttons[spec.key].NextSelectionDown = buttons[menuSpecs[i % #menuSpecs + 1].key]
-end
-
--- Currency counters in the lower-left corner, with dedicated flipper art.
-local counters = transparent(root, "Counters", UDim2.new(0, 22, 1, -18), UDim2.fromOffset(246, 130))
-counters.AnchorPoint = Vector2.new(0, 1)
-local counterScale = new("UIScale", counters, {Scale = 1})
-local function counter(kind, title, y, color)
-	local holder = transparent(counters, kind .. "Counter", UDim2.fromOffset(0, y), UDim2.fromOffset(246, 60))
-	local plate = frame(holder, "Plate", UDim2.fromOffset(28, 4), UDim2.fromOffset(215, 52), C.ink, 1)
-	plate.BackgroundTransparency = 0.28
-	corner(plate, 15)
-	stroke(plate, color, 1.5, 0.48)
-	makeIcon(holder, kind, UDim2.fromOffset(-8, -6), UDim2.fromOffset(76, 76), 3)
-	local caption = label(holder, "Caption", title, UDim2.fromOffset(73, 5), UDim2.fromOffset(157, 16), 12, C.muted, 3)
-	caption.TextXAlignment = Enum.TextXAlignment.Left
-	local value = label(holder, "Value", "0", UDim2.fromOffset(70, 20), UDim2.fromOffset(159, 35), 32, color, 4)
-	value.TextXAlignment = Enum.TextXAlignment.Left
-	value.TextScaled = true
-	new("UITextSizeConstraint", value, {MaxTextSize = 32, MinTextSize = 16})
-	return value
-end
-local coinText = counter("Coins", "МОНЕТЫ", 0, C.gold)
-local speedText = counter("Speed", "СКОРОСТЬ", 68, C.cyan)
-
--- Bottom-centre level meter. The progress number stays above the track.
-local progress = transparent(root, "LevelProgress", UDim2.new(0.5, 0, 1, -24), UDim2.fromOffset(620, 88))
-progress.AnchorPoint = Vector2.new(0.5, 1)
-local progressText = label(progress, "ProgressText", "0 / 10000", UDim2.fromOffset(0, 0), UDim2.new(1, 0, 0, 28), 23, C.white, 5)
-local trackShadow = frame(progress, "TrackShadow", UDim2.fromOffset(2, 38), UDim2.new(1, 0, 0, 54), C.ink)
-corner(trackShadow, 19)
-local track = frame(progress, "Track", UDim2.fromOffset(0, 33), UDim2.new(1, 0, 0, 54), C.navy, 2)
-corner(track, 18)
-stroke(track, C.ink, 4)
-gradient(track, Color3.fromRGB(22, 68, 89), Color3.fromRGB(9, 37, 55))
-local rim = transparent(track, "InnerRim", UDim2.fromOffset(4, 4), UDim2.new(1, -8, 1, -8), 3)
-corner(rim, 13)
-stroke(rim, Color3.fromRGB(116, 192, 210), 1.4, 0.48)
-local fillClip = transparent(track, "FillClip", UDim2.fromOffset(5, 5), UDim2.new(1, -10, 1, -10), 4)
-corner(fillClip, 12)
-fillClip.ClipsDescendants = true
-local fill = frame(fillClip, "BlueFill", UDim2.fromScale(0, 0), UDim2.fromScale(0, 1), C.blue, 4)
-corner(fill, 12)
-gradient(fill, Color3.fromRGB(81, 221, 255), Color3.fromRGB(16, 105, 239))
-local gloss = frame(fill, "Gloss", UDim2.fromOffset(3, 3), UDim2.new(1, -6, 0.38, 0), C.white, 5)
-gloss.BackgroundTransparency = 0.82
-corner(gloss, 8)
-for i = 1, 14 do
-	local tile = frame(fill, "BrickPattern", UDim2.new(i / 15, -3, 0.54, 0), UDim2.fromOffset(11, 10), C.white, 5)
-	tile.BackgroundTransparency = 0.88
-	corner(tile, 2)
-end
-local levelText = label(track, "Level", "Уровень 1", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 27, C.white, 7)
-
--- Built-in panels are UI shells; rewards and purchases are never granted on the client.
-local overlay = new("TextButton", root, {
-	Name = "MenuBackdrop", Size = UDim2.fromScale(1, 1), Text = "", BackgroundColor3 = C.ink,
-	BackgroundTransparency = 0.32, AutoButtonColor = false, BorderSizePixel = 0, Visible = false, ZIndex = 30,
-})
-local panel = frame(overlay, "Panel", UDim2.fromScale(0.5, 0.5), UDim2.fromOffset(510, 360), C.navy, 31)
-panel.AnchorPoint = Vector2.new(0.5, 0.5)
-corner(panel, 25)
-stroke(panel, C.ink, 5)
-gradient(panel, Color3.fromRGB(33, 103, 120), Color3.fromRGB(12, 43, 62))
-local panelScale = new("UIScale", panel, {Scale = 1})
-local panelTitle = label(panel, "Title", "", UDim2.fromOffset(24, 24), UDim2.fromOffset(410, 44), 32, C.white, 34)
-panelTitle.TextXAlignment = Enum.TextXAlignment.Left
-local close = new("TextButton", panel, {
-	Name = "Close", Text = "×", Font = Enum.Font.GothamBold, TextSize = 35,
-	TextColor3 = C.white, TextStrokeTransparency = 0, TextStrokeColor3 = C.ink,
-	Position = UDim2.new(1, -62, 0, 20), Size = UDim2.fromOffset(42, 42),
-	BackgroundColor3 = C.coral, AutoButtonColor = true, BorderSizePixel = 0, ZIndex = 35,
-})
-corner(close, 12)
-stroke(close, C.ink, 3)
-local panelIcons = {}
-for _, spec in menuSpecs do
-	local icon = makeIcon(panel, spec.key, UDim2.fromOffset(180, 79), UDim2.fromOffset(150, 150), 33)
-	icon.Visible = false
-	panelIcons[spec.key] = icon
-end
-local panelBody = label(panel, "Description", "", UDim2.fromOffset(35, 240), UDim2.fromOffset(440, 75), 19, C.muted, 33)
-panelBody.TextWrapped = true
-panelBody.Font = Enum.Font.GothamMedium
-local descriptions = {
-	Rebirth = "Новый заплыв — новые возможности!\nЗдесь будут условия перерождения.",
-	Gifts = "Сокровища океана ждут тебя!\nЗдесь будут подарки и награды.",
-	Shop = "Всё для большого погружения.\nЗдесь появятся товары магазина.",
-	Index = "Твоя морская энциклопедия.\nЗдесь появится коллекция открытий.",
-}
-showMenu = function(key)
-	for _, spec in menuSpecs do
-		panelIcons[spec.key].Visible = spec.key == key
-		if spec.key == key then panelTitle.Text = spec.title end
-	end
-	panelBody.Text = descriptions[key]
-	overlay.Visible = true
-end
-connect(close.Activated, function() overlay.Visible = false end)
-connect(overlay.Activated, function() overlay.Visible = false end)
--- Keep clicks on the panel from closing it through the backdrop.
-panel.Active = true
-connect(UserInputService.InputBegan, function(input, processed)
-	if not processed and input.KeyCode == Enum.KeyCode.Escape then overlay.Visible = false end
-end)
-
--- Numeric adapter: attributes win over same-named leaderstats values.
-local aliases = {
-	Coins = {"Coins", "Money", "Cash", "Монеты", "Деньги"},
-	Speed = {"Speed", "Скорость"}, Level = {"Level", "Уровень"},
-	XP = {"XP", "Experience", "LevelProgress"},
-	XPToNextLevel = {"XPToNextLevel", "RequiredXP", "NextLevelXP"},
-}
-local function finite(value)
-	return type(value) == "number" and value == value and math.abs(value) < math.huge
-end
-local function valueFor(key, fallback)
-	for _, name in aliases[key] do
-		local value = player:GetAttribute(name)
-		if finite(value) then return value end
-	end
-	local stats = player:FindFirstChild("leaderstats")
-	if stats then
-		for _, name in aliases[key] do
-			local object = stats:FindFirstChild(name)
-			if object and (object:IsA("IntValue") or object:IsA("NumberValue")) and finite(object.Value) then return object.Value end
+	C.corner(glow, 0.28)
+	local _, body = C.plate(slot, "Plate", UDim2.fromOffset(0, 0), UDim2.fromScale(1, 1), {
+		top = spec.top, bottom = spec.bottom, edge = spec.edge, rim = Theme.Ink, rimThickness = 3.5, radius = 0.24,
+	}, 2)
+	local inner = C.holder(body, "WhiteRim", UDim2.fromOffset(4, 4), UDim2.new(1, -8, 1, -8), 5)
+	C.corner(inner, 0.22)
+	local rim = C.stroke(inner, Theme.White, 2.5, 0.25)
+	C.image(body, "Icon", spec.key, UDim2.new(0.5, -43, 0, -1), UDim2.fromOffset(86, 86), 6)
+	C.label(body, "Caption", spec.title, {
+		Position = UDim2.new(0, -8, 1, -33), Size = UDim2.new(1, 16, 0, 30),
+		TextSize = spec.key == "Rebirth" and 18 or 24, ZIndex = 7,
+	})
+	local button = C.new("TextButton", slot, {
+		Name = spec.key, Text = "", AutoButtonColor = false, BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1), Selectable = true, ZIndex = 10,
+	})
+	for _, connection in Anim.bindButton({button = button, scale = scale, rim = rim, glow = glow, sound = clickSound}, function()
+		if gui:GetAttribute("UseExternalMenus") then
+			openMenuEvent:Fire(spec.key)
+		else
+			menus:toggle(spec.key)
 		end
+	end) do
+		table.insert(connections, connection)
 	end
-	return fallback
+	buttons[i] = button
 end
-local function compact(value)
-	value = math.max(0, value)
-	local units = {{1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"}}
-	for _, unit in units do
-		if value >= unit[1] then return string.gsub(string.format("%.1f", value / unit[1]), "%.0$", "") .. unit[2] end
+for i, button in buttons do
+	button.NextSelectionUp = buttons[(i - 2) % #buttons + 1]
+	button.NextSelectionDown = buttons[i % #buttons + 1]
+end
+
+---------------------------------------------------------------- counters
+local COIN_OUT = 22 -- how far the round icons stick out to the left
+local COUNTERS_W = S.CounterW + COIN_OUT
+local COUNTERS_H = S.CounterH * 2 + S.CounterGap
+local counters = C.holder(root, "Counters", UDim2.fromOffset(S.Left, 0), UDim2.fromOffset(COUNTERS_W, COUNTERS_H))
+local counterScale = C.new("UIScale", counters, {Scale = 1})
+
+local function counter(key, title, y, style, iconName)
+	local holder, body = C.plate(counters, key .. "Counter", UDim2.fromOffset(COIN_OUT, y), UDim2.fromOffset(S.CounterW, S.CounterH), {
+		top = style.top, bottom = style.bottom, rim = style.rim, rimThickness = 3.5, glow = style.glow, radius = 0.5,
+	}, 1)
+	local caption = C.label(body, "Caption", title, {
+		Position = UDim2.fromOffset(84, 8), Size = UDim2.fromOffset(240, 30), TextSize = 26,
+		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6,
+	})
+	local value = C.label(body, "Value", "0", {
+		Position = UDim2.fromOffset(84, 36), Size = UDim2.fromOffset(244, 46), TextSize = 40,
+		TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6,
+	}, nil, {style.valueTop, style.valueBottom})
+	local valueScale = C.new("UIScale", value, {Scale = 1})
+	local icon = C.image(holder, "Icon", iconName, UDim2.fromOffset(-COIN_OUT - 6, -8), UDim2.fromOffset(104, 104), 8)
+	local iconScale = C.new("UIScale", icon, {Scale = 1})
+	local shine = C.image(holder, "Shine", "Sparkle", UDim2.fromOffset(-COIN_OUT - 16, -18), UDim2.fromOffset(124, 124), 9)
+	shine.ImageTransparency = 1
+	return {caption = caption, value = value, valueScale = valueScale, icon = icon, iconScale = iconScale, shine = shine}
+end
+local coins = counter("Coins", "Монеты", 0, Theme.Coins, "Coin")
+local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Theme.Speed, "Speed")
+speed.value.Text = "Уровень 1"
+
+---------------------------------------------------------------- XP panel
+local xp = C.holder(root, "LevelProgress", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.XPW, S.XPH))
+local xpScale = C.new("UIScale", xp, {Scale = 1})
+local PANEL_X, PANEL_W, PANEL_Y, PANEL_H = 56, 494, 30, 78
+local _, panel = C.plate(xp, "Panel", UDim2.fromOffset(PANEL_X, PANEL_Y), UDim2.fromOffset(PANEL_W, PANEL_H), {
+	top = Theme.XP.top, bottom = Theme.XP.bottom, rim = Theme.XP.rim, rimThickness = 3.5, glow = Theme.XP.glow, radius = 0.5,
+}, 1)
+local TRACK_X, TRACK_W = 84, PANEL_W - 84 - 106
+C.label(panel, "Title", "Опыт (XP)", {
+	Position = UDim2.fromOffset(TRACK_X, 3), Size = UDim2.fromOffset(TRACK_W, 28), TextSize = 23, ZIndex = 6,
+})
+local track = C.frame(panel, "Track", {
+	Position = UDim2.fromOffset(TRACK_X, 34), Size = UDim2.fromOffset(TRACK_W, 32),
+	BackgroundColor3 = Theme.XP.track, ZIndex = 4,
+})
+C.corner(track, 0.5)
+C.stroke(track, Color3.fromRGB(4, 8, 30), 2.5)
+local fillClip = C.holder(track, "FillClip", UDim2.fromOffset(3, 3), UDim2.new(1, -6, 1, -6), 5)
+fillClip.ClipsDescendants = true
+C.corner(fillClip, 0.5)
+local fill = C.frame(fillClip, "BlueFill", {Size = UDim2.fromScale(0, 1), Visible = false, ZIndex = 5})
+C.corner(fill, 0.5)
+C.gradient(fill, Theme.XP.fillTop, Theme.XP.fillBottom)
+-- Diagonal stripes as a tiled image: rotated frames would not be clipped by Roblox.
+fill.ClipsDescendants = true
+local stripes = C.image(fill, "Stripes", "Stripes", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 6)
+stripes.ScaleType = Enum.ScaleType.Tile
+stripes.TileSize = UDim2.fromOffset(26, 26)
+local fillGloss = C.frame(fill, "Gloss", {Position = UDim2.fromOffset(5, 2), Size = UDim2.new(1, -10, 0.38, 0), BackgroundTransparency = 0.5, ZIndex = 7})
+C.corner(fillGloss, 0.5)
+local innerGlow = C.holder(track, "InnerGlow", UDim2.fromOffset(1, 1), UDim2.new(1, -2, 1, -2), 8)
+C.corner(innerGlow, 0.5)
+C.stroke(innerGlow, Theme.XP.rim, 1.5, 0.55)
+local progressText = C.label(track, "ProgressText", "0 / 10,000 XP", {Size = UDim2.fromScale(1, 1), TextSize = 20, ZIndex = 9})
+
+-- Star badge, sticking out of the panel's left end.
+local badge = C.holder(xp, "LevelBadge", UDim2.fromOffset(-6, -4), UDim2.fromOffset(132, 132), 10)
+local badgeScale = C.new("UIScale", badge, {Scale = 1})
+local starFlash = C.image(badge, "Flash", "Sparkle", UDim2.fromOffset(-34, -34), UDim2.fromOffset(200, 200), 10)
+starFlash.ImageTransparency = 1
+C.image(badge, "Star", "LevelStar", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 11)
+C.label(badge, "Caption", "Уровень", {Position = UDim2.fromOffset(0, 42), Size = UDim2.new(1, 0, 0, 20), TextSize = 17, ZIndex = 12}, Color3.fromRGB(150, 60, 0))
+local levelText = C.label(badge, "Level", "1", {Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 44), TextSize = 46, ZIndex = 12})
+for _, spot in {{-8, 18, 26}, {112, 6, 20}, {120, 96, 16}} do
+	C.image(badge, "Sparkle", "Sparkle", UDim2.fromOffset(spot[1], spot[2]), UDim2.fromOffset(spot[3], spot[3]), 12)
+end
+
+-- Crown with the next level at the right end.
+local nextLevel = C.holder(xp, "NextLevel", UDim2.fromOffset(PANEL_X + PANEL_W - 112, 2), UDim2.fromOffset(112, 104), 10)
+C.image(nextLevel, "Crown", "Crown", UDim2.new(0.5, -32, 0, 4), UDim2.fromOffset(64, 64), 11)
+local nextLevelText = C.label(nextLevel, "NextLevelText", "Уровень 2", {
+	Position = UDim2.fromOffset(0, 66), Size = UDim2.new(1, 0, 0, 24), TextSize = 19, ZIndex = 12,
+})
+for _, spot in {{10, 8, 18}, {88, 2, 22}} do
+	C.image(nextLevel, "Sparkle", "Sparkle", UDim2.fromOffset(spot[1], spot[2]), UDim2.fromOffset(spot[3], spot[3]), 12)
+end
+
+---------------------------------------------------------------- data binding
+local shownCoins = C.new("NumberValue", gui, {Name = "ShownCoins", Value = 0})
+connect(shownCoins:GetPropertyChangedSignal("Value"), function()
+	coins.value.Text = Data.format(shownCoins.Value)
+end)
+local currentFraction = 0
+local pendingLevelUp = false
+local data
+
+local function setFill(fraction)
+	fill.Visible = fraction > 0
+	fill.Size = UDim2.fromScale(fraction, 1)
+end
+local function showProgress()
+	local xpValue = math.max(0, data:get("XP"))
+	local required = data:get("XPRequired")
+	local level = math.max(1, math.floor(data:get("Level")))
+	if required > 0 then
+		progressText.Text = Data.format(xpValue) .. " / " .. Data.format(required) .. " XP"
+		nextLevelText.Text = "Уровень " .. Data.format(level + 1)
+	else
+		progressText.Text = "МАКС. УРОВЕНЬ"
+		nextLevelText.Text = "Максимум"
 	end
-	return tostring(math.floor(value))
-end
-local function exact(value)
-	if value >= 1e9 then return compact(value) end
-	return string.format("%.0f", value)
-end
-local fillTween
-local previousFraction = -1
-local function refresh()
-	if not alive then return end
-	coinText.Text = compact(valueFor("Coins", 0))
-	speedText.Text = compact(valueFor("Speed", 0))
-	levelText.Text = "Уровень " .. exact(math.max(1, math.floor(valueFor("Level", 1))))
-	local xp = math.max(0, valueFor("XP", 0))
-	local required = valueFor("XPToNextLevel", 10000)
-	local fraction = required > 0 and math.clamp(xp / required, 0, 1) or 1
-	progressText.Text = required > 0 and (exact(xp) .. " / " .. exact(required)) or "МАКС. УРОВЕНЬ"
-	if fraction ~= previousFraction then
-		if fillTween then fillTween:Cancel() end
-		fill.Visible = fraction > 0
-		fillTween = tween(fill, 0.32, {Size = UDim2.fromScale(fraction, 1)})
-		previousFraction = fraction
+	local fraction = required > 0 and math.clamp(xpValue / required, 0, 1) or 1
+	if fraction == currentFraction and not pendingLevelUp then return end
+	if pendingLevelUp then
+		-- Finish the old bar, then carry the leftover progress into the new level.
+		pendingLevelUp = false
+		fill.Visible = true
+		Anim.tween(fill, Theme.Time.Fill * 0.6, {Size = UDim2.fromScale(1, 1)}, nil, nil, "fill", function()
+			setFill(0)
+			fill.Visible = fraction > 0
+			Anim.tween(fill, Theme.Time.Fill, {Size = UDim2.fromScale(fraction, 1)}, nil, nil, "fill")
+		end)
+	else
+		fill.Visible = fraction > 0 or currentFraction > 0
+		Anim.tween(fill, Theme.Time.Fill, {Size = UDim2.fromScale(fraction, 1)}, nil, nil, "fill", function()
+			fill.Visible = fraction > 0
+		end)
 	end
+	currentFraction = fraction
 end
-for _, names in aliases do
-	for _, name in names do connect(player:GetAttributeChangedSignal(name), refresh) end
-end
-local statConnections = {}
-local function clearStatConnections()
-	for _, connection in statConnections do connection:Disconnect() end
-	table.clear(statConnections)
-end
-local function bindStats()
-	clearStatConnections()
-	local stats = player:FindFirstChild("leaderstats")
-	if stats then
-		local function changed() bindStats(); refresh() end
-		table.insert(statConnections, stats.ChildAdded:Connect(changed))
-		table.insert(statConnections, stats.ChildRemoved:Connect(changed))
-		for _, object in stats:GetChildren() do
-			if object:IsA("IntValue") or object:IsA("NumberValue") then
-				table.insert(statConnections, object:GetPropertyChangedSignal("Value"):Connect(refresh))
+
+data = Data.new(player, function(key, value, old)
+	if key == "Coins" then
+		if old == nil then
+			shownCoins.Value = value
+			coins.value.Text = Data.format(value)
+		else
+			Anim.tween(shownCoins, Theme.Time.Count, {Value = value}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, "count", function()
+				coins.value.Text = Data.format(value)
+			end)
+			if value > old then
+				Anim.pop(coins.iconScale, 1.2)
+				Anim.flash(coins.shine, "ImageTransparency", 0.1)
 			end
 		end
+	elseif key == "SpeedLevel" then
+		speed.value.Text = "Уровень " .. Data.format(math.max(1, value))
+		if old ~= nil and value > old then
+			Anim.pop(speed.valueScale, 1.3)
+			Anim.wiggle(speed.icon, 16)
+			Anim.flash(speed.shine, "ImageTransparency", 0.2)
+		end
+	elseif key == "Level" then
+		levelText.Text = Data.format(math.max(1, math.floor(value)))
+		if old ~= nil and value > old then
+			pendingLevelUp = true
+			Anim.pop(badgeScale, 1.22)
+			Anim.flash(starFlash, "ImageTransparency", 0)
+		end
+		showProgress()
+	else -- XP / XPRequired
+		showProgress()
 	end
-	refresh()
-end
-connect(player.ChildAdded, function(child) if child.Name == "leaderstats" then bindStats() end end)
-connect(player.ChildRemoved, function(child) if child.Name == "leaderstats" then bindStats() end end)
+end)
 
--- Reflow when the window changes; narrow displays put counters above the meter.
+---------------------------------------------------------------- layout
+-- Pixel layout from the safe area: groups keep their reference proportions,
+-- scale with the screen and never overlap. Narrow screens stack the counters
+-- above the XP panel.
 local function layout()
 	local area = root.AbsoluteSize
 	if area.X < 1 or area.Y < 1 then return end
-	local width, height = area.X, area.Y
-	local narrow = width < 1050
-	local countersAbove = width < 550 or (width < 780 and height >= 520)
-	local bottomReserve = countersAbove and 220 or 160
-	local scale = math.clamp((height - bottomReserve - 28) / 476, 0.38, 1)
-	local top = math.max(10, (height - bottomReserve - 476 * scale) / 2)
-	sideScale.Scale = scale
-	sidebar.AnchorPoint = Vector2.zero
-	sidebar.Position = UDim2.fromOffset(narrow and 12 or 20, top)
-	counterScale.Scale = math.clamp(math.min(width / 1050, height / 760), 0.62, 1)
-	counters.Position = UDim2.new(0, narrow and 12 or 22, 1, countersAbove and -112 or -18)
-	local meterWidth = countersAbove and math.min(620, width - 38) or math.min(660, width - 2 * (246 * counterScale.Scale + 42))
-	progress.Size = UDim2.fromOffset(meterWidth, 88)
-	progress.Position = UDim2.new(0.5, 0, 1, -18)
-	panelScale.Scale = math.min(1, (width - 30) / 510, (height - 30) / 360)
+	local w, h = area.X, area.Y
+	local s = math.clamp(math.min(w / S.Reference.X, h / S.Reference.Y), 0.4, 1.3)
+	local side = math.max(10, S.Left * s)
+	local bottom = math.max(8, S.Bottom * s)
+	local stacked = w / 2 - S.XPW * s / 2 < side + COUNTERS_W * s + 16
+	local xs = stacked and math.min(s * 1.1, (w - 2 * side) / S.XPW) or s
+	xpScale.Scale = xs
+	local xpTop = h - S.XPH * xs - bottom
+	xp.Position = UDim2.fromOffset(math.floor((w - S.XPW * xs) / 2), math.floor(xpTop))
+	counterScale.Scale = s
+	local countersBottom = stacked and (xpTop - 6) or (h - bottom)
+	local countersTop = countersBottom - COUNTERS_H * s
+	counters.Position = UDim2.fromOffset(math.floor(side), math.floor(countersTop))
+	local top = math.max(8, S.Top * s)
+	local available = countersTop - top - 18
+	local ns = math.clamp(math.min(s * 1.05, available / NAV_H), 0.3, 1.3)
+	navScale.Scale = ns
+	navigation.Position = UDim2.fromOffset(math.floor(side), math.floor(math.max(8, math.min(top, countersTop - 18 - NAV_H * ns))))
+	-- Menus shrink to fit small screens (the window's own UIScale is used by the open animation).
+	local menuFit = math.min(1, (w - 24) / S.MenuW, (h - 24) / (S.MenuH + 10))
+	for _, entry in menus.windows do
+		entry.fit.Scale = menuFit
+		entry.window.Size = UDim2.fromOffset(S.MenuW * menuFit, (S.MenuH + 10) * menuFit)
+	end
 end
 connect(root:GetPropertyChangedSignal("AbsoluteSize"), layout)
+data:start()
+
 connect(gui.Destroying, function()
-	alive = false
-	if fillTween then fillTween:Cancel() end
-	clearStatConnections()
+	data:destroy()
+	menus:destroy()
+	Anim.cancelAll()
 	for _, connection in connections do connection:Disconnect() end
+	table.clear(connections)
 end)
-bindStats()
 layout()

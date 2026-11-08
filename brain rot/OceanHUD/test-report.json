@@ -1,58 +1,315 @@
 {
-  "count": 51,
+  "count": 96,
+  "layout": [
+    {
+      "counters": {
+        "b": 906,
+        "r": 397,
+        "x": 35,
+        "y": 716
+      },
+      "nav": {
+        "b": 542.9999780654907,
+        "r": 152.59999465942383,
+        "x": 35,
+        "y": 60
+      },
+      "size": "1648x928",
+      "xp": {
+        "b": 906,
+        "r": 1104,
+        "x": 544,
+        "y": 790
+      }
+    },
+    {
+      "counters": {
+        "b": 994.8362014293671,
+        "r": 435.88792061805725,
+        "x": 38,
+        "y": 786
+      },
+      "nav": {
+        "b": 595.8836150169373,
+        "r": 167.25861930847168,
+        "x": 38,
+        "y": 65
+      },
+      "size": "1920x1020",
+      "xp": {
+        "b": 995.4999966621399,
+        "r": 1267.517225265503,
+        "x": 652,
+        "y": 868
+      }
+    },
+    {
+      "counters": {
+        "b": 1114.3592338562012,
+        "r": 461.7475929260254,
+        "x": 40,
+        "y": 893
+      },
+      "nav": {
+        "b": 631.7184295654297,
+        "r": 177.00970458984375,
+        "x": 40,
+        "y": 69
+      },
+      "size": "1920x1140",
+      "xp": {
+        "b": 1114.145637512207,
+        "r": 1285.4272155761719,
+        "x": 633,
+        "y": 979
+      }
+    },
+    {
+      "counters": {
+        "b": 820.0194140672684,
+        "r": 346.31067311763763,
+        "x": 30,
+        "y": 654
+      },
+      "nav": {
+        "b": 474.03882217407227,
+        "r": 132.7572784423828,
+        "x": 30,
+        "y": 52
+      },
+      "size": "1440x840",
+      "xp": {
+        "b": 820.3592212200165,
+        "r": 964.3203783035278,
+        "x": 475,
+        "y": 719
+      }
+    },
+    {
+      "counters": {
+        "b": 644.1293134689331,
+        "r": 281.4569025039673,
+        "x": 24,
+        "y": 509
+      },
+      "nav": {
+        "b": 385.5129225254059,
+        "r": 107.63792896270752,
+        "x": 24,
+        "y": 42
+      },
+      "size": "1280x660",
+      "xp": {
+        "b": 643.5000019073486,
+        "r": 838.2758712768555,
+        "x": 440,
+        "y": 561
+      }
+    },
+    {
+      "counters": {
+        "b": 694.0582535266876,
+        "r": 245.9320409297943,
+        "x": 21,
+        "y": 576
+      },
+      "nav": {
+        "b": 337.11651039123535,
+        "r": 94.07184600830078,
+        "x": 21,
+        "y": 37
+      },
+      "size": "1024x708",
+      "xp": {
+        "b": 694.0776705741882,
+        "r": 685.9611682891846,
+        "x": 338,
+        "y": 622
+      }
+    },
+    {
+      "counters": {
+        "b": 321.00000113248825,
+        "r": 158.80000215768814,
+        "x": 14,
+        "y": 245
+      },
+      "nav": {
+        "b": 217.19999396800995,
+        "r": 61.03999853134155,
+        "x": 14,
+        "y": 24
+      },
+      "size": "844x330",
+      "xp": {
+        "b": 320.4000006914139,
+        "r": 534.0000033378601,
+        "x": 310,
+        "y": 274
+      }
+    },
+    {
+      "counters": {
+        "b": 321.00000113248825,
+        "r": 158.80000215768814,
+        "x": 14,
+        "y": 245
+      },
+      "nav": {
+        "b": 217.19999396800995,
+        "r": 61.03999853134155,
+        "x": 14,
+        "y": 24
+      },
+      "size": "600x330",
+      "xp": {
+        "b": 320.4000006914139,
+        "r": 412.0000033378601,
+        "x": 188,
+        "y": 274
+      }
+    },
+    {
+      "counters": {
+        "b": 718.0000011324883,
+        "r": 158.80000215768814,
+        "x": 14,
+        "y": 642
+      },
+      "nav": {
+        "b": 217.19999396800995,
+        "r": 61.03999853134155,
+        "x": 14,
+        "y": 24
+      },
+      "size": "390x784",
+      "xp": {
+        "b": 775.0399997234344,
+        "r": 317.39999866485596,
+        "x": 71,
+        "y": 724
+      }
+    },
+    {
+      "counters": {
+        "b": 514.0000011324883,
+        "r": 158.80000215768814,
+        "x": 14,
+        "y": 438
+      },
+      "nav": {
+        "b": 217.19999396800995,
+        "r": 61.03999853134155,
+        "x": 14,
+        "y": 24
+      },
+      "size": "360x580",
+      "xp": {
+        "b": 571.0399997234344,
+        "r": 302.39999866485596,
+        "x": 56,
+        "y": 520
+      }
+    }
+  ],
   "passed": true,
   "studioPlayTest": false,
   "tests": [
-    "Exactly four navigation slots and one UIScale",
-    "Empty progress does not show a minimum blue sliver",
-    "Progress is placed above the bar with correct defaults",
-    "100 of 10000 fills exactly one percent",
-    "Threshold updates independently",
-    "Overflow clamps to full track",
-    "Negative experience clamps to zero",
-    "Zero threshold handles max level",
-    "Level label updates inside bar",
-    "Currency aliases and abbreviation",
-    "Speed updates separately from XP",
-    "Canonical attributes take precedence",
+    "Four button slots plus one UIScale",
+    "Buttons in reference order",
+    "Uses icon image Rebirth",
+    "Icon file exists Rebirth",
+    "Uses icon image Gifts",
+    "Icon file exists Gifts",
+    "Uses icon image Shop",
+    "Icon file exists Shop",
+    "Uses icon image Index",
+    "Icon file exists Index",
+    "Uses icon image Coin",
+    "Icon file exists Coin",
+    "Uses icon image Speed",
+    "Icon file exists Speed",
+    "Uses icon image LevelStar",
+    "Icon file exists LevelStar",
+    "Uses icon image Crown",
+    "Icon file exists Crown",
+    "Uses icon image Sparkle",
+    "Icon file exists Sparkle",
+    "Uses icon image Stripes",
+    "Icon file exists Stripes",
+    "No invented asset IDs",
+    "Captions on buttons",
+    "Defaults for counters",
+    "Default level badge and crown",
+    "Empty XP bar",
+    "Coins 125,430",
+    "Speed Уровень 18",
+    "Star 24, crown Уровень 25",
+    "XP text 7,850 / 10,000 XP",
+    "XP fill 78.5%",
+    "Coins count up through a tween",
+    "Coin bounce and shine settle",
+    "Huge values are shortened",
+    "Speed level-up pops and settles",
+    "SpeedLevel wins over Speed alias",
+    "Level-up updates star and crown",
+    "Leftover XP carried into the new level",
+    "Star bounce and flash settle",
+    "Overflow clamps to full",
+    "Negative XP clamps to empty",
+    "Max level",
     "Late leaderstats are discovered",
-    "Leaderstats changes refresh counter",
+    "leaderstats changes refresh",
     "Removed values do not remain stale",
-    "Rebirth opens its own panel",
-    "Rebirth panel closes",
-    "Gifts opens its own panel",
-    "Gifts panel closes",
-    "Shop opens its own panel",
-    "Shop panel closes",
-    "Index opens its own panel",
-    "Index panel closes",
-    "All buttons emit integration events",
-    "External menu mode does not open built-in shell",
-    "Repeated execution cannot duplicate the HUD",
-    "Navigation clears counters at 1920x1020",
-    "Progress fits at 1920x1020",
-    "Counters clear progress at 1920x1020",
-    "Navigation clears counters at 1440x840",
-    "Progress fits at 1440x840",
-    "Counters clear progress at 1440x840",
-    "Navigation clears counters at 1280x660",
-    "Progress fits at 1280x660",
-    "Counters clear progress at 1280x660",
-    "Navigation clears counters at 1024x708",
-    "Progress fits at 1024x708",
-    "Counters clear progress at 1024x708",
-    "Navigation clears counters at 844x330",
-    "Progress fits at 844x330",
-    "Counters clear progress at 844x330",
-    "Navigation clears counters at 600x330",
-    "Progress fits at 600x330",
-    "Counters clear progress at 600x330",
-    "Navigation clears counters at 390x784",
-    "Progress fits at 390x784",
-    "Counters clear progress at 390x784",
-    "Navigation clears counters at 360x580",
-    "Progress fits at 360x580",
-    "Counters clear progress at 360x580",
-    "Cleanup disconnects reactive subscriptions"
+    "Shop opens with fade + scale",
+    "Open animation ends at full size",
+    "Click sound plays",
+    "Press shrink returns to normal size",
+    "Pressing the same button closes the menu",
+    "Only one menu open at a time",
+    "Close button closes",
+    "Backdrop click closes",
+    "Menus have a Content container",
+    "Hover grows and glows",
+    "Hover ends",
+    "External menu mode only fires OpenMenu",
+    "Running twice does not duplicate the HUD",
+    "All groups on screen at 1648x928",
+    "No overlap at 1648x928",
+    "Buttons stay usable at 1648x928",
+    "All groups on screen at 1920x1020",
+    "No overlap at 1920x1020",
+    "Buttons stay usable at 1920x1020",
+    "All groups on screen at 1920x1140",
+    "No overlap at 1920x1140",
+    "Buttons stay usable at 1920x1140",
+    "All groups on screen at 1440x840",
+    "No overlap at 1440x840",
+    "Buttons stay usable at 1440x840",
+    "All groups on screen at 1280x660",
+    "No overlap at 1280x660",
+    "Buttons stay usable at 1280x660",
+    "All groups on screen at 1024x708",
+    "No overlap at 1024x708",
+    "Buttons stay usable at 1024x708",
+    "All groups on screen at 844x330",
+    "No overlap at 844x330",
+    "Buttons stay usable at 844x330",
+    "All groups on screen at 600x330",
+    "No overlap at 600x330",
+    "Buttons stay usable at 600x330",
+    "All groups on screen at 390x784",
+    "No overlap at 390x784",
+    "Buttons stay usable at 390x784",
+    "All groups on screen at 360x580",
+    "No overlap at 360x580",
+    "Buttons stay usable at 360x580",
+    "Reference left margin 35 px",
+    "Reference size at 1648x928",
+    "Cleanup disconnects data subscriptions",
+    "Server: level 24 needs 10,000 XP",
+    "Server: addXP carries leftover into level 25",
+    "Server: addXP can pass several levels",
+    "Server: coins never go negative"
   ]
 }
