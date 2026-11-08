@@ -15,9 +15,10 @@ UIAssets.Uploaded = {
 	Shop = "",
 	Index = "",
 	Coin = "",
-	Speed = "",
+	Flippers = "",
 	LevelStar = "",
-	Crown = "",
+	SharkFin = "",
+	Egg = "",
 	Sparkle = "",
 	Stripes = "",
 }

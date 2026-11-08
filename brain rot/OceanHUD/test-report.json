@@ -1,5 +1,5 @@
 {
-  "count": 96,
+  "count": 105,
   "layout": [
     {
       "counters": {
@@ -17,9 +17,9 @@
       "size": "1648x928",
       "xp": {
         "b": 906,
-        "r": 1104,
-        "x": 544,
-        "y": 790
+        "r": 1071,
+        "x": 577,
+        "y": 794
       }
     },
     {
@@ -37,10 +37,10 @@
       },
       "size": "1920x1020",
       "xp": {
-        "b": 995.4999966621399,
-        "r": 1267.517225265503,
-        "x": 652,
-        "y": 868
+        "b": 995.1034450531006,
+        "r": 1230.9741237163544,
+        "x": 688,
+        "y": 872
       }
     },
     {
@@ -58,10 +58,10 @@
       },
       "size": "1920x1140",
       "xp": {
-        "b": 1114.145637512207,
-        "r": 1285.4272155761719,
-        "x": 633,
-        "y": 979
+        "b": 1113.4854431152344,
+        "r": 1247.534008026123,
+        "x": 672,
+        "y": 983
       }
     },
     {
@@ -79,10 +79,10 @@
       },
       "size": "1440x840",
       "xp": {
-        "b": 820.3592212200165,
-        "r": 964.3203783035278,
-        "x": 475,
-        "y": 719
+        "b": 819.8640756607056,
+        "r": 935.6504765748978,
+        "x": 504,
+        "y": 722
       }
     },
     {
@@ -100,10 +100,10 @@
       },
       "size": "1280x660",
       "xp": {
-        "b": 643.5000019073486,
-        "r": 838.2758712768555,
-        "x": 440,
-        "y": 561
+        "b": 643.6551742553711,
+        "r": 815.3362150192261,
+        "x": 464,
+        "y": 564
       }
     },
     {
@@ -121,10 +121,10 @@
       },
       "size": "1024x708",
       "xp": {
-        "b": 694.0776705741882,
-        "r": 685.9611682891846,
-        "x": 338,
-        "y": 622
+        "b": 693.5922336578369,
+        "r": 664.9514591693878,
+        "x": 358,
+        "y": 624
       }
     },
     {
@@ -142,10 +142,10 @@
       },
       "size": "844x330",
       "xp": {
-        "b": 320.4000006914139,
-        "r": 534.0000033378601,
-        "x": 310,
-        "y": 274
+        "b": 320.800000667572,
+        "r": 520.6000029444695,
+        "x": 323,
+        "y": 276
       }
     },
     {
@@ -163,18 +163,18 @@
       },
       "size": "600x330",
       "xp": {
-        "b": 320.4000006914139,
-        "r": 412.0000033378601,
-        "x": 188,
-        "y": 274
+        "b": 320.800000667572,
+        "r": 398.60000294446945,
+        "x": 201,
+        "y": 276
       }
     },
     {
       "counters": {
-        "b": 718.0000011324883,
+        "b": 719.0000011324883,
         "r": 158.80000215768814,
         "x": 14,
-        "y": 642
+        "y": 643
       },
       "nav": {
         "b": 217.19999396800995,
@@ -184,18 +184,18 @@
       },
       "size": "390x784",
       "xp": {
-        "b": 775.0399997234344,
-        "r": 317.39999866485596,
-        "x": 71,
-        "y": 724
+        "b": 774.2799997329712,
+        "r": 303.3599988222122,
+        "x": 86,
+        "y": 725
       }
     },
     {
       "counters": {
-        "b": 514.0000011324883,
+        "b": 515.0000011324883,
         "r": 158.80000215768814,
         "x": 14,
-        "y": 438
+        "y": 439
       },
       "nav": {
         "b": 217.19999396800995,
@@ -205,10 +205,10 @@
       },
       "size": "360x580",
       "xp": {
-        "b": 571.0399997234344,
-        "r": 302.39999866485596,
-        "x": 56,
-        "y": 520
+        "b": 570.2799997329712,
+        "r": 288.3599988222122,
+        "x": 71,
+        "y": 521
       }
     }
   ],
@@ -227,12 +227,14 @@
     "Icon file exists Index",
     "Uses icon image Coin",
     "Icon file exists Coin",
-    "Uses icon image Speed",
-    "Icon file exists Speed",
+    "Uses icon image Flippers",
+    "Icon file exists Flippers",
     "Uses icon image LevelStar",
     "Icon file exists LevelStar",
-    "Uses icon image Crown",
-    "Icon file exists Crown",
+    "Uses icon image SharkFin",
+    "Icon file exists SharkFin",
+    "Uses icon image Egg",
+    "Icon file exists Egg",
     "Uses icon image Sparkle",
     "Icon file exists Sparkle",
     "Uses icon image Stripes",
@@ -240,11 +242,12 @@
     "No invented asset IDs",
     "Captions on buttons",
     "Defaults for counters",
-    "Default level badge and crown",
+    "Level star sits where the crown was",
     "Empty XP bar",
     "Coins 125,430",
     "Speed Уровень 18",
-    "Star 24, crown Уровень 25",
+    "Star shows level 24",
+    "Star is on the right and crown-sized",
     "XP text 7,850 / 10,000 XP",
     "XP fill 78.5%",
     "Coins count up through a tween",
@@ -252,7 +255,7 @@
     "Huge values are shortened",
     "Speed level-up pops and settles",
     "SpeedLevel wins over Speed alias",
-    "Level-up updates star and crown",
+    "Level-up updates the star",
     "Leftover XP carried into the new level",
     "Star bounce and flash settle",
     "Overflow clamps to full",
@@ -269,6 +272,12 @@
     "Only one menu open at a time",
     "Close button closes",
     "Backdrop click closes",
+    "Fish and Eggs buttons bottom-right",
+    "Shark fin and egg icons",
+    "Fish button opens the fish menu",
+    "Eggs button switches to the eggs menu",
+    "Eggs button closes its menu",
+    "Speed uses the flippers icon",
     "Menus have a Content container",
     "Hover grows and glows",
     "Hover ends",

@@ -122,8 +122,8 @@ local speedValue = counters.SpeedCounter.Body.Value
 local xp = root.LevelProgress
 local track = xp.Panel.Body.Track
 local fill = track.FillClip.BlueFill
-local levelText = xp.LevelBadge.Level
-local nextText = xp.NextLevel.NextLevelText
+local levelText = xp.LevelBadge.StarHolder.Level
+local badgeCaption = xp.LevelBadge.Caption
 
 -- Structure and images
 check(#nav:GetChildren() == 5, "Four button slots plus one UIScale")
@@ -136,7 +136,7 @@ local images = {}
 for _, object in gui:GetDescendants() do
 	if object:IsA("ImageLabel") then images[object.Image] = true end
 end
-for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Speed", "LevelStar", "Crown", "Sparkle", "Stripes"} do
+for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "LevelStar", "SharkFin", "Egg", "Sparkle", "Stripes"} do
 	check(images["rbxasset://textures/OceanHUD/" .. name .. ".png"], "Uses icon image " .. name)
 	check(fs.isFile(rootPath .. "assets/" .. name .. ".png"), "Icon file exists " .. name)
 end
@@ -150,14 +150,15 @@ check(nav.ShopSlot.Plate.Body.Caption.Text == "Магазин", "Captions on but
 
 -- Defaults
 check(coinsValue.Text == "0" and speedValue.Text == "Уровень 1", "Defaults for counters")
-check(levelText.Text == "1" and nextText.Text == "Уровень 2", "Default level badge and crown")
+check(levelText.Text == "1" and badgeCaption.Text == "Уровень" and not xp:FindFirstChild("NextLevel"), "Level star sits where the crown was")
 check(track.ProgressText.Text == "0 / 10,000 XP" and not fill.Visible, "Empty XP bar")
 
 -- Reference values
 attr("Coins", 125430); attr("SpeedLevel", 18); attr("Level", 24); attr("XPRequired", 10000); attr("XP", 7850)
 check(coinsValue.Text == "125,430", "Coins 125,430")
 check(speedValue.Text == "Уровень 18", "Speed Уровень 18")
-check(levelText.Text == "24" and nextText.Text == "Уровень 25", "Star 24, crown Уровень 25")
+check(levelText.Text == "24", "Star shows level 24")
+check(xp.LevelBadge.Position.X.Offset > 300 and xp.LevelBadge.StarHolder.Size.X.Offset <= 72, "Star is on the right and crown-sized")
 check(track.ProgressText.Text == "7,850 / 10,000 XP", "XP text 7,850 / 10,000 XP")
 check(fill.Visible and math.abs(fill.Size.X.Scale - 0.785) < 1e-6, "XP fill 78.5%")
 
@@ -175,9 +176,9 @@ attr("Speed", 99)
 check(speedValue.Text == "Уровень 19", "SpeedLevel wins over Speed alias")
 -- Level up with progress carried over (server writes Level, XPRequired, XP).
 attr("Level", 25); attr("XPRequired", 10375); attr("XP", 500)
-check(levelText.Text == "25" and nextText.Text == "Уровень 26", "Level-up updates star and crown")
+check(levelText.Text == "25", "Level-up updates the star")
 check(math.abs(fill.Size.X.Scale - 500 / 10375) < 1e-6, "Leftover XP carried into the new level")
-check(xp.LevelBadge.UIScale.Scale == 1 and xp.LevelBadge.Flash.ImageTransparency == 1, "Star bounce and flash settle")
+check(xp.LevelBadge.StarHolder.UIScale.Scale == 1 and xp.LevelBadge.StarHolder.Flash.ImageTransparency == 1, "Star bounce and flash settle")
 attr("XP", 99999)
 check(fill.Size.X.Scale == 1, "Overflow clamps to full")
 attr("XP", -5)
@@ -216,6 +217,16 @@ event(backdrop.IndexMenu.Panel.Body.Close, "Activated"):Fire()
 check(not backdrop.Visible, "Close button closes")
 press("Rebirth"); event(backdrop, "Activated"):Fire()
 check(not backdrop.Visible, "Backdrop click closes")
+local inv = root.Inventory
+check(inv.FishSlot.Plate.Body.Caption.Text == "Рыбы" and inv.EggsSlot.Plate.Body.Caption.Text == "Яйца", "Fish and Eggs buttons bottom-right")
+check(inv.FishSlot.Plate.Body.Icon.Image:find("SharkFin") and inv.EggsSlot.Plate.Body.Icon.Image:find("Egg"), "Shark fin and egg icons")
+event(inv.FishSlot.Fish, "Activated"):Fire()
+check(shown("Fish"), "Fish button opens the fish menu")
+event(inv.EggsSlot.Eggs, "Activated"):Fire()
+check(shown("Eggs") and not backdrop.FishMenu.Visible, "Eggs button switches to the eggs menu")
+event(inv.EggsSlot.Eggs, "Activated"):Fire()
+check(not backdrop.Visible, "Eggs button closes its menu")
+check(counters.SpeedCounter.Icon.Image:find("Flippers"), "Speed uses the flippers icon")
 check(backdrop.RebirthMenu.Panel.Body.Content:IsA("ScrollingFrame"), "Menus have a Content container")
 event(nav.IndexSlot.Index, "MouseEnter"):Fire()
 check(math.abs(nav.IndexSlot.UIScale.Scale - 1.07) < 1e-4 and nav.IndexSlot.HoverGlow.BackgroundTransparency < 1, "Hover grows and glows")
@@ -247,10 +258,11 @@ for _, d in sizes do
 	event(root, "property:AbsoluteSize"):Fire()
 	local n = box(nav, 112, 106 * 4 + 36)
 	local c = box(counters, 362, 190)
-	local x = box(xp, 560, 116)
+	local x = box(xp, 494, 112)
+	local inv = box(root.Inventory, 238, 106)
 	local tag = w .. "x" .. h
-	check(inside(n, w, h) and inside(c, w, h) and inside(x, w, h), "All groups on screen at " .. tag)
-	check(apart(n, c) and apart(c, x) and apart(n, x), "No overlap at " .. tag)
+	check(inside(n, w, h) and inside(c, w, h) and inside(x, w, h) and inside(inv, w, h), "All groups on screen at " .. tag)
+	check(apart(n, c) and apart(c, x) and apart(n, x) and apart(inv, x) and apart(inv, c) and apart(inv, n), "No overlap at " .. tag)
 	check(nav.UIScale.Scale >= 0.3, "Buttons stay usable at " .. tag)
 	table.insert(layoutReport, {size = tag, nav = n, counters = c, xp = x})
 end

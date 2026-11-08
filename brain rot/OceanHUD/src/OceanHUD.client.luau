@@ -42,9 +42,9 @@ local menus = MenuController.new(root, openMenuEvent, clickSound)
 local NAV_H = S.ButtonH * 4 + S.ButtonGap * 3
 local navigation = C.holder(root, "Navigation", UDim2.fromOffset(S.Left, S.Top), UDim2.fromOffset(S.ButtonW, NAV_H))
 local navScale = C.new("UIScale", navigation, {Scale = 1})
-local buttons = {}
-for i, spec in Theme.Buttons do
-	local slot = C.holder(navigation, spec.key .. "Slot", UDim2.fromOffset(0, (i - 1) * (S.ButtonH + S.ButtonGap)), UDim2.fromOffset(S.ButtonW, S.ButtonH))
+-- One candy button: glow, volumetric plate, white rim, picture icon, caption.
+local function makeSlot(parent, spec, position, captionSize)
+	local slot = C.holder(parent, spec.key .. "Slot", position, UDim2.fromOffset(S.ButtonW, S.ButtonH))
 	local scale = C.new("UIScale", slot, {Scale = 1})
 	local glow = C.frame(slot, "HoverGlow", {
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 18, 1, 18),
@@ -57,10 +57,10 @@ for i, spec in Theme.Buttons do
 	local inner = C.holder(body, "WhiteRim", UDim2.fromOffset(4, 4), UDim2.new(1, -8, 1, -8), 5)
 	C.corner(inner, 0.22)
 	local rim = C.stroke(inner, Theme.White, 2.5, 0.25)
-	C.image(body, "Icon", spec.key, UDim2.new(0.5, -43, 0, -1), UDim2.fromOffset(86, 86), 6)
+	C.image(body, "Icon", spec.icon or spec.key, UDim2.new(0.5, -43, 0, -1), UDim2.fromOffset(86, 86), 6)
 	C.label(body, "Caption", spec.title, {
 		Position = UDim2.new(0, -8, 1, -33), Size = UDim2.new(1, 16, 0, 30),
-		TextSize = spec.key == "Rebirth" and 18 or 24, ZIndex = 7,
+		TextSize = captionSize, ZIndex = 7,
 	})
 	local button = C.new("TextButton", slot, {
 		Name = spec.key, Text = "", AutoButtonColor = false, BackgroundTransparency = 1,
@@ -75,7 +75,12 @@ for i, spec in Theme.Buttons do
 	end) do
 		table.insert(connections, connection)
 	end
-	buttons[i] = button
+	return button
+end
+
+local buttons = {}
+for i, spec in Theme.Buttons do
+	buttons[i] = makeSlot(navigation, spec, UDim2.fromOffset(0, (i - 1) * (S.ButtonH + S.ButtonGap)), spec.key == "Rebirth" and 18 or 24)
 end
 for i, button in buttons do
 	button.NextSelectionUp = buttons[(i - 2) % #buttons + 1]
@@ -109,17 +114,24 @@ local function counter(key, title, y, style, iconName)
 	return {caption = caption, value = value, valueScale = valueScale, icon = icon, iconScale = iconScale, shine = shine}
 end
 local coins = counter("Coins", "Монеты", 0, Theme.Coins, "Coin")
-local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Theme.Speed, "Speed")
+local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Theme.Speed, "Flippers")
 speed.value.Text = "Уровень 1"
+
+---------------------------------------------------------------- fish & eggs (bottom-right)
+local inventory = C.holder(root, "Inventory", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.InventoryW, S.InventoryH))
+local inventoryScale = C.new("UIScale", inventory, {Scale = 1})
+for i, spec in Theme.Inventory do
+	makeSlot(inventory, spec, UDim2.fromOffset((i - 1) * (S.ButtonW + S.InventoryGap), 0), 26)
+end
 
 ---------------------------------------------------------------- XP panel
 local xp = C.holder(root, "LevelProgress", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.XPW, S.XPH))
 local xpScale = C.new("UIScale", xp, {Scale = 1})
-local PANEL_X, PANEL_W, PANEL_Y, PANEL_H = 56, 494, 30, 78
+local PANEL_X, PANEL_W, PANEL_Y, PANEL_H = 0, S.XPW, 30, 78
 local _, panel = C.plate(xp, "Panel", UDim2.fromOffset(PANEL_X, PANEL_Y), UDim2.fromOffset(PANEL_W, PANEL_H), {
 	top = Theme.XP.top, bottom = Theme.XP.bottom, rim = Theme.XP.rim, rimThickness = 3.5, glow = Theme.XP.glow, radius = 0.5,
 }, 1)
-local TRACK_X, TRACK_W = 84, PANEL_W - 84 - 106
+local TRACK_X, TRACK_W = 26, PANEL_W - 26 - 108
 C.label(panel, "Title", "Опыт (XP)", {
 	Position = UDim2.fromOffset(TRACK_X, 3), Size = UDim2.fromOffset(TRACK_W, 28), TextSize = 23, ZIndex = 6,
 })
@@ -147,26 +159,17 @@ C.corner(innerGlow, 0.5)
 C.stroke(innerGlow, Theme.XP.rim, 1.5, 0.55)
 local progressText = C.label(track, "ProgressText", "0 / 10,000 XP", {Size = UDim2.fromScale(1, 1), TextSize = 20, ZIndex = 9})
 
--- Star badge, sticking out of the panel's left end.
-local badge = C.holder(xp, "LevelBadge", UDim2.fromOffset(-6, -4), UDim2.fromOffset(132, 132), 10)
-local badgeScale = C.new("UIScale", badge, {Scale = 1})
-local starFlash = C.image(badge, "Flash", "Sparkle", UDim2.fromOffset(-34, -34), UDim2.fromOffset(200, 200), 10)
+-- Level star at the right end (crown-sized): current level inside, caption below.
+local badge = C.holder(xp, "LevelBadge", UDim2.fromOffset(PANEL_X + PANEL_W - 110, 0), UDim2.fromOffset(110, 106), 10)
+local starHolder = C.holder(badge, "StarHolder", UDim2.new(0.5, -36, 0, 0), UDim2.fromOffset(72, 72), 11)
+local badgeScale = C.new("UIScale", starHolder, {Scale = 1})
+local starFlash = C.image(starHolder, "Flash", "Sparkle", UDim2.fromOffset(-34, -34), UDim2.fromOffset(140, 140), 10)
 starFlash.ImageTransparency = 1
-C.image(badge, "Star", "LevelStar", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 11)
-C.label(badge, "Caption", "Уровень", {Position = UDim2.fromOffset(0, 42), Size = UDim2.new(1, 0, 0, 20), TextSize = 17, ZIndex = 12}, Color3.fromRGB(150, 60, 0))
-local levelText = C.label(badge, "Level", "1", {Position = UDim2.fromOffset(0, 60), Size = UDim2.new(1, 0, 0, 44), TextSize = 46, ZIndex = 12})
-for _, spot in {{-8, 18, 26}, {112, 6, 20}, {120, 96, 16}} do
+C.image(starHolder, "Star", "LevelStar", UDim2.fromScale(0, 0), UDim2.fromScale(1, 1), 11)
+local levelText = C.label(starHolder, "Level", "1", {Position = UDim2.fromOffset(0, 22), Size = UDim2.new(1, 0, 0, 32), TextSize = 30, ZIndex = 12})
+C.label(badge, "Caption", "Уровень", {Position = UDim2.fromOffset(0, 72), Size = UDim2.new(1, 0, 0, 24), TextSize = 20, ZIndex = 12})
+for _, spot in {{6, 10, 18}, {90, 4, 22}} do
 	C.image(badge, "Sparkle", "Sparkle", UDim2.fromOffset(spot[1], spot[2]), UDim2.fromOffset(spot[3], spot[3]), 12)
-end
-
--- Crown with the next level at the right end.
-local nextLevel = C.holder(xp, "NextLevel", UDim2.fromOffset(PANEL_X + PANEL_W - 112, 2), UDim2.fromOffset(112, 104), 10)
-C.image(nextLevel, "Crown", "Crown", UDim2.new(0.5, -32, 0, 4), UDim2.fromOffset(64, 64), 11)
-local nextLevelText = C.label(nextLevel, "NextLevelText", "Уровень 2", {
-	Position = UDim2.fromOffset(0, 66), Size = UDim2.new(1, 0, 0, 24), TextSize = 19, ZIndex = 12,
-})
-for _, spot in {{10, 8, 18}, {88, 2, 22}} do
-	C.image(nextLevel, "Sparkle", "Sparkle", UDim2.fromOffset(spot[1], spot[2]), UDim2.fromOffset(spot[3], spot[3]), 12)
 end
 
 ---------------------------------------------------------------- data binding
@@ -185,13 +188,10 @@ end
 local function showProgress()
 	local xpValue = math.max(0, data:get("XP"))
 	local required = data:get("XPRequired")
-	local level = math.max(1, math.floor(data:get("Level")))
 	if required > 0 then
 		progressText.Text = Data.format(xpValue) .. " / " .. Data.format(required) .. " XP"
-		nextLevelText.Text = "Уровень " .. Data.format(level + 1)
 	else
 		progressText.Text = "МАКС. УРОВЕНЬ"
-		nextLevelText.Text = "Максимум"
 	end
 	local fraction = required > 0 and math.clamp(xpValue / required, 0, 1) or 1
 	if fraction == currentFraction and not pendingLevelUp then return end
@@ -250,7 +250,7 @@ end)
 ---------------------------------------------------------------- layout
 -- Pixel layout from the safe area: groups keep their reference proportions,
 -- scale with the screen and never overlap. Narrow screens stack the counters
--- above the XP panel.
+-- (left) and fish/eggs buttons (right) above the XP panel.
 local function layout()
 	local area = root.AbsoluteSize
 	if area.X < 1 or area.Y < 1 then return end
@@ -258,7 +258,9 @@ local function layout()
 	local s = math.clamp(math.min(w / S.Reference.X, h / S.Reference.Y), 0.4, 1.3)
 	local side = math.max(10, S.Left * s)
 	local bottom = math.max(8, S.Bottom * s)
-	local stacked = w / 2 - S.XPW * s / 2 < side + COUNTERS_W * s + 16
+	local leftEdge = side + COUNTERS_W * s + 16
+	local rightEdge = w - side - S.InventoryW * s - 16
+	local stacked = w / 2 - S.XPW * s / 2 < leftEdge or w / 2 + S.XPW * s / 2 > rightEdge
 	local xs = stacked and math.min(s * 1.1, (w - 2 * side) / S.XPW) or s
 	xpScale.Scale = xs
 	local xpTop = h - S.XPH * xs - bottom
@@ -267,6 +269,9 @@ local function layout()
 	local countersBottom = stacked and (xpTop - 6) or (h - bottom)
 	local countersTop = countersBottom - COUNTERS_H * s
 	counters.Position = UDim2.fromOffset(math.floor(side), math.floor(countersTop))
+	inventoryScale.Scale = s
+	local inventoryBottom = stacked and (xpTop - 6) or (h - bottom)
+	inventory.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * s), math.floor(inventoryBottom - S.InventoryH * s))
 	local top = math.max(8, S.Top * s)
 	local available = countersTop - top - 18
 	local ns = math.clamp(math.min(s * 1.05, available / NAV_H), 0.3, 1.3)

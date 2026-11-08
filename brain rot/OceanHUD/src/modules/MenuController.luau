@@ -14,7 +14,15 @@ local DESCRIPTIONS = {
 	Gifts = "Забирай подарки за время в игре и ежедневные награды.",
 	Shop = "Улучшения скорости, яйца и полезные предметы.",
 	Index = "Коллекция всех найденных яиц и питомцев.",
+	Fish = "Здесь будут все твои рыбы.",
+	Eggs = "Здесь будут все твои яйца.",
 }
+
+local function allSpecs()
+	local list = table.clone(Theme.Buttons)
+	for _, spec in Theme.Inventory do table.insert(list, spec) end
+	return list
+end
 
 function MenuController.new(root: GuiObject, openEvent: BindableEvent, sound: Sound?)
 	local self = setmetatable({root = root, openEvent = openEvent, sound = sound, windows = {}, current = nil, connections = {}}, MenuController)
@@ -24,7 +32,7 @@ function MenuController.new(root: GuiObject, openEvent: BindableEvent, sound: So
 		BackgroundColor3 = Theme.Ink, BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, ZIndex = 30,
 	})
 	self.backdrop = backdrop
-	for _, spec in Theme.Buttons do
+	for _, spec in allSpecs() do
 		local window = C.new("CanvasGroup", backdrop, {
 			Name = spec.key .. "Menu", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
 			Size = UDim2.fromOffset(size.MenuW, size.MenuH + 10), BackgroundTransparency = 1,
@@ -38,7 +46,7 @@ function MenuController.new(root: GuiObject, openEvent: BindableEvent, sound: So
 		local inner = C.holder(body, "InnerRim", UDim2.fromOffset(7, 7), UDim2.new(1, -14, 1, -14), 34)
 		C.corner(inner, 0.07)
 		C.stroke(inner, Theme.White, 3, 0.3)
-		C.image(body, "Icon", spec.key, UDim2.fromOffset(18, 10), UDim2.fromOffset(78, 78), 35)
+		C.image(body, "Icon", spec.icon or spec.key, UDim2.fromOffset(18, 10), UDim2.fromOffset(78, 78), 35)
 		local title = C.label(body, "Title", spec.title, {
 			Position = UDim2.fromOffset(104, 18), Size = UDim2.fromOffset(360, 56), TextSize = 40,
 			TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 35,

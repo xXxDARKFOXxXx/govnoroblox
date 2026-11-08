@@ -260,23 +260,126 @@ def index():
 
 
 def coin():
+    """Thick gold coin: visible edge, reeded rim, recessed ring with dots,
+    bevelled star, diagonal shine streak and a sparkle."""
     cv = canvas()
-    outline = (140, 70, 6)
-    part(cv, ell(512, 512, 410, 410), (255, 232, 90), (238, 140, 14), outline, ow=26)
-    part(cv, ell(512, 520, 318, 318), (236, 150, 20), (255, 214, 70), outline=(206, 118, 10), ow=10, gloss=False)
-    st = smooth(star(512, 530, 250, 112), 10)
-    part(cv, st, (255, 252, 190), (255, 186, 30), outline=(196, 100, 6), ow=14)
+    outline = (120, 56, 0)
+    cx, cy, R = 512, 470, 390
+    face = ell(cx, cy, R, R)
+    edge = ell(cx, cy + 48, R, R)
+    # Coin thickness: darker band under the face.
+    paint(cv, grow(union(face, edge), 26), solid(outline))
+    paint(cv, edge, grad((214, 120, 10), (150, 72, 0), cy, cy + R + 48))
+    for i in range(36):  # reeded edge on the visible side
+        a = math.radians(i * 5)
+        x = cx + R * math.cos(a)
+        notch = rrect(x - 7, cy + R * math.sin(a) - 10, x + 7, cy + R * math.sin(a) + 44, 6)
+        paint(cv, inter(notch, minus(edge, face)), solid((120, 56, 0)), 0.55)
+    part(cv, face, (255, 236, 110), (240, 150, 16), outline=None, ow=0, gloss=False)
+    # Reeded rim on the face.
+    rim = minus(face, ell(cx, cy, R - 46, R - 46))
+    for i in range(60):
+        a = math.radians(i * 6)
+        x, y = cx + (R - 23) * math.cos(a), cy + (R - 23) * math.sin(a)
+        tick = rrect(x - 6, y - 16, x + 6, y + 16, 5).rotate(-math.degrees(a) + 90, center=(x, y), resample=Image.BICUBIC)
+        paint(cv, inter(tick, rim), solid((200, 118, 8)), 0.6)
+    # Recessed inner disc with a ring of dots.
+    paint(cv, grow(ell(cx, cy, R - 70, R - 70), 8), solid((196, 112, 8)))
+    part(cv, ell(cx, cy, R - 70, R - 70), (232, 144, 18), (255, 216, 80), ow=0, gloss=False)
+    for i in range(16):
+        a = math.radians(i * 22.5)
+        part(cv, ell(cx + (R - 115) * math.cos(a), cy + (R - 115) * math.sin(a), 16, 16),
+             (255, 246, 170), (240, 160, 20), outline=(190, 104, 6), ow=5, gloss=False, bevel=False)
+    st = smooth(star(cx, cy + 10, 215, 98), 10)
+    paint(cv, ImageChops.offset(grow(st, 10), 0, 16).filter(ImageFilter.GaussianBlur(10)), solid((150, 70, 0)), 0.5)
+    part(cv, st, (255, 252, 196), (255, 182, 26), outline=(190, 96, 4), ow=14)
+    # Diagonal glossy streaks across the face.
+    for offset, width, alpha in ((-120, 90, 0.42), (40, 34, 0.32)):
+        band = poly([(cx - R + offset, cy + R), (cx - R + offset + width, cy + R),
+                     (cx + R + offset + width, cy - R), (cx + R + offset, cy - R)])
+        paint(cv, inter(band, shrink(face, 20)).filter(ImageFilter.GaussianBlur(5)), solid((255, 255, 255)), alpha)
+    sparkle(cv, 790, 190, 95)
+    sparkle(cv, 230, 760, 50)
     finish(cv, "Coin")
 
 
-def speed():
+def flippers():
+    """Pair of swim fins: foot pocket, wide split blade, ribs, and water drops."""
     cv = canvas()
-    wing = (28, 70, 180)
-    for (cx, cy, rx, ry, rot) in ((300, 380, 230, 62, -24), (270, 510, 230, 58, -6), (290, 630, 190, 52, 12)):
-        part(cv, ell(cx, cy, rx, ry, rot), (255, 255, 255), (196, 228, 255), outline=wing, ow=18)
-    bolt = poly([(640, 70), (380, 560), (540, 560), (440, 960), (800, 400), (630, 400), (770, 70)])
-    part(cv, smooth(bolt, 8), (255, 248, 140), (255, 150, 10), outline=(130, 50, 0), ow=24)
-    finish(cv, "Speed")
+    outline = (14, 40, 110)
+
+    def fin(angle, dx, dy, top, bottom):
+        def place(m):
+            return ImageChops.offset(m.rotate(angle, center=(512, 512), resample=Image.BICUBIC), dx, dy)
+        blade = place(smooth(poly([(-110 + 512, 300), (110 + 512, 300), (205 + 512, 860), (100 + 512, 800),
+                                    (512, 890), (-100 + 512, 800), (-205 + 512, 860)]), 10))
+        pocket = place(rrect(512 - 118, 90, 512 + 118, 400, 90))
+        hole = place(ell(512, 190, 70, 62))
+        part(cv, union(blade, pocket), top, bottom, outline=outline, ow=24, gloss=False)
+        part(cv, pocket, (70, 130, 240), (24, 56, 170), ow=0, gloss=True)
+        paint(cv, grow(hole, 8), solid(outline))
+        paint(cv, hole, grad((10, 24, 70), (40, 80, 170), 120, 260))
+        for x in (-70, 70):  # stiff ribs along the blade
+            rib = place(smooth(poly([(512 + x - 14, 420), (512 + x + 14, 420), (512 + x * 1.9 + 14, 790), (512 + x * 1.9 - 14, 790)]), 6))
+            paint(cv, rib, solid((255, 255, 255)), 0.45)
+        sheen = inter(blade, place(ell(512 - 50, 520, 60, 200, 8)))
+        paint(cv, sheen.filter(ImageFilter.GaussianBlur(10)), solid((255, 255, 255)), 0.45)
+
+    fin(16, -170, 20, (150, 255, 236), (0, 170, 196))
+    fin(-14, 170, -10, (170, 255, 240), (0, 186, 206))
+    for (x, y, r) in ((140, 800, 40), (210, 900, 26), (900, 820, 34)):
+        drop = union(ell(x, y, r, r), poly([(x - r * 0.7, y - r * 0.6), (x + r * 0.7, y - r * 0.6), (x, y - r * 2.2)]))
+        part(cv, smooth(drop, 3), (220, 250, 255), (90, 200, 255), outline=outline, ow=8, gloss=False)
+    finish(cv, "Flippers")
+
+
+def raised_squares(cv, mask, top, bottom, line, size=92, step=150, ox=0, oy=0):
+    """Toy-brick texture: little bevelled squares inside the mask."""
+    inner = shrink(mask, 28)
+    for gx in range(-2, 10):
+        for gy in range(-2, 10):
+            x, y = ox + gx * step, oy + gy * step
+            sq = inter(rrect(x - size / 2, y - size / 2, x + size / 2, y + size / 2, 18), inner)
+            if sq.getbbox() and sum(sq.histogram()[128:]) > size * size * 0.6:
+                part(cv, sq, top, bottom, outline=line, ow=6, gloss=False)
+
+
+def shark_fin():
+    cv = canvas()
+    outline = (16, 30, 70)
+
+    def bez(p0, p1, p2, n=24):
+        return [((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0],
+                 (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]) for t in (i / n for i in range(n + 1))]
+    fin = poly(bez((170, 770), (300, 260), (690, 110)) + bez((690, 110), (590, 470), (850, 770)))
+    fin = smooth(fin, 10)
+    part(cv, fin, (176, 206, 236), (66, 98, 150), outline=outline, ow=26)
+    raised_squares(cv, fin, (206, 228, 250), (110, 140, 190), (60, 86, 140), size=86, step=132, ox=420, oy=430)
+    sheen = inter(fin, poly(bez((240, 740), (330, 330), (650, 160)) + [(600, 240), (380, 470), (330, 740)]))
+    paint(cv, sheen.filter(ImageFilter.GaussianBlur(12)), solid((255, 255, 255)), 0.35)
+    # Water with wavy foam at the fin base.
+    # Water: a wave with rounded crests, not a box.
+    crests = [ell(150 + i * 145, 738, 92, 52) for i in range(6)]
+    water = smooth(union(ell(512, 820, 440, 104), rrect(120, 735, 904, 860, 60), *crests), 8)
+    part(cv, water, (120, 226, 255), (16, 112, 222), outline=outline, ow=22, gloss=False)
+    for i in range(6):
+        paint(cv, ell(150 + i * 145, 718, 56, 16), solid((255, 255, 255)), 0.8)
+    for (x, y, r) in ((110, 640, 26), (920, 650, 32), (860, 590, 18)):
+        part(cv, ell(x, y, r, r), (230, 252, 255), (110, 210, 255), outline=outline, ow=8, gloss=False, bevel=False)
+    sparkle(cv, 860, 220, 80)
+    finish(cv, "SharkFin")
+
+
+def egg_icon():
+    cv = canvas()
+    egg = union(ell(512, 580, 330, 360), ell(512, 470, 270, 360))
+    part(cv, egg, (255, 252, 236), (226, 196, 140), outline=(90, 56, 20), ow=26)
+    raised_squares(cv, egg, (255, 246, 214), (214, 180, 120), (150, 112, 60), size=96, step=150, ox=512, oy=560)
+    sheen = inter(shrink(egg, 30), ell(400, 330, 110, 170, -20))
+    paint(cv, sheen.filter(ImageFilter.GaussianBlur(14)), solid((255, 255, 255)), 0.55)
+    sparkle(cv, 850, 200, 85)
+    sparkle(cv, 170, 300, 50)
+    finish(cv, "Egg")
 
 
 def level_star():
@@ -287,19 +390,6 @@ def level_star():
     inner = shrink(st, 70)
     paint(cv, inner, grad((255, 200, 50), (255, 236, 120), 200, 900), 0.35)
     finish(cv, "LevelStar")
-
-
-def crown():
-    cv = canvas()
-    outline = (120, 56, 0)
-    body = poly([(200, 720), (150, 330), (360, 530), (512, 250), (664, 530), (874, 330), (824, 720)])
-    part(cv, smooth(body, 8), (255, 240, 110), (240, 150, 14), outline, ow=24)
-    part(cv, rrect(180, 680, 844, 830, 40), (255, 220, 80), (226, 128, 10), outline, ow=24)
-    for x, y in ((150, 320), (512, 236), (874, 320)):
-        part(cv, ell(x, y, 58, 58), (255, 250, 190), (250, 180, 30), outline, ow=16)
-    for x, c1, c2 in ((340, (255, 120, 140), (210, 20, 60)), (512, (120, 220, 255), (30, 100, 230)), (684, (140, 255, 140), (20, 170, 60))):
-        part(cv, ell(x, 755, 46, 46), c1, c2, outline, ow=10)
-    finish(cv, "Crown")
 
 
 def sparkle_icon():
@@ -321,5 +411,5 @@ def stripes():
     print("drew Stripes")
 
 
-for fn in (rebirth, gifts, shop, index, coin, speed, level_star, crown, sparkle_icon, stripes):
+for fn in (rebirth, gifts, shop, index, coin, flippers, level_star, shark_fin, egg_icon, sparkle_icon, stripes):
     fn()
