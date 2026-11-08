@@ -19,9 +19,9 @@ local function seed(player: Player)
 	-- A few sample items so the inventory grid and hotbar can be checked.
 	Inventory.add(player, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
 	Inventory.add(player, "Shark", {Name = "Акула", Category = "Fish", Icon = "SharkFin"})
-	Inventory.add(player, "Apple", {Name = "Яблоко", Category = "Food", Icon = "Food", Count = 5})
+	Inventory.add(player, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
 	Inventory.setHotbar(player, "Shark", 1)
-	Inventory.setHotbar(player, "Apple", 2)
+	Inventory.setHotbar(player, "GoldEgg", 2)
 end
 Players.PlayerAdded:Connect(seed)
 for _, player in Players:GetPlayers() do seed(player) end

@@ -1,5 +1,5 @@
 {
-  "count": 161,
+  "count": 160,
   "layout": [
     {
       "counters": {
@@ -237,8 +237,6 @@
     "Icon file exists Sparkle",
     "Uses icon image Backpack",
     "Icon file exists Backpack",
-    "Uses icon image Food",
-    "Icon file exists Food",
     "No invented asset IDs",
     "Captions on buttons",
     "Defaults for counters",
@@ -267,7 +265,7 @@
     "Closed inventory: backpack with [G]",
     "Closed: no window, no hotbar",
     "Empty inventory message",
-    "Tabs Все / Яйца / Рыбы / Еда",
+    "Tabs Все / Яйца / Рыбы, no Еда",
     "Tab icons",
     "Search box",
     "Hotbar slots numbered 1-8",
@@ -280,7 +278,7 @@
     "Hotbar shows assigned items",
     "Eggs tab filters",
     "Selected tab is highlighted blue",
-    "Food tab filters",
+    "Fish tab filters",
     "Search is case-insensitive in Russian",
     "No matches shows the empty message",
     "Count updates live",
@@ -374,6 +372,7 @@
     "Server: unknown category is rejected",
     "Server: cannot remove more than owned",
     "Server: removing the last one deletes the item",
+    "Server: Food category no longer exists",
     "Server: one item per hotbar slot",
     "Server: hotbar slot must be 1-8"
   ]

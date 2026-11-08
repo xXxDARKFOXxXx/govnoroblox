@@ -133,7 +133,7 @@ local images = {}
 for _, object in gui:GetDescendants() do
 	if object:IsA("ImageLabel") then images[object.Image] = true end
 end
-for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "SharkFin", "Egg", "Sparkle", "Backpack", "Food"} do
+for _, name in {"Rebirth", "Gifts", "Shop", "Index", "Coin", "Flippers", "SharkFin", "Egg", "Sparkle", "Backpack"} do
 	check(images["rbxasset://textures/OceanHUD/" .. name .. ".png"], "Uses icon image " .. name)
 	check(fs.isFile(rootPath .. "assets/" .. name .. ".png"), "Icon file exists " .. name)
 end
@@ -219,9 +219,9 @@ check(backpack.Button.Key.Text == "[G]" and backpack.Button.Icon.Image:find("Bac
 check(not panel.Visible and not hotbar.Visible, "Closed: no window, no hotbar")
 check(main.Empty.Visible and main.Empty.Text == "Здесь пока ничего нет", "Empty inventory message")
 local tabNames = {}
-for _, spec in {"All", "Eggs", "Fish", "Food"} do tabNames[#tabNames + 1] = panel[spec .. "Tab"].Caption.Text end
-check(table.concat(tabNames, ",") == "Все,Яйца,Рыбы,Еда", "Tabs Все / Яйца / Рыбы / Еда")
-check(panel.FoodTab.Icon.Image:find("Food") and panel.AllTab.Icon.Image:find("Backpack"), "Tab icons")
+for _, spec in {"All", "Eggs", "Fish"} do tabNames[#tabNames + 1] = panel[spec .. "Tab"].Caption.Text end
+check(table.concat(tabNames, ",") == "Все,Яйца,Рыбы" and panel:FindFirstChild("FoodTab") == nil, "Tabs Все / Яйца / Рыбы, no Еда")
+check(panel.FishTab.Icon.Image:find("SharkFin") and panel.AllTab.Icon.Image:find("Backpack"), "Tab icons")
 check(main.Search.PlaceholderText == "Поиск", "Search box")
 for i = 1, 8 do assert(hotbar["Slot" .. i].Number.Text == tostring(i)) end
 check(true, "Hotbar slots numbered 1-8")
@@ -241,7 +241,7 @@ end
 event(player, "ChildAdded"):Fire(folder)
 item("BasicEgg", "Обычное яйцо", "Eggs", "Egg", 3, nil)
 item("Shark", "Акула", "Fish", "SharkFin", 1, 1)
-local apple = item("Apple", "Яблоко", "Food", "Food", 5, 2)
+local apple = item("GoldEgg", "Золотое яйцо", "Eggs", "Egg", 5, 2)
 event(folder, "ChildAdded"):Fire()
 local function cards()
 	local n = 0
@@ -251,20 +251,20 @@ end
 check(cards() == 3 and not main.Empty.Visible, "All tab shows every item")
 check(main.Grid.Item_BasicEgg.Count.Text == "x3" and main.Grid.Item_BasicEgg.ItemName.Text == "Обычное яйцо", "Item card with name and count")
 check(main.Grid.Item_Shark:FindFirstChild("Count") == nil, "Single items have no count badge")
-check(hotbar.Slot1.Icon.Image:find("SharkFin") and hotbar.Slot2.Icon.Image:find("Food") and hotbar.Slot3.Icon.Image == "", "Hotbar shows assigned items")
+check(hotbar.Slot1.Icon.Image:find("SharkFin") and hotbar.Slot2.Icon.Image:find("Egg") and hotbar.Slot3.Icon.Image == "", "Hotbar shows assigned items")
 event(panel.EggsTab, "Activated"):Fire()
-check(cards() == 1 and main.Grid:FindFirstChild("Item_BasicEgg"), "Eggs tab filters")
+check(cards() == 2 and main.Grid:FindFirstChild("Item_BasicEgg") and main.Grid:FindFirstChild("Item_GoldEgg"), "Eggs tab filters")
 check(panel.EggsTab.UIGradient.Enabled and not panel.AllTab.UIGradient.Enabled, "Selected tab is highlighted blue")
-event(panel.FoodTab, "Activated"):Fire()
-check(cards() == 1 and main.Grid:FindFirstChild("Item_Apple"), "Food tab filters")
+event(panel.FishTab, "Activated"):Fire()
+check(cards() == 1 and main.Grid:FindFirstChild("Item_Shark"), "Fish tab filters")
 event(panel.AllTab, "Activated"):Fire()
-main.Search.Text = "ЯЙЦ"; event(main.Search, "property:Text"):Fire()
+main.Search.Text = "ОБЫЧН"; event(main.Search, "property:Text"):Fire()
 check(cards() == 1 and main.Grid:FindFirstChild("Item_BasicEgg"), "Search is case-insensitive in Russian")
 main.Search.Text = "кит"; event(main.Search, "property:Text"):Fire()
 check(cards() == 0 and main.Empty.Visible, "No matches shows the empty message")
 main.Search.Text = ""; event(main.Search, "property:Text"):Fire()
 apple:SetAttribute("Count", 6); event(apple, "AttributeChanged"):Fire("Count")
-check(main.Grid.Item_Apple.Count.Text == "x6", "Count updates live")
+check(main.Grid.Item_GoldEgg.Count.Text == "x6", "Count updates live")
 local picks = {}
 root.HotbarSelected.Event:Connect(function(index, id) table.insert(picks, tostring(index) .. ":" .. tostring(id)) end)
 key(r.Enum.KeyCode.One)
@@ -272,7 +272,7 @@ check(hotbar.Slot1.UIStroke.Color == r.Color3.new(1, 1, 1) and picks[#picks] == 
 key(r.Enum.KeyCode.One)
 check(hotbar.Slot1.UIStroke.Color == r.Color3.new(0, 0, 0) and picks[#picks] == "nil:nil", "Pressing 1 again unselects")
 event(hotbar.Slot2, "Activated"):Fire()
-check(picks[#picks] == "2:Apple", "Clicking a slot selects it")
+check(picks[#picks] == "2:GoldEgg", "Clicking a slot selects it")
 key(r.Enum.KeyCode.G)
 check(not panel.Visible and not hotbar.Visible, "G closes the inventory")
 event(col.FishSlot.Fish, "Activated"):Fire()
@@ -370,11 +370,12 @@ check(not pcall(invModule.add, p, "Rock", {Name = "Камень", Category = "Ro
 check(not invModule.remove(p, "BasicEgg", 5) and invModule.count(p, "BasicEgg") == 3, "Server: cannot remove more than owned")
 check(invModule.remove(p, "BasicEgg", 3) and p.Inventory:FindFirstChild("BasicEgg") == nil, "Server: removing the last one deletes the item")
 invModule.add(p, "Shark", {Name = "Акула", Category = "Fish", Icon = "SharkFin"})
-invModule.add(p, "Apple", {Name = "Яблоко", Category = "Food", Icon = "Food"})
+invModule.add(p, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
+check(not pcall(invModule.add, p, "Apple", {Name = "Яблоко", Category = "Food"}), "Server: Food category no longer exists")
 invModule.setHotbar(p, "Shark", 1)
-invModule.setHotbar(p, "Apple", 1)
-check(p.Inventory.Apple:GetAttribute("HotbarSlot") == 1 and p.Inventory.Shark:GetAttribute("HotbarSlot") == nil, "Server: one item per hotbar slot")
-check(not pcall(invModule.setHotbar, p, "Apple", 9), "Server: hotbar slot must be 1-8")
+invModule.setHotbar(p, "GoldEgg", 1)
+check(p.Inventory.GoldEgg:GetAttribute("HotbarSlot") == 1 and p.Inventory.Shark:GetAttribute("HotbarSlot") == nil, "Server: one item per hotbar slot")
+check(not pcall(invModule.setHotbar, p, "GoldEgg", 9), "Server: hotbar slot must be 1-8")
 
 fs.writeFile(rootPath .. "test-report.json", serde.encode("json", {passed = true, count = #tests, tests = tests, layout = layoutReport, studioPlayTest = false}, true))
 print("PASS: " .. #tests .. " checks")

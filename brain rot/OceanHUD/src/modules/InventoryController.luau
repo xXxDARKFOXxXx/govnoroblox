@@ -2,7 +2,7 @@
 -- window (category tabs, search, item grid), in a dark translucent style.
 --
 -- Data comes from the server: Player.Inventory (Folder) holds one Folder per
--- item with attributes DisplayName, Category ("Eggs" | "Fish" | "Food"),
+-- item with attributes DisplayName, Category ("Eggs" | "Fish"),
 -- Icon (UIAssets name or rbxassetid://...), Count and optional HotbarSlot (1-8).
 -- See OceanInventory on the server. The client never creates items.
 local UserInputService = game:GetService("UserInputService")
@@ -18,7 +18,6 @@ InventoryController.Categories = {
 	{key = "All", title = "Все", icon = "Backpack"},
 	{key = "Eggs", title = "Яйца", icon = "Egg"},
 	{key = "Fish", title = "Рыбы", icon = "SharkFin"},
-	{key = "Food", title = "Еда", icon = "Food"},
 }
 local SLOT, GAP, SLOTS = 92, 8, 8
 local TAB, TAB_GAP = 100, 10

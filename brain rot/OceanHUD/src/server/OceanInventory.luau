@@ -1,7 +1,7 @@
 -- OceanInventory (ModuleScript, ServerScriptService): server-owned inventory.
 -- Items live in Player.Inventory (replicated to that player's client), one
 -- Folder per item with attributes the HUD reads:
---   DisplayName, Category ("Eggs" | "Fish" | "Food"), Icon, Count, HotbarSlot (1-8, optional)
+--   DisplayName, Category ("Eggs" | "Fish"), Icon, Count, HotbarSlot (1-8, optional)
 --
 --   local Inventory = require(game.ServerScriptService.OceanInventory)
 --   Inventory.add(player, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg"})
@@ -9,7 +9,7 @@
 --   Inventory.setHotbar(player, "BasicEgg", 1)
 local OceanInventory = {}
 
-OceanInventory.Categories = {Eggs = true, Fish = true, Food = true}
+OceanInventory.Categories = {Eggs = true, Fish = true}
 OceanInventory.HotbarSlots = 8
 
 function OceanInventory.folder(player: Player): Folder
