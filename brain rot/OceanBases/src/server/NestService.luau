@@ -38,24 +38,11 @@ local function attachEgg(player: Player, eggType: string)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
-	-- Bottom of the egg in the raised hands, above the head (the root is ~2.5 studs below the head top).
-	local model = Creatures.egg(character, eggType, CFrame.new(root.CFrame.Position + Vector3.new(0, 3.9, 0)))
+	-- Held over the head in both hands (the client raises the arms).
+	local frame = root.CFrame * Creatures.OverheadOffset
+	local model = Creatures.egg(character, eggType, frame)
 	model.Name = "CarriedEgg"
-	-- Not an "OceanEgg": the client rocks those in place with PivotTo, which
-	-- would pin the welded character to the nest.
-	model:RemoveTag("OceanEgg")
-	model:SetAttribute("Carried", true)
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.Anchored = false
-			part.CanCollide = false
-			part.Massless = true
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = root
-			weld.Part1 = part
-			weld.Parent = part
-		end
-	end
+	Creatures.attach(model, root, frame, Creatures.OverheadOffset)
 	return model
 end
 

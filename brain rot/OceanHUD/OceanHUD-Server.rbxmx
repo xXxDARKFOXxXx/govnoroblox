@@ -165,10 +165,10 @@ local function seed(player: Player)
 	Inventory.add(player, "CoralEgg", {Name = "Коралловое яйцо", Category = "Eggs", Icon = "Egg", Count = 2})
 	Inventory.add(player, "GlacierEgg", {Name = "Ледниковое яйцо", Category = "Eggs", Icon = "Egg"})
 	Inventory.add(player, "OceanCrownEgg", {Name = "Яйцо Короны океана", Category = "Eggs", Icon = "Egg"})
-	Inventory.add(player, "Fish_Clown_L3", {Name = "Рыба-клоун · ур. 3", Category = "Fish", Icon = "SharkFin",
-		Data = {FishType = "Clown", Level = 3}})
+	Inventory.add(player, "Fish_Salmon_L3", {Name = "Лосось · ур. 3", Category = "Fish", Icon = "SharkFin",
+		Data = {FishType = "Salmon", Level = 3}})
 	Inventory.setHotbar(player, "TideEgg", 1)
-	Inventory.setHotbar(player, "Fish_Clown_L3", 2)
+	Inventory.setHotbar(player, "Fish_Salmon_L3", 2)
 end
 Players.PlayerAdded:Connect(seed)
 for _, player in Players:GetPlayers() do seed(player) end

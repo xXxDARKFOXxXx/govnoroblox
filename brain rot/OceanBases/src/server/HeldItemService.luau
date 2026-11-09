@@ -1,11 +1,12 @@
 -- HeldItemService (server): shows the item picked in the HUD (Player attribute
 -- HeldItem: an egg id or a fish item id) in the character's hands, so the
 -- owner sees what a click on the yard floor will place. Eggs keep their
--- original size; fish are shrunk to fit in the hands. While the player carries
--- an egg stolen from a nest (overhead), nothing is shown in the hands.
+-- original size and are held over the head (like a stolen nest egg); fish are
+-- shrunk and held in front. While the player carries a stolen nest egg,
+-- nothing else is shown in the hands.
 --
--- Character child "HeldItem" (Model, attribute Held = true, welded to the root,
--- massless and non-colliding). The client poses the arms for it.
+-- Character child "HeldItem" (Model, attribute Held = true; HeldKind = "Fish"
+-- for a fish), welded to the root with an exact offset. The client poses the arms.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("BaseConfig"))
@@ -13,22 +14,6 @@ local Creatures = require(script.Parent:WaitForChild("CreatureModels"))
 
 local HeldItemService = {}
 local FISH_HOLD_LENGTH = 3.5
-
-local function weldAll(model: Model, root: BasePart)
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.Anchored = false
-			part.CanCollide = false
-			part.CanTouch = false
-			part.CanQuery = false
-			part.Massless = true
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = root
-			weld.Part1 = part
-			weld.Parent = part
-		end
-	end
-end
 
 -- What the player holds: ("Egg", eggType) / ("Fish", fishType) / nil.
 function HeldItemService.heldKind(player: Player): (string?, string?)
@@ -52,14 +37,21 @@ function HeldItemService.update(player: Player)
 	if not root or player:GetAttribute("CarryEgg") then return end
 	local kind, name = HeldItemService.heldKind(player)
 	if not kind then return end
-	-- Held in front of the chest, in both hands (arms forward on the client).
-	local front = root.CFrame * CFrame.new(0, -0.4, -2.0)
 	local model
 	if kind == "Egg" then
-		local size = Config.Eggs[name].size or Vector3.new(2.6, 3.5, 2.6)
-		model = Creatures.egg(character, name, front * CFrame.new(0, 0, -size.Z / 2 + 0.6))
+		-- Eggs: over the head in both hands, like a stolen nest egg.
+		local frame = root.CFrame * Creatures.OverheadOffset
+		model = Creatures.egg(character, name, frame)
+		if not model then return end
+		model.Name = "HeldItem"
+		model:SetAttribute("Held", true)
+		Creatures.attach(model, root, frame, Creatures.OverheadOffset)
 	else
-		model = Creatures.fish(character, name, front * CFrame.new(0, 1.0, -0.6) * CFrame.Angles(0, math.rad(90), 0))
+		-- Fish: in front of the chest, shrunk to fit in the hands (GLB only).
+		local offset = CFrame.new(0, 0.6, -2.0) * CFrame.Angles(0, math.rad(90), 0)
+		local frame = root.CFrame * offset
+		model = Creatures.fish(character, name, frame)
+		if not model then return end
 		local length = Config.Fish[name].length or 4
 		if length > FISH_HOLD_LENGTH then
 			local pivot = model:GetPivot()
@@ -68,14 +60,11 @@ function HeldItemService.update(player: Player)
 		end
 		local ripple = model:FindFirstChild("Ripple")
 		if ripple then ripple:Destroy() end
+		model.Name = "HeldItem"
+		model:SetAttribute("Held", true)
+		model:SetAttribute("HeldKind", "Fish")
+		Creatures.attach(model, root, frame, offset)
 	end
-	model.Name = "HeldItem"
-	-- Not animated in place by the pen animation (that would pin the player).
-	model:RemoveTag("OceanEgg")
-	model:RemoveTag("OceanFish")
-	model:SetAttribute("Held", true)
-	model:SetAttribute("Carried", true)
-	weldAll(model, root)
 end
 
 function HeldItemService.watch(player: Player)

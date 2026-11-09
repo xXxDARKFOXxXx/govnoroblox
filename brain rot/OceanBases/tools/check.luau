@@ -105,6 +105,18 @@ local taskStub = {spawn = function() end, wait = function() return 0 end, defer 
 local load, makeEnv = Env.loader(game, {task = taskStub})
 local Config = load(tree.shared.BaseConfig)
 
+-- Imported GLB fish (stubs): the 20 SeaLife fish, as in the real place.
+-- The 20 original Studfish (Clown, Whale, ...) are not imported.
+local SEALIFE = {"Butterflyfish", "Salmon", "Sardine", "Cuttlefish", "Nautilus", "MoorishIdol", "SeaUrchin", "Catfish", "Mandarin", "Starfish",
+	"RegalTang", "Flounder", "Parrotfish", "Lobster", "HermitCrab", "RibbonTrout", "PygmyGoby", "Shrimp", "SeaTurtle", "Sunfish"}
+local models = r.Instance.new("Folder"); models.Name = "OceanModels"; models.Parent = game:GetService("ReplicatedStorage")
+local fishModels = r.Instance.new("Folder"); fishModels.Name = "Fish"; fishModels.Parent = models
+for _, name in SEALIFE do
+	local m = r.Instance.new("Model"); m.Name = name
+	local mesh = r.Instance.new("MeshPart"); mesh.Name = name .. "_Mesh"; mesh.Size = r.Vector3.new(Config.Fish[name].length, 2, 2); mesh.Parent = m
+	m.Parent = fishModels
+end
+
 -- Run the server bootstrap exactly as Roblox would (it builds the bases, no baked copy here).
 luau.load(tree.server.OceanBasesServer.Source, {debugName = "OceanBasesServer", environment = makeEnv(tree.server.OceanBasesServer)})()
 local Ownership = load(tree.server.BaseOwnershipService)
@@ -375,22 +387,32 @@ for eggType in Config.Eggs do
 	assert(e.PrimaryPart and e:GetAttribute("EggType") == eggType)
 	local rolled = {}
 	for _ = 1, 200 do rolled[Creatures.rollFish(eggType)] = true end
-	for f in rolled do assert(Config.Eggs[eggType].tiers[Config.Fish[f].tier], "Unexpected fish " .. f) end
+	for f in rolled do
+		assert(table.find(SEALIFE, f), "Rolled a fish without a GLB model: " .. f)
+		-- Its own tiers, or (legendary eggs while no legendary GLB is imported) the nearest lower tier.
+		local tier = Config.Fish[f].tier
+		local best = 0
+		for t in Config.Eggs[eggType].tiers do best = math.max(best, t) end
+		assert(Config.Eggs[eggType].tiers[tier] or tier < best, "Unexpected fish " .. f .. " from " .. eggType)
+	end
 end
-check(true, "Every egg type builds and only rolls fish of its tiers")
+check(true, "Every egg type builds and only rolls fish that have a GLB model")
+local glbOnly = true
 for fishType in Config.Fish do
 	local model = Creatures.fish(scratch, fishType, r.CFrame.new())
-	local tails = 0
-	for _, part in model:GetChildren() do if part:GetAttribute("Tail") then tails += 1 end end
-	assert(model.PrimaryPart and tails == 2 and model:FindFirstChild("Ripple"), fishType)
+	if table.find(SEALIFE, fishType) then
+		glbOnly = glbOnly and model ~= nil and model:GetAttribute("Imported") and model:FindFirstChild("Ripple") ~= nil
+	else
+		glbOnly = glbOnly and model == nil
+	end
 end
-check(true, "Every fish type builds with a body, wagging tail and floor ring")
+check(glbOnly, "Fish are only the imported GLB models (no built part models)")
 
 -- Client animation
 local Anim = load(tree.client.FishAnimationController)
 local cell = Pens.createCell(baseA, at(baseA, 0, 20))
 cell:SetAttribute("EggType", "TideEgg")
-Pens.hatch(cell, "Clown")
+Pens.hatch(cell, "Salmon")
 local fishModel = cell.Content:FindFirstChildWhichIsA("Model")
 Anim.start()
 local center = fishModel:GetAttribute("Center")
@@ -406,7 +428,8 @@ for _, p in positions do
 		and p.Y > poolZone.CFrame.Position.Y + 2
 end
 check(inside and (positions[0] - positions[2]).Magnitude > 0.5, "Fish flies around in the air over the pool")
-local look = fishModel.PrimaryPart.CFrame.LookVector
+-- GLB fish: the head is at -X of the model.
+local look = fishModel.PrimaryPart.CFrame:VectorToWorldSpace(r.Vector3.new(-1, 0, 0))
 Anim.step(3 * 1.3 + 0.05, center + r.Vector3.new(0, 10, 10))
 local moved = (fishModel.PrimaryPart.CFrame.Position - positions[3]).Unit
 check(look:Dot(moved) > 0.5, "Fish faces the way it flies")
@@ -505,6 +528,16 @@ event(nest.EggSpot.TakePrompt, "Triggered"):Fire(diver)
 check(not nestState.available and diver:GetAttribute("CarryEgg") == nest:GetAttribute("EggType") and diver:GetAttribute("CarrySection") == 1, "Taking the egg: the diver carries it")
 check(diver.Character:FindFirstChild("CarriedEgg") and not nest:FindFirstChild("Egg") and not nest.EggSpot.TakePrompt.Enabled, "Egg moves from the nest to above the diver's head")
 check(not diver.Character.CarriedEgg:HasTag("OceanEgg") and diver.Character.CarriedEgg:GetAttribute("Carried"), "Carried egg is not rocked in place by the client (the diver can move)")
+do
+	local overhead = true
+	for _, part in diver.Character.CarriedEgg:GetDescendants() do
+		if part:IsA("BasePart") then
+			local weld = part:FindFirstChild("HoldWeld")
+			overhead = overhead and weld and weld:IsA("Weld") and weld.C0.Position.Y > 2.5 and math.abs(weld.C0.Position.X) < 2
+		end
+	end
+	check(overhead, "Stolen egg is welded over the head with an exact offset")
+end
 local nest2 = seabed.Nests:FindFirstChild("Nest_1_2")
 diverRoot.CFrame = r.CFrame.new(nest2.EggSpot.CFrame.Position + r.Vector3.new(0, 3, 0))
 event(nest2.EggSpot.TakePrompt, "Triggered"):Fire(diver)
@@ -596,7 +629,6 @@ Pens.action(owner, "Explode", 1)
 check(true, "Unknown actions are ignored")
 
 ---------------------------------------------------------------- imported GLB models are used when present
-local models = r.Instance.new("Folder"); models.Name = "OceanModels"; models.Parent = game:GetService("ReplicatedStorage")
 for _, data in {{"Fish", "Clown"}, {"Predators", "01_Barracuda"}, {"Eggs", "01_Tide"}} do
 	local folder = models:FindFirstChild(data[1]) or r.Instance.new("Folder")
 	folder.Name = data[1]; folder.Parent = models
@@ -616,7 +648,7 @@ local importedPredator = Creatures.predator(scratch, "01_Barracuda", r.CFrame.ne
 check(importedPredator:GetAttribute("Imported") and importedPredator["01_Barracuda_Body"]:GetAttribute("PatrolRadius") == 0, "Imported predator: its runtime only animates, the server moves it")
 local importedEgg = Creatures.egg(scratch, "TideEgg", r.CFrame.new(0, 0, 0))
 check(importedEgg:GetAttribute("Imported") and not importedEgg:FindFirstChild("Shell"), "Imported egg model is used")
-check(not Creatures.fish(scratch, "Whale", r.CFrame.new()):GetAttribute("Imported"), "Missing models fall back to built ones")
+check(Creatures.fish(scratch, "Whale", r.CFrame.new()) == nil, "A fish without a GLB model is not built from parts")
 
 ---------------------------------------------------------------- swim speed
 local SwimSpeed = load(tree.server.SwimSpeedService)
@@ -635,6 +667,19 @@ for _, part in (inHands and inHands:GetDescendants() or {}) do
 	if part:IsA("BasePart") then unanchored = unanchored and not part.Anchored and part.Massless and not part.CanCollide end
 end
 check(inHands and inHands:GetAttribute("Held") and not inHands:HasTag("OceanEgg") and unanchored, "The picked egg appears in the hands (welded, does not hold the player)")
+do
+	local root = holder.Character.HumanoidRootPart
+	local exact, above = true, true
+	for _, part in inHands:GetDescendants() do
+		if part:IsA("BasePart") then
+			local weld = part:FindFirstChild("HoldWeld")
+			exact = exact and weld and weld:IsA("Weld") and weld.Part0 == root and part:FindFirstChildOfClass("WeldConstraint") == nil
+			above = above and weld and weld.C0.Position.Y > 2.5 and math.abs(weld.C0.Position.X) < 2 and math.abs(weld.C0.Position.Z) < 2
+		end
+	end
+	check(exact, "Held egg uses a Weld with an exact offset (stays in the hands on every screen)")
+	check(above, "Held egg sits over the head")
+end
 holder:SetAttribute("CarryEgg", "TideEgg")
 Held.update(holder)
 check(holder.Character:FindFirstChild("HeldItem") == nil, "Nothing in the hands while carrying a stolen egg overhead")
@@ -657,14 +702,18 @@ end
 local carried = r.Instance.new("Model"); carried.Name = "CarriedEgg"; carried.Parent = rig
 check(Pose.poseFor(rig) == "Up", "Carrying a nest egg: arms-up pose")
 Pose.apply(rig, "Up")
-local hand = joints.Right.Transform:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
-local handL = joints.Left.Transform:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
+local hand = joints.Right.C0:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
+local handL = joints.Left.C0:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
 check(hand.Y > 0.9 and handL.Y > 0.9, "Both arms point up: the egg is held over the head (legs keep swimming)")
 carried:Destroy()
-local heldModel = r.Instance.new("Model"); heldModel.Name = "HeldItem"; heldModel.Parent = rig
 Pose.apply(rig, Pose.poseFor(rig))
-hand = joints.Right.Transform:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
-check(Pose.poseFor(rig) == "Front" and hand.Z < -0.8, "Holding a picked item: arms forward")
+check(joints.Right.C0:VectorToWorldSpace(r.Vector3.new(0, -1, 0)).Y < -0.99, "Empty hands: arms go back down")
+local heldModel = r.Instance.new("Model"); heldModel.Name = "HeldItem"; heldModel.Parent = rig
+check(Pose.poseFor(rig) == "Up", "Holding a picked egg (placing, running, swimming): also over the head")
+heldModel:SetAttribute("HeldKind", "Fish")
+Pose.apply(rig, Pose.poseFor(rig))
+hand = joints.Right.C0:VectorToWorldSpace(r.Vector3.new(0, -1, 0))
+check(Pose.poseFor(rig) == "Front" and hand.Z < -0.8, "Holding a fish: arms forward")
 
 ---------------------------------------------------------------- predators face the player head first
 do

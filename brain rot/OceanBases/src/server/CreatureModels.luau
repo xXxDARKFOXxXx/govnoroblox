@@ -124,74 +124,24 @@ function CreatureModels.egg(parent: Instance, eggType: string, cf: CFrame, heigh
 	return m
 end
 
----------------------------------------------------------------- fish (built)
-local function builtFish(parent: Instance, fishType: string, cf: CFrame)
-	local info = Config.Fish[fishType]
-	local m = Pieces.model(parent, fishType)
-	local round = info.round
-	local length = round and 2.2 or 2.8
-	local body = Pieces.ellipsoid(m, "Body", Vector3.new(round and 2.1 or 1.5, round and 2.0 or 1.7, length), cf, info.body)
-	Pieces.ellipsoid(m, "Belly", Vector3.new(round and 1.8 or 1.2, round and 1.2 or 0.9, length * 0.82), cf * CFrame.new(0, -0.35, -0.1), info.belly)
-	for _, z in (round and {} or {-0.35, 0.45}) do
-		Pieces.ellipsoid(m, "Stripe", Vector3.new(1.56, 1.76, 0.28), cf * CFrame.new(0, 0.02, z), info.stripe)
-	end
-	if round then
-		for i = 0, 7 do
-			local a = math.rad(i * 45)
-			Pieces.wedge(m, "Spike", Vector3.new(0.12, 0.35, 0.3), cf * CFrame.new(math.cos(a) * 1.05, math.sin(a) * 1.0, 0.2) * CFrame.Angles(0, 0, a - math.pi / 2), info.stripe)
-		end
-	end
-	local tailRoot = cf * CFrame.new(0, 0, length / 2 + 0.25)
-	for _, side in {1, -1} do
-		local tail = Pieces.wedge(m, "Tail", Vector3.new(0.18, 0.9, 1.0), tailRoot * CFrame.new(0, side * 0.32, 0.35) * CFrame.Angles(math.rad(side * 30), 0, side < 0 and math.pi or 0), info.fin)
-		tail:SetAttribute("Tail", true)
-	end
-	Pieces.wedge(m, "DorsalFin", Vector3.new(0.16, 0.7, 1.1), cf * CFrame.new(0, (round and 1.0 or 0.85) + 0.25, 0.25), info.fin)
-	for _, side in {-1, 1} do
-		Pieces.ellipsoid(m, "SideFin", Vector3.new(0.12, 0.45, 0.75), cf * CFrame.new(side * (round and 1.05 or 0.78), -0.2, -0.1) * CFrame.Angles(0, math.rad(side * 25), math.rad(side * 20)), info.fin)
-		local eye = cf * CFrame.new(side * (round and 0.75 or 0.55), 0.3, -length / 2 + (round and 0.55 or 0.6))
-		Pieces.ball(m, "EyeWhite", 0.62, eye, C.White)
-		Pieces.ball(m, "Pupil", 0.36, eye * CFrame.new(side * 0.12, 0, -0.17), Color3.fromRGB(20, 20, 30))
-		Pieces.ball(m, "Glint", 0.13, eye * CFrame.new(side * 0.17, 0.1, -0.3), C.White)
-	end
-	Pieces.part(m, "Mouth", Vector3.new(0.35, 0.12, 0.12), cf * CFrame.new(0, -0.18, -length / 2 + 0.02), Color3.fromRGB(120, 30, 40))
-	if info.lure then
-		local lure = Pieces.ball(m, "Lure", 0.5, cf * CFrame.new(0, 1.5, -2.1), Color3.fromRGB(255, 240, 120), Enum.Material.Neon)
-		Pieces.rod(m, "LureStalk", (cf * CFrame.new(0, 0.9, -0.6)).Position, lure.CFrame.Position, 0.12, info.stripe)
-	end
-	if info.crown then
-		local crown = cf * CFrame.new(0, 1.0, -0.3)
-		Pieces.cylinder(m, "CrownBand", 0.3, 0.95, crown, C.Gold, Enum.Material.Neon)
-		for i = 0, 4 do
-			local a = math.rad(i * 72)
-			Pieces.wedge(m, "CrownSpike", Vector3.new(0.18, 0.45, 0.3), crown * CFrame.new(math.cos(a) * 0.38, 0.35, math.sin(a) * 0.38) * CFrame.Angles(0, -a, 0), C.Gold)
-		end
-	end
-	if info.sparkle then sparkles(body, Config.RarityColors[info.rarity] or C.GlowGold, 4) end
-	m.PrimaryPart = body
-	m:SetAttribute("ForwardYaw", 0)
-	return m
+---------------------------------------------------------------- fish (GLB only)
+-- Fish come only from the imported GLB models (OceanModels.Fish). A fish type
+-- without an imported model is not used: eggs never roll it, and fish() returns
+-- nil. Importing more GLBs (e.g. the 20 original Studfish) adds them by itself.
+function CreatureModels.hasFish(fishType: string): boolean
+	local root = ReplicatedStorage:FindFirstChild("OceanModels")
+	local folder = root and root:FindFirstChild("Fish")
+	return folder ~= nil and folder:FindFirstChild(fishType) ~= nil
 end
 
--- Fish centred on cf. Imported models keep the size they have in the files.
-function CreatureModels.fish(parent: Instance, fishType: string, cf: CFrame)
+-- Fish centred on cf, in the size it has in the files; nil if not imported.
+function CreatureModels.fish(parent: Instance, fishType: string, cf: CFrame): Model?
 	assert(Config.Fish[fishType], "Unknown fish " .. tostring(fishType))
 	local m = CreatureModels.imported("Fish", fishType)
-	if m then
-		m.Parent = parent
-		local box = m:GetBoundingBox()
-		m:PivotTo(m:GetPivot() + (cf.Position - box.Position))
-	else
-		m = builtFish(parent, fishType, cf)
-		-- Same length as the fish in the Studfish files (the built one is ~3 studs).
-		local info = Config.Fish[fishType]
-		local builtLength = info.round and 2.9 or 3.6
-		if info.length and math.abs(info.length - builtLength) > 0.1 then
-			local pivot = m:GetPivot()
-			m:ScaleTo(info.length / builtLength)
-			m:PivotTo(pivot)
-		end
-	end
+	if not m then return nil end
+	m.Parent = parent
+	local box = m:GetBoundingBox()
+	m:PivotTo(m:GetPivot() + (cf.Position - box.Position))
 	m.Name = fishType
 	m:SetAttribute("FishType", fishType)
 	-- Glow ring on the water under the fish (animated on the client).
@@ -199,6 +149,41 @@ function CreatureModels.fish(parent: Instance, fishType: string, cf: CFrame)
 	m:AddTag("OceanFish")
 	return m
 end
+
+---------------------------------------------------------------- held on a character
+-- Welds a model to a character's root with an exact offset (Weld + C0, not
+-- WeldConstraint: a WeldConstraint keeps whatever gap the parts have on each
+-- machine, and the server sees the character late, so the item ended up
+-- beside or ahead of the player). `frame` = the model's reference frame now
+-- (e.g. the bottom centre of an egg), `offset` = where that frame goes,
+-- relative to the root. Parts become unanchored, massless and non-colliding.
+function CreatureModels.attach(model: Model, root: BasePart, frame: CFrame, offset: CFrame)
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			local c0 = offset * frame:ToObjectSpace(part.CFrame)
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = false
+			part.Massless = true
+			part.CFrame = root.CFrame * c0
+			local weld = Instance.new("Weld")
+			weld.Name = "HoldWeld"
+			weld.Part0 = root
+			weld.Part1 = part
+			weld.C0 = c0
+			weld.Parent = part
+		end
+	end
+	-- Not rocked / flown by the pen animation (that would pin the player).
+	model:RemoveTag("OceanEgg")
+	model:RemoveTag("OceanFish")
+	model:SetAttribute("Carried", true)
+end
+
+-- Where an egg sits while held: its bottom just above the head, in the raised
+-- hands (the root is ~2.5 studs below the top of the head).
+CreatureModels.OverheadOffset = CFrame.new(0, 3.3, 0)
 
 ---------------------------------------------------------------- predators (built)
 -- Big blocky fish with a toothy jaw, glowing eyes and a forked tail, -Z forward.
@@ -254,8 +239,8 @@ function CreatureModels.predator(parent: Instance, kind: string, cf: CFrame)
 end
 
 ---------------------------------------------------------------- rolls
--- Egg → tier (weighted) → random fish of that tier.
-function CreatureModels.rollFish(eggType: string, random: Random?): string
+-- Egg → tier (weighted) → random imported fish of that tier (nil: no fish models at all).
+function CreatureModels.rollFish(eggType: string, random: Random?): string?
 	local info = Config.Eggs[eggType]
 	local rng = random or Random.new()
 	local tiers, total = {}, 0
@@ -273,7 +258,25 @@ function CreatureModels.rollFish(eggType: string, random: Random?): string
 			break
 		end
 	end
-	local list = Config.FishTiers[chosen]
+	-- Only fish with an imported GLB model. If the chosen tier has none yet,
+	-- take the nearest lower tier that has some (then the nearest higher one).
+	local function available(tier)
+		local list = {}
+		for _, fishType in Config.FishTiers[tier] or {} do
+			if CreatureModels.hasFish(fishType) then table.insert(list, fishType) end
+		end
+		return list
+	end
+	local list = available(chosen)
+	for tier = chosen - 1, 1, -1 do
+		if #list > 0 then break end
+		list = available(tier)
+	end
+	for tier = chosen + 1, #Config.FishTiers do
+		if #list > 0 then break end
+		list = available(tier)
+	end
+	if #list == 0 then return nil end
 	return list[math.clamp(math.floor(rng:NextNumber() * #list) + 1, 1, #list)]
 end
 

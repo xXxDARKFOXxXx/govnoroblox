@@ -147,6 +147,7 @@ local function spawnFish(cell: Model, fishType: string)
 	local phase = rng:NextNumber() * math.pi * 2
 	local start = center + Vector3.new(math.cos(phase) * rx, 0, math.sin(phase) * rz)
 	local fish = Creatures.fish(cell.Content, fishType, CFrame.new(start))
+	if not fish then return nil end -- no GLB model for this fish
 	-- Flight path for the client animation.
 	fish:SetAttribute("Center", center)
 	fish:SetAttribute("FloorY", waterY)
@@ -187,6 +188,7 @@ end
 
 function FishPenController.hatch(cell: Model, fishType: string?)
 	fishType = fishType or Creatures.rollFish(cell:GetAttribute("EggType"), FishPenController.random)
+	if not fishType then return end -- no fish models imported at all
 	setFish(cell, fishType, 1)
 end
 
