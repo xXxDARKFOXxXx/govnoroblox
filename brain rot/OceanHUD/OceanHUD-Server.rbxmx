@@ -162,6 +162,8 @@ local function seed(player: Player)
 	Inventory.add(player, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
 	Inventory.add(player, "Shark", {Name = "Акула", Category = "Fish", Icon = "SharkFin"})
 	Inventory.add(player, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
+	Inventory.add(player, "StarEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg", Count = 2})
+	Inventory.add(player, "OceanEgg", {Name = "Морское яйцо", Category = "Eggs", Icon = "Egg"})
 	Inventory.setHotbar(player, "Shark", 1)
 	Inventory.setHotbar(player, "GoldEgg", 2)
 end
