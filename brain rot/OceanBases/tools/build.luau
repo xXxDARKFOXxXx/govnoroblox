@@ -14,20 +14,72 @@ local OUTPUT = root .. "../OceanGame.rbxl"
 
 local game = roblox.deserializePlace(fs.readFile(SOURCE))
 
--- Keep models the user imported into the previous OceanGame.rbxl
--- (ReplicatedStorage.OceanModels: Eggs, Fish, Predators).
-local keptModels = 0
-if fs.isFile(OUTPUT) then
-	local previous = roblox.deserializePlace(fs.readFile(OUTPUT))
-	local models = previous:GetService("ReplicatedStorage"):FindFirstChild("OceanModels")
-	if models then
-		models.Parent = game:GetService("ReplicatedStorage")
-		keptModels = #models:GetDescendants()
-	end
-end
 local tree = Env.install(game, root)
 local load = Env.loader(game)
 local Config = load(tree.shared.BaseConfig)
+
+-- Keep the models the user imported into the previous OceanGame.rbxl:
+-- ReplicatedStorage.OceanModels (Eggs, Fish, Predators), plus any GLB rigs
+-- still lying in its Workspace after "Import 3D" — those are sorted here by
+-- their root bone (StudFish_*, StudPredator_*, StudEgg_*). Scary Studfish
+-- (Piranha, Moray, ...) guard the nests, so they go to Predators.
+-- A copy of OceanModels is kept in OceanModels.rbxm (in git), so the models
+-- survive even if the place file is rebuilt from scratch.
+local MODELS_FILE = root .. "OceanModels.rbxm"
+local keptModels, sortedModels = 0, {}
+do
+	local previous = fs.isFile(OUTPUT) and roblox.deserializePlace(fs.readFile(OUTPUT)) or nil
+	local models = previous and previous:GetService("ReplicatedStorage"):FindFirstChild("OceanModels")
+	if not models and fs.isFile(MODELS_FILE) then
+		models = roblox.deserializeModel(fs.readFile(MODELS_FILE))[1]
+	end
+	if not models then
+		models = roblox.Instance.new("Folder")
+		models.Name = "OceanModels"
+	end
+	local function category(name)
+		local f = models:FindFirstChild(name)
+		if not f then
+			f = roblox.Instance.new("Folder")
+			f.Name = name
+			f.Parent = models
+		end
+		return f
+	end
+	local rules = {{"^StudFish_", "Fish"}, {"^StudPredator_", "Predators"}, {"^StudEgg_", "Eggs"}}
+	for _, child in (previous and previous:GetService("Workspace"):GetChildren() or {}) do
+		local rootBone
+		for _, d in child:GetDescendants() do
+			if d:IsA("Bone") then
+				for _, rule in rules do
+					if d.Name:match(rule[1]) then rootBone = {d.Name:gsub(rule[1], ""), rule[2]} end
+				end
+			end
+			if rootBone then break end
+		end
+		if rootBone then
+			local name, kind = rootBone[1], rootBone[2]
+			if kind == "Fish" and Config.Predators[name] then kind = "Predators" end
+			for _, part in child:GetDescendants() do
+				if part:IsA("BasePart") then
+					part.Anchored = true
+					part.CanCollide = false
+				end
+			end
+			local target = category(kind)
+			local old = target:FindFirstChild(name)
+			if old then old:Destroy() end
+			child.Name = name
+			child.Parent = target
+			table.insert(sortedModels, kind .. "/" .. name)
+		end
+	end
+	if #models:GetChildren() > 0 then
+		for _, f in models:GetChildren() do keptModels += #f:GetChildren() end
+		fs.writeFile(MODELS_FILE, roblox.serializeModel({models}))
+		models.Parent = game:GetService("ReplicatedStorage")
+	end
+end
 local Builder = load(tree.server.BaseBuilder)
 
 local workspaceService = game:GetService("Workspace")
@@ -111,5 +163,5 @@ local seabedParts = 0
 for _, object in restored:GetService("Workspace").OceanSeabed:GetDescendants() do
 	if object:IsA("BasePart") then seabedParts += 1 end
 end
-print(string.format("Built OceanGame.rbxl: %d scripts, %d base parts (%d per base), %d seabed parts, %d buried decor parts removed, %d imported model objects kept.",
-	scripts, parts, parts // Config.BaseCount, seabedParts, buried, keptModels))
+print(string.format("Built OceanGame.rbxl: %d scripts, %d base parts (%d per base), %d seabed parts, %d buried decor parts removed, %d imported models in OceanModels (%d sorted from Workspace).",
+	scripts, parts, parts // Config.BaseCount, seabedParts, buried, keptModels, #sortedModels))

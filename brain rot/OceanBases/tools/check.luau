@@ -50,6 +50,7 @@ r.implementMethod("Instance", "GetPropertyChangedSignal", function(object, name)
 local serverTime = 1000
 r.implementMethod("Workspace", "GetServerTimeNow", function() return serverTime end)
 r.implementMethod("Players", "GetPlayers", function(players) return players:GetChildren() end)
+r.implementMethod("RunService", "IsStudio", function() return false end)
 local notices = {}
 r.implementMethod("RemoteEvent", "FireClient", function(_, p, message) table.insert(notices, {p, message}) end)
 local tagged = {}

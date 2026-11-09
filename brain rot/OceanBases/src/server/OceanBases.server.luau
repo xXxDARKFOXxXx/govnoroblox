@@ -75,6 +75,36 @@ local seabed = workspace:FindFirstChild("OceanSeabed") or Seabed.build(workspace
 
 Pens.init(bases)
 Upgrades.init(bases)
+
+-- Studio only: a ready-made pen (5 fish of different levels and 2 eggs) so the
+-- models and the Рыбы / Яйца menus can be seen right away in a play test.
+if game:GetService("RunService"):IsStudio() then
+	table.insert(Ownership.onAssigned, function(_, base)
+		local cells = Pens.cells(base)
+		for i, data in {{"RegalTang", 1}, {"Salmon", 3}, {"SeaTurtle", 2}, {"Lobster", 5}, {"Butterflyfish", 1}} do
+			if cells[i] and cells[i]:GetAttribute("State") == "Empty" then
+				cells[i]:SetAttribute("EggType", "TideEgg")
+				Pens.hatch(cells[i], data[1])
+				for _ = 2, data[2] do
+					cells[i]:SetAttribute("FishLevel", cells[i]:GetAttribute("FishLevel") + 1)
+				end
+				cells[i]:SetAttribute("Income", Config.fishIncome(data[1], data[2]))
+				Pens.refreshCell(cells[i])
+			end
+		end
+		for i, eggType in {[7] = "CoralEgg", [8] = "OceanCrownEgg"} do
+			local cell = cells[i]
+			if cell and cell:GetAttribute("State") == "Empty" then
+				cell:SetAttribute("State", "Egg")
+				cell:SetAttribute("EggType", eggType)
+				cell:SetAttribute("HatchAt", workspace:GetServerTimeNow() + Config.Eggs[eggType].hatch)
+				require(folder:WaitForChild("CreatureModels")).egg(cell.Content, eggType, CFrame.new(cell.EggPlacement.CFrame.Position + Vector3.new(0, 0.1, 0)))
+				Pens.refreshCell(cell)
+			end
+		end
+	end)
+end
+
 Ownership.init(bases)
 Nests.init(seabed)
 Predators.init(seabed)

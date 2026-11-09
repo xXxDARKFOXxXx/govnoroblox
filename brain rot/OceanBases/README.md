@@ -48,16 +48,19 @@
 В Roblox они попадают только через импорт в Studio: меши загружаются на твой аккаунт. Пока модели не импортированы,
 игра использует свои модели из деталей, и всё работает.
 
-Как подключить:
+**Уже импортировано 45 моделей:** 30 из StudfishExpansion (SeaLife и Scary), 5 StudPredators и 10 StudEggs.
+Они лежат в `ReplicatedStorage.OceanModels` и в файле `OceanModels.rbxm` (в git), поэтому переживают любую пересборку.
+20 исходных Studfish (Clown, Koi, Shark и другие) пока не импортированы, вместо них используются модели из деталей.
+
+Как добавить ещё модели:
 1. Открой `OceanGame.rbxl`. **File → Import 3D**: выбери GLB, **Rig Type → Custom**, **Scale Unit → Studs**, вставь в **Workspace**.
-   Повтори для всех нужных моделей. Можно импортировать часть: недостающие заменятся моделями из деталей.
-2. В **Command Bar** выполни (в режиме редактирования, не в Play):
-   ```lua
-   require(game.ServerStorage.OceanModelsOrganizer)()
-   ```
-   Помощник найдёт модели по корневым костям и разложит их в `ReplicatedStorage.OceanModels/{Fish, Predators, Eggs}`.
-   Страшные рыбы (Пиранья, Мурена и другие) попадут к хищникам.
-3. Сохрани плейс (**File → Save**). Следующие сборки сохраняют папку `OceanModels`.
+2. Сохрани плейс (**File → Save**).
+3. Запусти `tools/build.luau`. Сборка сама найдёт модели в Workspace по корневым костям и разложит их в `OceanModels/{Fish, Predators, Eggs}`.
+   Страшные рыбы (Пиранья, Мурена и другие) попадут к хищникам. Затем сборка обновит `OceanModels.rbxm`.
+
+Помощник `ServerStorage.OceanModelsOrganizer` делает то же прямо в Studio (Command Bar: `require(game.ServerStorage.OceanModelsOrganizer)()`).
+
+**Демо в Studio:** при запуске в Studio твоя база сразу получает 5 рыб разных уровней и 2 яйца. Так можно проверить модели и меню «Рыбы»/«Яйца». В опубликованной игре демо не работает.
 
 Анимацию импортированных моделей делают твои скрипты `StudfishRuntime`, `StudPredatorsRuntime` и `StudEggsRuntime` — сборка кладёт их в StarterPlayerScripts.
 Хищникам ставится `PatrolRadius = 0`: их runtime только анимирует пасть и плавники, а двигает их сервер.
