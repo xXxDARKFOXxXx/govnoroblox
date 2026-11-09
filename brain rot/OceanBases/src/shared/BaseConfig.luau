@@ -11,27 +11,32 @@ local BaseConfig = {}
 BaseConfig.BaseCount = 5
 -- Base origin = centre of the yard's back edge, on the court floor.
 BaseConfig.Origins = {
-	Vector3.new(-112, 4, -156),
-	Vector3.new(-56, 4, -156),
+	Vector3.new(-114, 4, -156),
+	Vector3.new(-57, 4, -156),
 	Vector3.new(0, 4, -156),
-	Vector3.new(56, 4, -156),
-	Vector3.new(112, 4, -156),
+	Vector3.new(57, 4, -156),
+	Vector3.new(114, 4, -156),
 }
 BaseConfig.Facing = 0 -- yards open towards +Z (the court and the ocean corridor)
 
 ---------------------------------------------------------------- yard & cells
 BaseConfig.CellSize = 8 -- one cell = one 8x8 floor tile (same grid as the court)
-BaseConfig.Columns = 5
+BaseConfig.Columns = 6
 BaseConfig.FloorTop = 1 -- the yard floor is one stud above the court
 BaseConfig.Margin = 2 -- between the fence and the cells
 BaseConfig.FrontWalk = 7 -- walkway between the last row and the front fence
+-- Pool at the back of the yard (fish fly in the air above its water).
+BaseConfig.PoolZone = 16 -- depth of the strip that holds the pool
+BaseConfig.PoolSize = Vector2.new(32, 12) -- inner water area
+BaseConfig.PoolDepth = 1.8 -- about a third of a character's height
+BaseConfig.PoolRim = 1.2
 BaseConfig.StartRows = 2
 BaseConfig.MaxRows = 4
 -- Upgrade to N rows: cells and price.
 BaseConfig.Levels = {
-	[2] = {cells = 10, price = 0},
-	[3] = {cells = 15, price = 5000},
-	[4] = {cells = 20, price = 25000},
+	[2] = {cells = 12, price = 0},
+	[3] = {cells = 18, price = 5000},
+	[4] = {cells = 24, price = 25000},
 }
 BaseConfig.EntranceWidth = 10
 
@@ -41,14 +46,22 @@ end
 
 -- Depth of the yard (back fence to front fence) for a number of rows.
 function BaseConfig.depth(rows: number): number
-	return BaseConfig.Margin + rows * BaseConfig.CellSize + BaseConfig.FrontWalk
+	return BaseConfig.Margin + BaseConfig.PoolZone + rows * BaseConfig.CellSize + BaseConfig.FrontWalk
+end
+
+-- Local centre (X, Z) of the pool and the height of its water surface.
+function BaseConfig.poolCenter(): Vector2
+	return Vector2.new(0, BaseConfig.Margin + BaseConfig.PoolZone / 2)
+end
+function BaseConfig.waterTop(): number
+	return BaseConfig.FloorTop + BaseConfig.PoolDepth
 end
 
 -- Local centre (X, Z) of a cell; rows count from the back.
 function BaseConfig.cellCenter(row: number, column: number): Vector2
 	local s = BaseConfig.CellSize
 	local x = (column - (BaseConfig.Columns + 1) / 2) * s
-	local z = BaseConfig.Margin + (row - 0.5) * s
+	local z = BaseConfig.Margin + BaseConfig.PoolZone + (row - 0.5) * s
 	return Vector2.new(x, z)
 end
 
@@ -61,6 +74,7 @@ BaseConfig.Colors = {
 	Stone = rgb(155, 134, 100), StoneDark = rgb(121, 101, 72),
 	GlowBlue = rgb(110, 232, 255), GlowGold = rgb(255, 206, 92),
 	Kelp = rgb(60, 196, 130), KelpDark = rgb(30, 150, 110),
+	Water = rgb(36, 176, 232), PoolRim = rgb(74, 150, 170), PoolRimTop = rgb(200, 240, 245), PoolBottom = rgb(246, 222, 160),
 	CoralPink = rgb(255, 120, 178), CoralPurple = rgb(176, 110, 255),
 	Shell = rgb(255, 232, 226), Starfish = rgb(255, 150, 120),
 	Red = rgb(232, 60, 60), White = rgb(255, 255, 255), Gold = rgb(255, 200, 40),
@@ -101,9 +115,9 @@ BaseConfig.RarityColors = {
 
 ---------------------------------------------------------------- effects & timing
 BaseConfig.IncomeTick = 1 -- seconds between payouts
-BaseConfig.FishHeight = 3.2 -- fish float this high above their cell
-BaseConfig.FishSwimRadius = 1.8
-BaseConfig.FishSwimSpeed = 0.8 -- radians per second
+-- Fish fly above the pool: each one gets its own oval path and height.
+BaseConfig.FishFlyHeight = {3.0, 6.5} -- above the water surface
+BaseConfig.FishSwimSpeed = 0.55 -- radians per second
 BaseConfig.AnimationDistance = 220
 
 return BaseConfig

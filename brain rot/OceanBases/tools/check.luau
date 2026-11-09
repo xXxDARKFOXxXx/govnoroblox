@@ -135,13 +135,13 @@ for a = 1, 4 do
 	check(boxes[a].maxX + 4 <= boxes[a + 1].minX, "Bases " .. a .. " and " .. (a + 1) .. " do not touch")
 end
 local courtArea = (court.maxX - court.minX) * (court.maxZ - court.minZ)
-check(occupied / courtArea < 0.25, string.format("Bases use %.0f%% of the court at the start", occupied / courtArea * 100))
+check(occupied / courtArea < 0.30, string.format("Bases use %.0f%% of the court at the start", occupied / courtArea * 100))
 
 local roofless, studded, total = true, true, 0
 for id, base in bases do
 	check(base.PrimaryPart == base.Root and base:GetAttribute("Rows") == 2, "Base " .. id .. " starts with 2 rows")
 	local cells = Pens.cells(base)
-	check(#cells == 10, "Base " .. id .. " starts with 10 cells")
+	check(#cells == 12, "Base " .. id .. " starts with 12 cells (6 per row)")
 	for _, cell in cells do
 		for _, name in {"Tile", "EggPlacement", "InteractionPoint", "Content"} do assert(cell:FindFirstChild(name), name) end
 		assert(cell.InteractionPoint:FindFirstChild("CellPrompt") and cell.InteractionPoint:FindFirstChild("CellInfo"))
@@ -152,7 +152,7 @@ for id, base in bases do
 		if part:IsA("BasePart") then
 			total += 1
 			-- Open yard: nothing large hangs above the fence (no roof).
-			if part.Transparency < 1 and part.Size.X * part.Size.Z > 30 and part.CFrame.Position.Y > Config.Origins[id].Y + 3 then roofless = false end
+			if part.Transparency < 1 and part.Size.X * part.Size.Z > 30 and part.CFrame.Position.Y > Config.Origins[id].Y + 6 then roofless = false end
 			if part:IsA("Part") and part.Shape == r.Enum.PartType.Block and part.Material == r.Enum.Material.Plastic and part.TopSurface ~= r.Enum.SurfaceType.Studs then
 				studded = false
 			end
@@ -162,6 +162,14 @@ for id, base in bases do
 	check(base:FindFirstChild("OwnerSign", true) == nil and base.Yard.OwnerTag:FindFirstChild("OwnerGui"), "Base " .. id .. " owner name floats in the air (no sign board)")
 end
 check(roofless, "Yards are open (no roof)")
+for id, base in bases do
+	local pool = base:FindFirstChild("Pool")
+	assert(pool and pool:FindFirstChild("Water") and pool:FindFirstChild("FishZone"), "pool " .. id)
+	local depth = pool.FishZone.CFrame.Position.Y - pool.PoolBottom.CFrame.Position.Y
+	assert(depth > 1.4 and depth < 2.2, "pool depth " .. depth)
+	assert(not pool.Water.CanCollide)
+end
+check(true, "Every yard has a shallow pool (about a third of a character tall)")
 check(studded, "Plastic blocks have studs, like the court floor and walls")
 check(total / 5 < 400, "Light bases (" .. math.floor(total / 5) .. " parts each)")
 local anchored = true
@@ -206,7 +214,7 @@ check(Ownership.isOwner(alice, baseA) and not Ownership.isOwner(bob, baseA), "Ow
 Inventory.add(alice, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
 Inventory.add(alice, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
 local cells = Pens.cells(baseA)
-local first, last = cells[1], cells[10]
+local first, last = cells[1], cells[12]
 check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == true and not first.InteractionPoint.CellInfo.Enabled, "Empty cell: prompt on, no label clutter")
 event(first.InteractionPoint.CellPrompt, "Triggered"):Fire(bob)
 check(first:GetAttribute("State") == "Empty", "Another player cannot place eggs in your yard")
@@ -238,7 +246,11 @@ Pens.tick(1)
 check(first:GetAttribute("State") == "Fish" and last:GetAttribute("State") == "Fish", "Eggs hatch when their time is up")
 check(cells[4]:GetAttribute("State") == "Egg", "Slower eggs keep waiting")
 local fish = first.Content:FindFirstChildWhichIsA("Model")
-check(fish and fish.PrimaryPart and math.abs(fish.PrimaryPart.CFrame.Position.Y - (first.EggPlacement.CFrame.Position.Y + Config.FishHeight)) < 1e-3, "Fish appears floating above its cell")
+local zone = baseA.Pool.FishZone
+local fp = fish.PrimaryPart.CFrame.Position
+check(fp.Y >= zone.CFrame.Position.Y + Config.FishFlyHeight[1] - 0.01 and fp.Y <= zone.CFrame.Position.Y + Config.FishFlyHeight[2] + 0.01, "Fish flies in the air above the water, not in it")
+check(math.abs(fp.X - zone.CFrame.Position.X) <= zone.Size.X / 2 and math.abs(fp.Z - zone.CFrame.Position.Z) <= zone.Size.Z / 2, "Fish is over the pool")
+check(fish:GetAttribute("FloorY") == zone.CFrame.Position.Y, "Fish ring sits on the water surface")
 check(Config.Eggs.BasicEgg.fish[first:GetAttribute("FishType")] ~= nil, "Fish comes from the egg's table")
 
 -- Income straight into the pocket
@@ -254,7 +266,11 @@ check(bob:GetAttribute("Coins") == nil or bob:GetAttribute("Coins") == 0, "Other
 
 -- Expansion: one more row per level, wider yard, no floors
 local board = baseA.Yard.UpgradeBoard
-check(board.BoardFace.UpgradeLabel.Text.Text:find("5,000") ~= nil and board.BoardFace.UpgradeLabel.Text.Text:find("10 → 15") ~= nil, "Board shows price and new cell count")
+check(board.BoardFace.UpgradeLabel.Text.Text:find("5,000") ~= nil and board.BoardFace.UpgradeLabel.Text.Text:find("12 → 18") ~= nil, "Board shows price and new cell count")
+check(board.BoardFace.UpgradeLabelBack.Text.Text == board.BoardFace.UpgradeLabel.Text.Text, "Board text on both sides")
+local frontFence = -math.huge
+for _, part in baseA.Yard.Fence:GetChildren() do frontFence = math.max(frontFence, part.CFrame.Position.Z) end
+check(board.BoardFace.CFrame.Position.Z > frontFence + 1 and board.UpgradePoint.CFrame.Position.Z > frontFence, "Upgrade board stands outside the yard")
 local before = bounds(baseA)
 alice:SetAttribute("Coins", 100)
 event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
@@ -264,26 +280,26 @@ event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(bob)
 check(baseA:GetAttribute("Rows") == 2 and bob:GetAttribute("Coins") == 999999, "Nobody can expand someone else's base")
 alice:SetAttribute("Coins", 31000)
 event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
-check(baseA:GetAttribute("Rows") == 3 and #Pens.cells(baseA) == 15 and alice:GetAttribute("Coins") == 26000, "Expansion 1: 15 cells for 5,000")
+check(baseA:GetAttribute("Rows") == 3 and #Pens.cells(baseA) == 18 and alice:GetAttribute("Coins") == 26000, "Expansion 1: 18 cells for 5,000")
 local after = bounds(baseA)
 check(after.maxZ > before.maxZ + 7 and math.abs(after.minZ - before.minZ) < 0.01 and math.abs((after.maxX - after.minX) - (before.maxX - before.minX)) < 0.01, "The yard grows a row towards the front")
 local topBefore, topAfter = -math.huge, -math.huge
 for _, part in baseA:GetDescendants() do
-	if part:IsA("BasePart") and part.Transparency < 1 then topAfter = math.max(topAfter, part.CFrame.Position.Y) end
+	if part:IsA("BasePart") and part.Transparency < 1 and not part:FindFirstAncestor("Content") then topAfter = math.max(topAfter, part.CFrame.Position.Y) end
 end
 check(topAfter < Config.Origins[1].Y + 9, "Expansion adds no floors (stays one level)")
 check(first:GetAttribute("State") == "Fish" and first.Content:FindFirstChildWhichIsA("Model"), "Fish stay in place when the yard grows")
-local newCell = Pens.cells(baseA)[13]
+local newCell = Pens.cells(baseA)[15]
 Inventory.add(alice, "StarEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg"})
 event(newCell.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 check(newCell:GetAttribute("State") == "Egg", "New cells work right away")
 check(baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Alice", "Owner name stays after expansion")
 local newBoard = baseA.Yard.UpgradeBoard
 event(newBoard.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
-check(baseA:GetAttribute("Rows") == 4 and #Pens.cells(baseA) == 20 and alice:GetAttribute("Coins") == 1000, "Expansion 2: 20 cells for 25,000")
+check(baseA:GetAttribute("Rows") == 4 and #Pens.cells(baseA) == 24 and alice:GetAttribute("Coins") == 1000, "Expansion 2: 24 cells for 25,000")
 check(baseA.Yard.UpgradeBoard.UpgradePoint.UpgradePrompt:GetAttribute("Active") == false and baseA.Yard.UpgradeBoard.BoardFace.UpgradeLabel.Text.Text:find("Максимум") ~= nil, "Max size reached")
 local full = bounds(baseA)
-check(full.maxZ <= court.maxZ and full.maxZ <= -105, "A fully expanded yard still leaves the court front free")
+check(full.maxZ <= court.maxZ and full.maxZ <= -90, "A fully expanded yard still leaves 90+ studs of the court free in front")
 local neighbours = true
 for id = 2, 5 do neighbours = neighbours and full.maxX + 4 <= boxes[id].minX end
 check(neighbours, "A fully expanded yard does not reach the neighbours")
@@ -291,7 +307,7 @@ check(neighbours, "A fully expanded yard does not reach the neighbours")
 -- Leaving frees the base
 event(Players, "PlayerRemoving"):Fire(alice)
 check(baseA:GetAttribute("OwnerUserId") == 0 and baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Свободная база", "Leaving frees the base")
-check(baseA:GetAttribute("Rows") == 2 and #Pens.cells(baseA) == 10, "Freed base shrinks back to 10 cells")
+check(baseA:GetAttribute("Rows") == 2 and #Pens.cells(baseA) == 12, "Freed base shrinks back to 12 cells")
 local busy = 0
 for _, cell in Pens.cells(baseA) do if cell:GetAttribute("State") ~= "Empty" then busy += 1 end end
 check(busy == 0, "Freed base has empty cells")
@@ -329,15 +345,22 @@ for i = 0, 3 do
 	Anim.step(i * 1.3, center + r.Vector3.new(0, 10, 10))
 	positions[i] = fishModel.PrimaryPart.CFrame.Position
 end
-local tile = cell.Tile.CFrame.Position
+local poolZone = baseA.Pool.FishZone
 local inside = true
 for _, p in positions do
-	inside = inside and math.abs(p.X - tile.X) <= Config.CellSize / 2 and math.abs(p.Z - tile.Z) <= Config.CellSize / 2
+	inside = inside and math.abs(p.X - poolZone.CFrame.Position.X) <= poolZone.Size.X / 2 and math.abs(p.Z - poolZone.CFrame.Position.Z) <= poolZone.Size.Z / 2
+		and p.Y > poolZone.CFrame.Position.Y + 2
 end
-check(inside and (positions[0] - positions[2]).Magnitude > 0.5, "Fish swims in a circle over its own cell")
-check(math.abs(fishModel.Ripple.CFrame.Position.Y - (cell.EggPlacement.CFrame.Position.Y + 0.05)) < 1e-3, "Glow ring lies on the cell floor")
+check(inside and (positions[0] - positions[2]).Magnitude > 0.5, "Fish flies around in the air over the pool")
+local look = fishModel.PrimaryPart.CFrame.LookVector
+Anim.step(3 * 1.3 + 0.05, center + r.Vector3.new(0, 10, 10))
+local moved = (fishModel.PrimaryPart.CFrame.Position - positions[3]).Unit
+check(look:Dot(moved) > 0.5, "Fish faces the way it flies")
+check(math.abs(fishModel.Ripple.CFrame.Position.Y - (poolZone.CFrame.Position.Y + 0.05)) < 1e-3, "Glow ring lies on the water")
 Anim.step(5, center + r.Vector3.new(0, 1000, 0))
-check(fishModel.PrimaryPart.CFrame.Position == positions[3], "Far-away fish are not animated")
+local frozen = fishModel.PrimaryPart.CFrame.Position
+Anim.step(9, center + r.Vector3.new(0, 1000, 0))
+check(fishModel.PrimaryPart.CFrame.Position == frozen, "Far-away fish are not animated")
 Anim.stop()
 
 fs.writeFile(root .. "test-report.json", serde.encode("json", {passed = true, count = #tests, tests = tests, studioPlayTest = false}, true))

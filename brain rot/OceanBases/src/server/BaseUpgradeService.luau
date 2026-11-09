@@ -49,6 +49,9 @@ function BaseUpgradeService.refreshBoard(base: Model)
 		text.Text = "Максимум\n" .. Config.Levels[rows].cells .. " мест"
 		prompt:SetAttribute("Active", false)
 	end
+	-- Same text on the side facing the yard.
+	local back = board.BoardFace:FindFirstChild("UpgradeLabelBack")
+	if back then back.Text.Text = text.Text end
 end
 
 -- Rebuilds the yard for `rows` (fence, walkway, board, spawn, owner name).

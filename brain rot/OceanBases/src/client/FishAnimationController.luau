@@ -1,6 +1,6 @@
 -- FishAnimationController (client): one shared Heartbeat loop that swims every
--- nearby fish in a small circle above its cell (bobbing, roll), wags tails,
--- pulses the glow ring on the floor under it, and gently rocks eggs. Only models near the camera move.
+-- nearby fish on its oval in the air above the yard pool (bobbing, roll),
+-- wags tails, pulses the glow ring on the water under it, and rocks eggs. Only models near the camera move.
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -57,7 +57,8 @@ function FishAnimationController.step(t: number, cameraPosition: Vector3)
 		elseif (s.center - cameraPosition).Magnitude < maxDistance then
 			local a = s.phase + t * s.speed
 			local pos = s.center + Vector3.new(math.cos(a) * s.rx, math.sin(t * 2.2 + s.phase) * 0.12, math.sin(a) * s.rz)
-			local tangent = Vector3.new(-math.sin(a) * s.rx, 0, math.cos(a) * s.rz)
+			-- Face the way the fish is moving (some fly clockwise, some anticlockwise).
+			local tangent = Vector3.new(-math.sin(a) * s.rx, 0, math.cos(a) * s.rz) * (s.speed >= 0 and 1 or -1)
 			local cf = CFrame.lookAt(pos, pos + tangent) * CFrame.Angles(0, 0, math.sin(t * 3 + s.phase) * 0.07)
 			model:PivotTo(cf)
 			local bodyCf = s.body.CFrame
@@ -69,7 +70,7 @@ function FishAnimationController.step(t: number, cameraPosition: Vector3)
 				local pulse = 1 + 0.22 * math.sin(t * 2.5 + s.phase)
 				s.ripple.Size = Vector3.new(s.rippleSize.X, s.rippleSize.Y * pulse, s.rippleSize.Z * pulse)
 				s.ripple.Transparency = 0.55 + 0.25 * (pulse - 0.78) / 0.44
-				-- A glowing ring flat on the cell floor, under the fish.
+				-- A glowing ring flat on the water, under the fish.
 				s.ripple.CFrame = CFrame.new(pos.X, s.floorY + 0.05, pos.Z) * CFrame.Angles(0, 0, math.rad(90))
 			end
 		end

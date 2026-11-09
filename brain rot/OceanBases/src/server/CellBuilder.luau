@@ -1,5 +1,6 @@
 -- CellBuilder: one cell of the yard = one studded 8x8 floor tile. An egg can
--- be placed on any free cell; the fish that hatches floats above it.
+-- be placed on any free cell; the fish that hatches flies over the yard pool
+-- while its cell shows its name and income.
 --
 -- CellN (Model, attributes Index/Row/Column/State)
 --   Tile             (walkable floor tile, checker colour)
@@ -56,7 +57,7 @@ function CellBuilder.build(parent: Instance, origin: CFrame, row: number, column
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "CellInfo"
 	gui.Size = UDim2.fromOffset(170, 50)
-	gui.StudsOffset = Vector3.new(0, Config.FishHeight + 2.6, 0)
+	gui.StudsOffset = Vector3.new(0, 4.2, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 40
 	gui.Enabled = false

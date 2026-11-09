@@ -83,17 +83,35 @@ function FishPenController.clearCell(cell: Model)
 	FishPenController.refreshCell(cell)
 end
 
+-- Fish fly in the air above the pool water, each on its own oval and height,
+-- so a full yard of fish spreads over the whole pool instead of piling up.
 local function spawnFish(cell: Model, fishType: string)
-	local floor = cell.EggPlacement.CFrame.Position
-	local center = floor + Vector3.new(0, Config.FishHeight, 0)
-	local fish = Creatures.fish(cell.Content, fishType, CFrame.new(center))
-	-- Swim path for the client animation: a small circle above the cell.
+	local base = Ownership.baseFrom(cell)
+	local zone = base and base:FindFirstChild("Pool") and base.Pool:FindFirstChild("FishZone")
+	local rng = FishPenController.random
+	local waterY, center, rx, rz
+	if zone then
+		waterY = zone.CFrame.Position.Y
+		local low, high = Config.FishFlyHeight[1], Config.FishFlyHeight[2]
+		center = zone.CFrame.Position + Vector3.new(0, low + rng:NextNumber() * (high - low), 0)
+		rx = 3 + rng:NextNumber() * (zone.Size.X / 2 - 4)
+		rz = 1.5 + rng:NextNumber() * (zone.Size.Z / 2 - 2)
+	else
+		-- No pool (custom place): hover over the cell instead.
+		waterY = cell.EggPlacement.CFrame.Position.Y
+		center = cell.EggPlacement.CFrame.Position + Vector3.new(0, 3.2, 0)
+		rx, rz = 1.8, 1.8
+	end
+	local phase = rng:NextNumber() * math.pi * 2
+	local start = center + Vector3.new(math.cos(phase) * rx, 0, math.sin(phase) * rz)
+	local fish = Creatures.fish(cell.Content, fishType, CFrame.new(start))
+	-- Flight path for the client animation.
 	fish:SetAttribute("Center", center)
-	fish:SetAttribute("FloorY", floor.Y)
-	fish:SetAttribute("RadiusX", Config.FishSwimRadius)
-	fish:SetAttribute("RadiusZ", Config.FishSwimRadius)
-	fish:SetAttribute("Phase", FishPenController.random:NextNumber() * math.pi * 2)
-	fish:SetAttribute("Speed", Config.FishSwimSpeed * (0.85 + FishPenController.random:NextNumber() * 0.3))
+	fish:SetAttribute("FloorY", waterY)
+	fish:SetAttribute("RadiusX", rx)
+	fish:SetAttribute("RadiusZ", rz)
+	fish:SetAttribute("Phase", phase)
+	fish:SetAttribute("Speed", Config.FishSwimSpeed * (0.8 + rng:NextNumber() * 0.4) * (rng:NextNumber() < 0.5 and -1 or 1))
 	return fish
 end
 
