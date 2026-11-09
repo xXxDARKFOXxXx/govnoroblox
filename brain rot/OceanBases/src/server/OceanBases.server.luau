@@ -1,9 +1,8 @@
 -- OceanBases (Script in ServerScriptService.OceanBases): starts the base systems.
 -- Bases are prebuilt in Workspace.OceanBases by the build (visible in Studio);
 -- if they are missing (e.g. the scripts were inserted into another place),
--- they are built here. Locked upgrade floors live in ServerStorage.OceanBasesLocked.
+-- they are built here at the starting size.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
 
 local folder = script.Parent
 local Config = require(ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("BaseConfig"))
@@ -13,22 +12,11 @@ local Pens = require(folder:WaitForChild("FishPenController"))
 local Upgrades = require(folder:WaitForChild("BaseUpgradeService"))
 
 local basesFolder = workspace:FindFirstChild("OceanBases")
-local locked = ServerStorage:FindFirstChild("OceanBasesLocked")
 if not basesFolder then
 	basesFolder = Instance.new("Folder")
 	basesFolder.Name = "OceanBases"
-	locked = Instance.new("Folder")
-	locked.Name = "OceanBasesLocked"
-	locked.Parent = ServerStorage
 	for id = 1, Config.BaseCount do
-		local origin = Builder.origin(id)
-		Builder.build(basesFolder, id, origin, Config.StartFloors)
-		local store = Instance.new("Folder")
-		store.Name = "Base" .. id
-		store.Parent = locked
-		for k = Config.StartFloors + 1, Config.MaxFloors do
-			Builder.buildFloor(store, origin, k)
-		end
+		Builder.build(basesFolder, id, Builder.origin(id), Config.StartRows)
 	end
 	basesFolder.Parent = workspace
 end
@@ -59,6 +47,6 @@ selectItem.OnServerEvent:Connect(function(player, itemId)
 	end
 end)
 
-Pens.init(bases, locked)
-Upgrades.init(bases, locked)
+Pens.init(bases)
+Upgrades.init(bases)
 Ownership.init(bases)

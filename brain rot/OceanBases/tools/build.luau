@@ -1,5 +1,5 @@
 -- Builds the full game place: ocean map + HUD (from OceanHUD's build) + the
--- five player bases baked into Workspace, locked floors in ServerStorage.
+-- five player bases (open yards) baked into Workspace.
 -- Run from the OceanBases folder:  ..\..\tools\lune\lune.exe run tools/build.luau
 local fs = require("@lune/fs")
 local roblox = require("@lune/roblox")
@@ -21,31 +21,21 @@ local Builder = load(tree.server.BaseBuilder)
 local workspaceService = game:GetService("Workspace")
 local old = workspaceService:FindFirstChild("OceanBases")
 if old then old:Destroy() end
-local storage = game:GetService("ServerStorage")
-local oldLocked = storage:FindFirstChild("OceanBasesLocked")
-if oldLocked then oldLocked:Destroy() end
 
 local basesFolder = roblox.Instance.new("Folder")
 basesFolder.Name = "OceanBases"
-local locked = roblox.Instance.new("Folder")
-locked.Name = "OceanBasesLocked"
 for id = 1, Config.BaseCount do
-	local origin = Builder.origin(id)
-	Builder.build(basesFolder, id, origin, Config.StartFloors)
-	local store = roblox.Instance.new("Folder")
-	store.Name = "Base" .. id
-	store.Parent = locked
-	for k = Config.StartFloors + 1, Config.MaxFloors do
-		Builder.buildFloor(store, origin, k)
-	end
+	Builder.build(basesFolder, id, Builder.origin(id), Config.StartRows)
 end
 basesFolder.Parent = workspaceService
-locked.Parent = storage
+-- Remove the old floors storage of the previous (multi-storey) design if present.
+local oldLocked = game:GetService("ServerStorage"):FindFirstChild("OceanBasesLocked")
+if oldLocked then oldLocked:Destroy() end
 
 -- Studio opens looking at the bases from the court, slightly above.
 local camera = workspaceService:FindFirstChildOfClass("Camera")
 if camera then
-	camera.CFrame = roblox.CFrame.lookAt(roblox.Vector3.new(30, 62, -40), roblox.Vector3.new(0, 8, -136))
+	camera.CFrame = roblox.CFrame.lookAt(roblox.Vector3.new(20, 48, -70), roblox.Vector3.new(0, 4, -140))
 end
 
 local bytes = roblox.serializePlace(game)
@@ -53,7 +43,7 @@ fs.writeFile(OUTPUT, bytes)
 
 -- Round trip: everything compiles, counts are as expected.
 local restored = roblox.deserializePlace(bytes)
-local scripts, parts, lockedParts = 0, 0, 0
+local scripts, parts = 0, 0
 for _, object in restored:GetDescendants() do
 	if object:IsA("LuaSourceContainer") then
 		assert(#luau.compile(object.Source) > 0, "Invalid script: " .. object:GetFullName())
@@ -63,12 +53,8 @@ end
 for _, object in restored:GetService("Workspace").OceanBases:GetDescendants() do
 	if object:IsA("BasePart") then parts += 1 end
 end
-for _, object in restored:GetService("ServerStorage").OceanBasesLocked:GetDescendants() do
-	if object:IsA("BasePart") then lockedParts += 1 end
-end
 fs.writeFile(root .. "build-report.json", serde.encode("json", {
 	output = "brain rot/OceanGame.rbxl", scripts = scripts, placeBytes = #bytes,
-	baseParts = parts, partsPerBase = parts // Config.BaseCount, lockedFloorParts = lockedParts,
+	baseParts = parts, partsPerBase = parts // Config.BaseCount,
 }, true))
-print(string.format("Built OceanGame.rbxl: %d scripts, %d base parts (%d per base), %d parts in locked floors.",
-	scripts, parts, parts // Config.BaseCount, lockedParts))
+print(string.format("Built OceanGame.rbxl: %d scripts, %d base parts (%d per base).", scripts, parts, parts // Config.BaseCount))

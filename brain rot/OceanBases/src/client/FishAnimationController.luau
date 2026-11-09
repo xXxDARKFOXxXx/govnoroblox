@@ -1,6 +1,6 @@
 -- FishAnimationController (client): one shared Heartbeat loop that swims every
--- nearby fish around its pen (ellipse path, bobbing, roll), wags tails, pulses
--- the water ripple, and gently rocks eggs. Only models near the camera move.
+-- nearby fish in a small circle above its cell (bobbing, roll), wags tails,
+-- pulses the glow ring on the floor under it, and gently rocks eggs. Only models near the camera move.
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,7 +29,7 @@ local function trackFish(model: Model)
 		body = body, center = center, tails = tails, hinge = CFrame.new(0, 0, hinge),
 		rx = model:GetAttribute("RadiusX") or 2, rz = model:GetAttribute("RadiusZ") or 1.5,
 		phase = model:GetAttribute("Phase") or 0, speed = model:GetAttribute("Speed") or Config.FishSwimSpeed,
-		ripple = ripple, rippleOffset = ripple and body.CFrame:ToObjectSpace(ripple.CFrame), rippleSize = ripple and ripple.Size,
+		ripple = ripple, rippleSize = ripple and ripple.Size, floorY = model:GetAttribute("FloorY") or (center.Y - 3),
 		base = model:GetPivot(),
 	}
 end
@@ -69,8 +69,8 @@ function FishAnimationController.step(t: number, cameraPosition: Vector3)
 				local pulse = 1 + 0.22 * math.sin(t * 2.5 + s.phase)
 				s.ripple.Size = Vector3.new(s.rippleSize.X, s.rippleSize.Y * pulse, s.rippleSize.Z * pulse)
 				s.ripple.Transparency = 0.55 + 0.25 * (pulse - 0.78) / 0.44
-				-- Keep the ripple flat on the water, under the fish.
-				s.ripple.CFrame = CFrame.new(pos + Vector3.new(0, s.rippleOffset.Position.Y, 0)) * CFrame.Angles(0, 0, math.rad(90))
+				-- A glowing ring flat on the cell floor, under the fish.
+				s.ripple.CFrame = CFrame.new(pos.X, s.floorY + 0.05, pos.Z) * CFrame.Angles(0, 0, math.rad(90))
 			end
 		end
 	end

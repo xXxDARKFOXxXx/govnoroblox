@@ -101,18 +101,13 @@ local Pens = load(tree.server.FishPenController)
 local Upgrades = load(tree.server.BaseUpgradeService)
 local Creatures = load(tree.server.CreatureModels)
 local Inventory = load(game:GetService("ServerScriptService").OceanInventory)
-local Stats = load(game:GetService("ServerScriptService").OceanHUDStats)
 
 local basesFolder = game:GetService("Workspace").OceanBases
-local locked = game:GetService("ServerStorage").OceanBasesLocked
 local bases = {}
 for id = 1, 5 do bases[id] = basesFolder["Base" .. id] end
 
 ---------------------------------------------------------------- layout & structure
-check(#basesFolder:GetChildren() == 5, "Five bases on the start court")
-local court = {minX = -144, maxX = 144, minZ = -160, maxZ = 0}
-local boxes, occupied = {}, 0
-for id, base in bases do
+local function bounds(base)
 	local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
 	for _, part in base:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -125,57 +120,55 @@ for id, base in bases do
 			minZ, maxZ = math.min(minZ, p.Z - ez), math.max(maxZ, p.Z + ez)
 		end
 	end
-	boxes[id] = {minX = minX, maxX = maxX, minZ = minZ, maxZ = maxZ}
-	occupied += (maxX - minX) * (maxZ - minZ)
-	check(minX >= court.minX and maxX <= court.maxX and minZ >= court.minZ and maxZ <= court.maxZ, "Base " .. id .. " stays inside the start court")
+	return {minX = minX, maxX = maxX, minZ = minZ, maxZ = maxZ}
+end
+check(#basesFolder:GetChildren() == 5, "Five bases on the start court")
+local court = {minX = -144, maxX = 144, minZ = -160, maxZ = 0}
+local boxes, occupied = {}, 0
+for id, base in bases do
+	local b = bounds(base)
+	boxes[id] = b
+	occupied += (b.maxX - b.minX) * (b.maxZ - b.minZ)
+	check(b.minX >= court.minX and b.maxX <= court.maxX and b.minZ >= court.minZ and b.maxZ <= court.maxZ, "Base " .. id .. " stays inside the start court")
 end
 for a = 1, 4 do
 	check(boxes[a].maxX + 4 <= boxes[a + 1].minX, "Bases " .. a .. " and " .. (a + 1) .. " do not touch")
 end
 local courtArea = (court.maxX - court.minX) * (court.maxZ - court.minZ)
-check(occupied / courtArea < 0.35, string.format("Bases use %.0f%% of the court (room left for buildings)", occupied / courtArea * 100))
-local frontmost = -math.huge
-for _, b in boxes do frontmost = math.max(frontmost, b.maxZ) end
-check(-frontmost >= 105, "At least 105 studs of free court in front of the bases")
+check(occupied / courtArea < 0.25, string.format("Bases use %.0f%% of the court at the start", occupied / courtArea * 100))
 
-local PEN_PARTS = {"Base", "Walls", "Water", "Decorations", "EggPlacement", "FishMovementArea", "InteractionPoint", "Effects", "Content"}
+local roofless, studded, total = true, true, 0
 for id, base in bases do
-	check(base.PrimaryPart == base.Root and base:FindFirstChild("SpawnPoint"), "Base " .. id .. " has a root pivot and spawn point")
-	check(base:GetAttribute("Floors") == 2 and #Pens.pens(base) == 10, "Base " .. id .. " starts with 2 floors and 10 pens")
-	local store = locked["Base" .. id]
-	local lockedPens = 0
-	for _, floor in store:GetChildren() do lockedPens += #floor.Pens:GetChildren() end
-	check(lockedPens == 10 and store:FindFirstChild("Floor3") and store:FindFirstChild("Floor4"), "Base " .. id .. " can grow to 20 pens (floors 3 and 4 stored)")
-	for _, pen in Pens.pens(base) do
-		for _, name in PEN_PARTS do assert(pen:FindFirstChild(name), "Pen part " .. name) end
-		assert(pen.EggPlacement:FindFirstChild("FishSpawn") and pen.InteractionPoint:FindFirstChild("IncomeDisplay"))
+	check(base.PrimaryPart == base.Root and base:GetAttribute("Rows") == 2, "Base " .. id .. " starts with 2 rows")
+	local cells = Pens.cells(base)
+	check(#cells == 10, "Base " .. id .. " starts with 10 cells")
+	for _, cell in cells do
+		for _, name in {"Tile", "EggPlacement", "InteractionPoint", "Content"} do assert(cell:FindFirstChild(name), name) end
+		assert(cell.InteractionPoint:FindFirstChild("CellPrompt") and cell.InteractionPoint:FindFirstChild("CellInfo"))
+		assert(cell.Tile.Size.X == Config.CellSize and cell.Tile.Size.Z == Config.CellSize)
 	end
-	check(true, "Base " .. id .. " pens have Base/Walls/Water/Decorations/EggPlacement/FishSpawn/FishMovementArea/InteractionPoint/IncomeDisplay/Effects")
-end
-local anchored, decorCollide, lights = true, 0, 0
-for _, part in basesFolder:GetDescendants() do
-	if part:IsA("BasePart") then
-		anchored = anchored and part.Anchored
-		if part.CanCollide and (part.Name:find("Kelp") or part.Name:find("Coral") or part.Name:find("Shell") or part.Name:find("Star") or part.Name:find("Rope")) then
-			decorCollide += 1
+	check(true, "Base " .. id .. " cells are 8x8 tiles with a prompt and a label")
+	for _, part in base:GetDescendants() do
+		if part:IsA("BasePart") then
+			total += 1
+			-- Open yard: nothing large hangs above the fence (no roof).
+			if part.Transparency < 1 and part.Size.X * part.Size.Z > 30 and part.CFrame.Position.Y > Config.Origins[id].Y + 3 then roofless = false end
+			if part:IsA("Part") and part.Shape == r.Enum.PartType.Block and part.Material == r.Enum.Material.Plastic and part.TopSurface ~= r.Enum.SurfaceType.Studs then
+				studded = false
+			end
 		end
-	elseif part:IsA("PointLight") then
-		lights += 1
 	end
+	check(base:FindFirstChild("Chest", true) == nil and base:FindFirstChild("Floors") == nil and base:FindFirstChild("Lift", true) == nil, "Base " .. id .. " has no chest, floors or lift")
+	check(base:FindFirstChild("OwnerSign", true) == nil and base.Yard.OwnerTag:FindFirstChild("OwnerGui"), "Base " .. id .. " owner name floats in the air (no sign board)")
+end
+check(roofless, "Yards are open (no roof)")
+check(studded, "Plastic blocks have studs, like the court floor and walls")
+check(total / 5 < 400, "Light bases (" .. math.floor(total / 5) .. " parts each)")
+local anchored = true
+for _, part in basesFolder:GetDescendants() do
+	if part:IsA("BasePart") then anchored = anchored and part.Anchored end
 end
 check(anchored, "Every base part is anchored")
-check(decorCollide == 0, "Small decor has no collision")
-check(lights <= 5 * 4, "Few real lights (" .. lights .. " for five bases)")
--- Floor heights: upgrades stack upwards, not outwards.
-local f3 = locked.Base1.Floor3
-check(math.abs(f3.FloorRoot.CFrame.Position.Y - (bases[1].Root.CFrame.Position.Y + Config.floorTop(3))) < 1e-3, "Floor 3 sits one storey above floor 2")
-local footprint = boxes[1]
-local f4 = locked.Base1.Floor4
-local fx = 0
-for _, part in f4:GetDescendants() do
-	if part:IsA("BasePart") then fx = math.max(fx, math.abs(part.CFrame.Position.X - bases[1].Root.CFrame.Position.X)) end
-end
-check(fx <= (footprint.maxX - footprint.minX) / 2 + 1, "Upper floors keep the same footprint")
 
 ---------------------------------------------------------------- players
 local Players = game:GetService("Players")
@@ -196,116 +189,120 @@ local function makePlayer(name, userId)
 	event(Players, "PlayerAdded"):Fire(p)
 	return p
 end
+r.implementMethod("Players", "GetPlayerByUserId", function(players, id)
+	for _, p in players:GetChildren() do if p.UserId == id then return p end end
+	return nil
+end)
 local alice = makePlayer("Alice", 101)
 local bob = makePlayer("Bob", 202)
 local baseA, baseB = Ownership.baseOf(alice), Ownership.baseOf(bob)
 check(baseA == bases[1] and baseB == bases[2], "Joining players get free bases in order")
-check(baseA:GetAttribute("OwnerUserId") == 101 and baseA.Entrance.OwnerSign.OwnerLabel.Text.Text == "База: Alice", "Owner sign shows the player name")
-check((alice.Character.HumanoidRootPart.CFrame.Position - baseA.SpawnPoint.CFrame.Position).Magnitude < 4, "Owner is moved to their base")
+check(baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Alice", "Owner name floats above the base")
+check(bases[3].Yard.OwnerTag.OwnerGui.OwnerName.Text == "Свободная база", "Free bases say so")
+check((alice.Character.HumanoidRootPart.CFrame.Position - baseA.Yard.SpawnPoint.CFrame.Position).Magnitude < 4, "Owner is moved into their yard")
 check(Ownership.isOwner(alice, baseA) and not Ownership.isOwner(bob, baseA), "Ownership check")
 
--- Eggs from the inventory
-Inventory.add(alice, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 2})
+-- Eggs on any cell
+Inventory.add(alice, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
 Inventory.add(alice, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
-local penA = Pens.pens(baseA)[1]
-local prompt = penA.InteractionPoint.PenPrompt
-check(prompt:GetAttribute("Active") == true and penA.InteractionPoint.PenInfo.Title.Text == "Свободный загон", "Empty pen invites to place an egg")
-event(prompt, "Triggered"):Fire(bob)
-check(penA:GetAttribute("State") == "Empty", "Another player cannot place eggs in your pen")
+local cells = Pens.cells(baseA)
+local first, last = cells[1], cells[10]
+check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == true and not first.InteractionPoint.CellInfo.Enabled, "Empty cell: prompt on, no label clutter")
+event(first.InteractionPoint.CellPrompt, "Triggered"):Fire(bob)
+check(first:GetAttribute("State") == "Empty", "Another player cannot place eggs in your yard")
+event(first.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+event(last.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+event(cells[7].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+check(first:GetAttribute("State") == "Egg" and last:GetAttribute("State") == "Egg" and cells[7]:GetAttribute("State") == "Egg", "Eggs go on any cell of the yard")
+check(Inventory.count(alice, "BasicEgg") == 0 and Inventory.count(alice, "GoldEgg") == 1, "Placed eggs leave the inventory")
+local egg = first.Content:FindFirstChild("Egg")
+check(egg and math.abs(egg.Shell.CFrame.Position.Y - (first.Tile.CFrame.Position.Y + 0.5 + 1.4)) < 0.3, "Egg stands on the cell tile")
+check(math.abs(egg.Shell.CFrame.Position.X - first.Tile.CFrame.Position.X) < 1e-3 and math.abs(egg.Shell.CFrame.Position.Z - first.Tile.CFrame.Position.Z) < 1e-3, "Egg is centred on its cell")
+check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == false and first.InteractionPoint.CellInfo.Enabled, "Busy cell hides its prompt and shows a label")
 -- Hand-held egg via the hotbar remote.
 local selectItem = game:GetService("ReplicatedStorage").OceanBases.Remotes.SelectItem
 event(selectItem, "OnServerEvent"):Fire(alice, "GoldEgg")
 check(alice:GetAttribute("HeldItem") == "GoldEgg", "Hotbar selection reaches the server")
 event(selectItem, "OnServerEvent"):Fire(alice, "NotMine")
 check(alice:GetAttribute("HeldItem") == "GoldEgg", "Server ignores items the player does not have")
-event(selectItem, "OnServerEvent"):Fire(alice, nil)
-event(prompt, "Triggered"):Fire(alice)
-check(penA:GetAttribute("State") == "Egg" and penA:GetAttribute("EggType") == "BasicEgg", "Owner places an egg")
-check(Inventory.count(alice, "BasicEgg") == 1, "The egg leaves the inventory")
-check(#penA.Content:GetChildren() == 1 and penA.Content.Egg.PrimaryPart, "Egg model stands on the pedestal")
-check(math.abs(penA.Content.Egg.Shell.CFrame.Position.Y - (penA.EggPlacement.CFrame.Position.Y + 1.4)) < 0.2, "Egg sits on top of the pedestal")
-check(prompt:GetAttribute("Active") == false, "A busy pen hides its prompt")
-event(prompt, "Triggered"):Fire(alice)
-check(Inventory.count(alice, "BasicEgg") == 1, "Cannot place a second egg in the same pen")
-alice:SetAttribute("HeldItem", "GoldEgg")
-local penA2 = Pens.pens(baseA)[2]
-event(penA2.InteractionPoint.PenPrompt, "Triggered"):Fire(alice)
-check(penA2:GetAttribute("EggType") == "GoldEgg" and Inventory.count(alice, "GoldEgg") == 0, "The egg in the hand is used first")
+event(cells[4].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+check(cells[4]:GetAttribute("EggType") == "GoldEgg", "The egg in the hand is used")
+event(cells[5].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+check(cells[5]:GetAttribute("State") == "Empty", "No eggs left: nothing is placed")
 
 -- Hatching
 Pens.tick(1)
-check(penA:GetAttribute("State") == "Egg" and penA.InteractionPoint.PenInfo.Line.Text:find("0:15") ~= nil, "Countdown shown until hatching")
+check(first.InteractionPoint.CellInfo.Line.Text:find("0:15") ~= nil, "Countdown above the egg")
 serverTime += 15
 Pens.tick(1)
-check(penA:GetAttribute("State") == "Fish", "Egg hatches when its time is up")
-local fishType = penA:GetAttribute("FishType")
-check(Config.Eggs.BasicEgg.fish[fishType] ~= nil, "Fish comes from the egg's table")
-local fish = penA.Content:FindFirstChildWhichIsA("Model")
-check(fish and fish:GetAttribute("Center") and fish.PrimaryPart, "Fish model with a swim path appears in the pen")
-check(penA.InteractionPoint.PenInfo.Line.Text == "+" .. Config.Fish[fishType].income .. " / сек", "Pen shows income per second")
+check(first:GetAttribute("State") == "Fish" and last:GetAttribute("State") == "Fish", "Eggs hatch when their time is up")
+check(cells[4]:GetAttribute("State") == "Egg", "Slower eggs keep waiting")
+local fish = first.Content:FindFirstChildWhichIsA("Model")
+check(fish and fish.PrimaryPart and math.abs(fish.PrimaryPart.CFrame.Position.Y - (first.EggPlacement.CFrame.Position.Y + Config.FishHeight)) < 1e-3, "Fish appears floating above its cell")
+check(Config.Eggs.BasicEgg.fish[first:GetAttribute("FishType")] ~= nil, "Fish comes from the egg's table")
 
--- Income
-baseA:SetAttribute("Stored", 0)
-Pens.tick(10)
-local expected = Config.Fish[fishType].income * 10
-check(math.abs(baseA:GetAttribute("Stored") - expected) < 1e-6, "Fish income goes into the base chest")
-check(baseA.Chest.ChestPoint.ChestInfo.Amount.Text == tostring(expected), "Chest shows stored coins")
+-- Income straight into the pocket
 alice:SetAttribute("Coins", 0)
-event(baseA.Chest.ChestPoint.CollectPrompt, "Triggered"):Fire(bob)
-check(baseA:GetAttribute("Stored") == expected, "Another player cannot collect your coins")
-event(baseA.Chest.ChestPoint.CollectPrompt, "Triggered"):Fire(alice)
-check(alice:GetAttribute("Coins") == expected and baseA:GetAttribute("Stored") == 0, "Owner collects the coins")
+local perSecond = first:GetAttribute("Income") + last:GetAttribute("Income") + cells[7]:GetAttribute("Income")
 Pens.tick(10)
-check(baseB:GetAttribute("Stored") == 0, "Empty bases earn nothing")
+check(alice:GetAttribute("Coins") == perSecond * 10, "Fish income goes straight into the owner's coins")
+check(baseA:GetAttribute("Income") == perSecond, "Base knows its income per second")
+Pens.tick(0.5)
+Pens.tick(0.5)
+check(alice:GetAttribute("Coins") == perSecond * 11, "Fractions of a second add up, nothing is lost")
+check(bob:GetAttribute("Coins") == nil or bob:GetAttribute("Coins") == 0, "Other players earn nothing from your fish")
 
--- Upgrades
-local board = baseA.UpgradeBoard
-check(board.BoardFace.UpgradeLabel.Text.Text:find("5,000") ~= nil, "Board shows the next floor price")
+-- Expansion: one more row per level, wider yard, no floors
+local board = baseA.Yard.UpgradeBoard
+check(board.BoardFace.UpgradeLabel.Text.Text:find("5,000") ~= nil and board.BoardFace.UpgradeLabel.Text.Text:find("10 → 15") ~= nil, "Board shows price and new cell count")
+local before = bounds(baseA)
 alice:SetAttribute("Coins", 100)
 event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
-check(baseA:GetAttribute("Floors") == 2 and alice:GetAttribute("Coins") == 100, "Upgrade needs enough coins")
+check(baseA:GetAttribute("Rows") == 2 and alice:GetAttribute("Coins") == 100, "Expansion needs enough coins")
 bob:SetAttribute("Coins", 999999)
 event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(bob)
-check(baseA:GetAttribute("Floors") == 2 and bob:GetAttribute("Coins") == 999999, "Nobody can upgrade someone else's base")
+check(baseA:GetAttribute("Rows") == 2 and bob:GetAttribute("Coins") == 999999, "Nobody can expand someone else's base")
 alice:SetAttribute("Coins", 31000)
 event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
-check(baseA:GetAttribute("Floors") == 3 and alice:GetAttribute("Coins") == 26000, "Buying floor 3 costs 5,000")
-check(#Pens.pens(baseA) == 15 and baseA.Floors:FindFirstChild("Floor3"), "Floor 3 adds 5 pens on top")
-check(math.abs(baseA.Floors.Floor3.FloorRoot.CFrame.Position.Y - (baseA.Root.CFrame.Position.Y + Config.floorTop(3))) < 1e-3, "New floor is placed above, not beside")
-event(board.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
-check(baseA:GetAttribute("Floors") == 4 and #Pens.pens(baseA) == 20 and alice:GetAttribute("Coins") == 1000, "Floor 4: 20 pens, 25,000 coins")
-check(board.UpgradePoint.UpgradePrompt:GetAttribute("Active") == false and board.BoardFace.UpgradeLabel.Text.Text:find("Максимум") ~= nil, "Max level reached")
-local newPen = baseA.Floors.Floor4.Pens:GetChildren()[1]
+check(baseA:GetAttribute("Rows") == 3 and #Pens.cells(baseA) == 15 and alice:GetAttribute("Coins") == 26000, "Expansion 1: 15 cells for 5,000")
+local after = bounds(baseA)
+check(after.maxZ > before.maxZ + 7 and math.abs(after.minZ - before.minZ) < 0.01 and math.abs((after.maxX - after.minX) - (before.maxX - before.minX)) < 0.01, "The yard grows a row towards the front")
+local topBefore, topAfter = -math.huge, -math.huge
+for _, part in baseA:GetDescendants() do
+	if part:IsA("BasePart") and part.Transparency < 1 then topAfter = math.max(topAfter, part.CFrame.Position.Y) end
+end
+check(topAfter < Config.Origins[1].Y + 9, "Expansion adds no floors (stays one level)")
+check(first:GetAttribute("State") == "Fish" and first.Content:FindFirstChildWhichIsA("Model"), "Fish stay in place when the yard grows")
+local newCell = Pens.cells(baseA)[13]
 Inventory.add(alice, "StarEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg"})
-event(newPen.InteractionPoint.PenPrompt, "Triggered"):Fire(alice)
-check(newPen:GetAttribute("State") == "Egg", "Pens on new floors work")
-
--- Lift
-local lift1, lift4 = baseA.Floors.Floor1.Lift.LiftPoint, baseA.Floors.Floor4.Lift.LiftPoint
-check(lift1.LiftUp:GetAttribute("Active") and not lift1.LiftDown:GetAttribute("Active"), "Ground lift only goes up")
-check(not lift4.LiftUp:GetAttribute("Active") and lift4.LiftDown:GetAttribute("Active"), "Top lift only goes down")
-check(baseA.Floors.Floor4.Lift.LiftTube.Transparency == 1 and baseA.Floors.Floor3.Lift.LiftTube.Transparency < 1, "Lift tube only below an upper floor")
-event(lift1.LiftUp, "Triggered"):Fire(alice)
-local y = alice.Character.HumanoidRootPart.CFrame.Position.Y
-check(math.abs(y - (baseA.Floors.Floor2.Lift.LiftArrival.CFrame.Position.Y + 1)) < 1e-3, "Lift takes the player one floor up")
-event(lift4.LiftUp, "Triggered"):Fire(alice)
-check(alice.Character.HumanoidRootPart.CFrame.Position.Y == y, "Lift cannot go above the top floor")
+event(newCell.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
+check(newCell:GetAttribute("State") == "Egg", "New cells work right away")
+check(baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Alice", "Owner name stays after expansion")
+local newBoard = baseA.Yard.UpgradeBoard
+event(newBoard.UpgradePoint.UpgradePrompt, "Triggered"):Fire(alice)
+check(baseA:GetAttribute("Rows") == 4 and #Pens.cells(baseA) == 20 and alice:GetAttribute("Coins") == 1000, "Expansion 2: 20 cells for 25,000")
+check(baseA.Yard.UpgradeBoard.UpgradePoint.UpgradePrompt:GetAttribute("Active") == false and baseA.Yard.UpgradeBoard.BoardFace.UpgradeLabel.Text.Text:find("Максимум") ~= nil, "Max size reached")
+local full = bounds(baseA)
+check(full.maxZ <= court.maxZ and full.maxZ <= -105, "A fully expanded yard still leaves the court front free")
+local neighbours = true
+for id = 2, 5 do neighbours = neighbours and full.maxX + 4 <= boxes[id].minX end
+check(neighbours, "A fully expanded yard does not reach the neighbours")
 
 -- Leaving frees the base
 event(Players, "PlayerRemoving"):Fire(alice)
-check(baseA:GetAttribute("OwnerUserId") == 0 and baseA.Entrance.OwnerSign.OwnerLabel.Text.Text == "Свободная база", "Leaving frees the base")
-check(baseA:GetAttribute("Floors") == 2 and locked.Base1:FindFirstChild("Floor3") and locked.Base1:FindFirstChild("Floor4"), "Freed base goes back to 2 floors")
+check(baseA:GetAttribute("OwnerUserId") == 0 and baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Свободная база", "Leaving frees the base")
+check(baseA:GetAttribute("Rows") == 2 and #Pens.cells(baseA) == 10, "Freed base shrinks back to 10 cells")
 local busy = 0
-for _, pen in Pens.pens(baseA) do if pen:GetAttribute("State") ~= "Empty" then busy += 1 end end
-check(busy == 0 and baseA:GetAttribute("Stored") == 0, "Freed base has empty pens and chest")
+for _, cell in Pens.cells(baseA) do if cell:GetAttribute("State") ~= "Empty" then busy += 1 end end
+check(busy == 0, "Freed base has empty cells")
 local carol = makePlayer("Carol", 303)
-check(Ownership.baseOf(carol) == baseA, "Next player gets the freed base")
+check(Ownership.baseOf(carol) == baseA and baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Carol", "Next player gets the freed base")
 
 -- Creature models
 local scratch = r.Instance.new("Folder")
 for eggType in Config.Eggs do
-	local egg = Creatures.egg(scratch, eggType, r.CFrame.new())
-	assert(egg.PrimaryPart and egg:GetAttribute("EggType") == eggType)
+	local e = Creatures.egg(scratch, eggType, r.CFrame.new())
+	assert(e.PrimaryPart and e:GetAttribute("EggType") == eggType)
 	local rolled = {}
 	for _ = 1, 200 do rolled[Creatures.rollFish(eggType)] = true end
 	for f in rolled do assert(Config.Eggs[eggType].fish[f], "Unexpected fish " .. f) end
@@ -317,33 +314,28 @@ for fishType in Config.Fish do
 	for _, part in model:GetChildren() do if part:GetAttribute("Tail") then tails += 1 end end
 	assert(model.PrimaryPart and tails == 2 and model:FindFirstChild("Ripple"), fishType)
 end
-check(true, "Every fish type builds with a body, wagging tail and ripple")
+check(true, "Every fish type builds with a body, wagging tail and floor ring")
 
 -- Client animation
 local Anim = load(tree.client.FishAnimationController)
-local fishModel = Pens.pens(baseA)[1].Content:FindFirstChildWhichIsA("Model")
-if not fishModel then
-	-- Carol's base was reset; hatch a fresh fish for the animation check.
-	local pen = Pens.pens(baseA)[1]
-	pen:SetAttribute("EggType", "BasicEgg")
-	Pens.hatch(pen, "ClownFish")
-	fishModel = pen.Content:FindFirstChildWhichIsA("Model")
-end
-event(tagged, "add:OceanFish"):Fire(fishModel)
+local cell = Pens.cells(baseA)[1]
+cell:SetAttribute("EggType", "BasicEgg")
+Pens.hatch(cell, "ClownFish")
+local fishModel = cell.Content:FindFirstChildWhichIsA("Model")
 Anim.start()
-event(tagged, "add:OceanFish"):Fire(fishModel)
 local center = fishModel:GetAttribute("Center")
 local positions = {}
 for i = 0, 3 do
 	Anim.step(i * 1.3, center + r.Vector3.new(0, 10, 10))
 	positions[i] = fishModel.PrimaryPart.CFrame.Position
 end
-local area = fishModel.Parent.Parent.FishMovementArea
+local tile = cell.Tile.CFrame.Position
 local inside = true
 for _, p in positions do
-	inside = inside and math.abs(p.X - area.CFrame.Position.X) <= area.Size.X / 2 and math.abs(p.Z - area.CFrame.Position.Z) <= area.Size.Z / 2
+	inside = inside and math.abs(p.X - tile.X) <= Config.CellSize / 2 and math.abs(p.Z - tile.Z) <= Config.CellSize / 2
 end
-check(inside and (positions[0] - positions[2]).Magnitude > 0.5, "Fish swims around inside its pen")
+check(inside and (positions[0] - positions[2]).Magnitude > 0.5, "Fish swims in a circle over its own cell")
+check(math.abs(fishModel.Ripple.CFrame.Position.Y - (cell.EggPlacement.CFrame.Position.Y + 0.05)) < 1e-3, "Glow ring lies on the cell floor")
 Anim.step(5, center + r.Vector3.new(0, 1000, 0))
 check(fishModel.PrimaryPart.CFrame.Position == positions[3], "Far-away fish are not animated")
 Anim.stop()

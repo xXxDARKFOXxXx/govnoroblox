@@ -1,8 +1,7 @@
 {
-  "baseParts": 8405,
-  "lockedFloorParts": 7700,
+  "baseParts": 1180,
   "output": "brain rot/OceanGame.rbxl",
-  "partsPerBase": 1681,
-  "placeBytes": 486592,
+  "partsPerBase": 236,
+  "placeBytes": 415461,
   "scripts": 28
 }

@@ -15,8 +15,8 @@ local basesFolder = workspace:WaitForChild("OceanBases")
 FishAnimation.start()
 Effects.start(basesFolder)
 
--- Owner-only prompts: pens, chest and upgrade board. Lifts work for everyone.
-local OWNER_ONLY = {PenPrompt = true, CollectPrompt = true, UpgradePrompt = true}
+-- Owner-only prompts: cells and the expansion board.
+local OWNER_ONLY = {CellPrompt = true, UpgradePrompt = true}
 local function baseOf(instance: Instance): Model?
 	local node = instance
 	while node and not (node:IsA("Model") and node:GetAttribute("BaseId")) do node = node.Parent end
@@ -41,30 +41,10 @@ for _, object in basesFolder:GetDescendants() do bind(object) end
 basesFolder.DescendantAdded:Connect(function(object)
 	if object:IsA("ProximityPrompt") then task.defer(bind, object) end
 end)
--- Pen labels: fish and eggs are shown to everyone; "free pen" hints only to the owner.
-local function applyInfo(gui: BillboardGui)
-	local pen = gui.Parent and gui.Parent.Parent
-	local base = baseOf(gui)
-	if not pen or not base then return end
-	local mine = base:GetAttribute("OwnerUserId") == player.UserId
-	gui.Enabled = mine or pen:GetAttribute("State") ~= "Empty"
-end
-local function bindInfo(gui: Instance)
-	if not gui:IsA("BillboardGui") or gui.Name ~= "PenInfo" or gui:GetAttribute("ClientBound") then return end
-	gui:SetAttribute("ClientBound", true)
-	local pen = gui.Parent.Parent
-	pen:GetAttributeChangedSignal("State"):Connect(function() applyInfo(gui) end)
-	applyInfo(gui)
-end
-for _, object in basesFolder:GetDescendants() do bindInfo(object) end
-basesFolder.DescendantAdded:Connect(function(object)
-	if object:IsA("BillboardGui") then task.defer(bindInfo, object) end
-end)
 for _, base in basesFolder:GetChildren() do
 	base:GetAttributeChangedSignal("OwnerUserId"):Connect(function()
 		for _, object in base:GetDescendants() do
 			if object:IsA("ProximityPrompt") then apply(object) end
-			if object:IsA("BillboardGui") and object.Name == "PenInfo" then applyInfo(object) end
 		end
 	end)
 end

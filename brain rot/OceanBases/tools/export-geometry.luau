@@ -33,7 +33,8 @@ local function add(root)
 	end
 end
 add(base)
-local locked = game:GetService("ServerStorage").OceanBasesLocked:FindFirstChild("Base" .. baseId)
+local storage = game:GetService("ServerStorage"):FindFirstChild("OceanBasesLocked")
+local locked = storage and storage:FindFirstChild("Base" .. baseId)
 if locked then
 	for k = 3, floors do
 		local floor = locked:FindFirstChild("Floor" .. k)

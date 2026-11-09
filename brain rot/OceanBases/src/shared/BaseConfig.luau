@@ -5,59 +5,66 @@ local function rgb(r, g, b) return Color3.fromRGB(r, g, b) end
 local BaseConfig = {}
 
 ---------------------------------------------------------------- placement
--- Five bases in a row along the back wall of the spawn court (floor top Y = 4).
--- Each footprint is 44 x 40 studs; the middle and front of the court stay free.
-BaseConfig.FloorY = 4
+-- Five open yards in a row along the back wall of the spawn court (floor top
+-- Y = 4). Each yard grows a little towards the front with every upgrade; the
+-- middle and the front of the court stay free for future buildings.
 BaseConfig.BaseCount = 5
-BaseConfig.Footprint = Vector2.new(44, 40)
-BaseConfig.Centers = {
-	Vector3.new(-112, 4, -136),
-	Vector3.new(-56, 4, -136),
-	Vector3.new(0, 4, -136),
-	Vector3.new(56, 4, -136),
-	Vector3.new(112, 4, -136),
+-- Base origin = centre of the yard's back edge, on the court floor.
+BaseConfig.Origins = {
+	Vector3.new(-112, 4, -156),
+	Vector3.new(-56, 4, -156),
+	Vector3.new(0, 4, -156),
+	Vector3.new(56, 4, -156),
+	Vector3.new(112, 4, -156),
 }
--- Bases face +Z (towards the court and the ocean corridor).
-BaseConfig.Facing = 0
+BaseConfig.Facing = 0 -- yards open towards +Z (the court and the ocean corridor)
 
----------------------------------------------------------------- floors & upgrades
-BaseConfig.FloorHeight = 11 -- distance between floor tops
-BaseConfig.GroundTop = 1 -- the ground platform is raised by 1 stud
-BaseConfig.PensPerFloor = 5
-BaseConfig.MaxFloors = 4
-BaseConfig.StartFloors = 2 -- 10 pens at the start
--- Upgrade to N floors costs Levels[N].Price coins.
+---------------------------------------------------------------- yard & cells
+BaseConfig.CellSize = 8 -- one cell = one 8x8 floor tile (same grid as the court)
+BaseConfig.Columns = 5
+BaseConfig.FloorTop = 1 -- the yard floor is one stud above the court
+BaseConfig.Margin = 2 -- between the fence and the cells
+BaseConfig.FrontWalk = 7 -- walkway between the last row and the front fence
+BaseConfig.StartRows = 2
+BaseConfig.MaxRows = 4
+-- Upgrade to N rows: cells and price.
 BaseConfig.Levels = {
-	[2] = {floors = 2, pens = 10, price = 0},
-	[3] = {floors = 3, pens = 15, price = 5000},
-	[4] = {floors = 4, pens = 20, price = 25000},
+	[2] = {cells = 10, price = 0},
+	[3] = {cells = 15, price = 5000},
+	[4] = {cells = 20, price = 25000},
 }
-
--- Pen centres on every floor (local X, Z; +Z is the front of the base).
-BaseConfig.PenSize = Vector2.new(12, 10)
-BaseConfig.PenSpots = {
-	Vector2.new(-14, -13), Vector2.new(0, -13), Vector2.new(14, -13),
-	Vector2.new(-14, 4), Vector2.new(14, 4),
-}
-BaseConfig.LiftSpot = Vector2.new(-16, 15)
-BaseConfig.ChestSpot = Vector2.new(16.5, 14)
-BaseConfig.UpgradeSpot = Vector2.new(10, 17)
-BaseConfig.SpawnSpot = Vector3.new(0, 4, 14) -- where the owner appears (local)
 BaseConfig.EntranceWidth = 10
 
+function BaseConfig.width(): number
+	return BaseConfig.Columns * BaseConfig.CellSize + BaseConfig.Margin * 2
+end
+
+-- Depth of the yard (back fence to front fence) for a number of rows.
+function BaseConfig.depth(rows: number): number
+	return BaseConfig.Margin + rows * BaseConfig.CellSize + BaseConfig.FrontWalk
+end
+
+-- Local centre (X, Z) of a cell; rows count from the back.
+function BaseConfig.cellCenter(row: number, column: number): Vector2
+	local s = BaseConfig.CellSize
+	local x = (column - (BaseConfig.Columns + 1) / 2) * s
+	local z = BaseConfig.Margin + (row - 0.5) * s
+	return Vector2.new(x, z)
+end
+
 ---------------------------------------------------------------- palette
+-- Studded Plastic everywhere, like the court floor and walls.
 BaseConfig.Colors = {
-	Wood = rgb(176, 108, 58), WoodDark = rgb(122, 72, 38), WoodLight = rgb(210, 146, 86),
-	Stone = rgb(196, 188, 214), StoneDark = rgb(150, 142, 172), StoneLight = rgb(222, 216, 236),
-	Path = rgb(208, 202, 224), Sand = rgb(246, 222, 160),
-	Water = rgb(64, 214, 236), WaterDeep = rgb(28, 160, 214), Foam = rgb(210, 250, 255),
+	TileA = rgb(130, 225, 224), TileB = rgb(91, 196, 212), -- yard checker (wall palette)
+	Border = rgb(47, 100, 106), BorderLight = rgb(74, 180, 200),
+	Wood = rgb(196, 140, 78), WoodDark = rgb(150, 100, 52), WoodLight = rgb(224, 172, 104),
+	Stone = rgb(155, 134, 100), StoneDark = rgb(121, 101, 72),
 	GlowBlue = rgb(110, 232, 255), GlowGold = rgb(255, 206, 92),
-	Rope = rgb(220, 184, 120), Net = rgb(232, 206, 150),
-	Kelp = rgb(60, 196, 90), KelpDark = rgb(30, 140, 70),
+	Kelp = rgb(60, 196, 130), KelpDark = rgb(30, 150, 110),
 	CoralPink = rgb(255, 120, 178), CoralPurple = rgb(176, 110, 255),
-	Shell = rgb(255, 232, 226), Starfish = rgb(255, 150, 90),
-	Red = rgb(232, 60, 60), White = rgb(255, 255, 255), Flag = rgb(40, 110, 220),
-	Gold = rgb(255, 200, 40), Metal = rgb(140, 150, 170),
+	Shell = rgb(255, 232, 226), Starfish = rgb(255, 150, 120),
+	Red = rgb(232, 60, 60), White = rgb(255, 255, 255), Gold = rgb(255, 200, 40),
+	Foam = rgb(210, 250, 255), Metal = rgb(140, 150, 170),
 }
 
 ---------------------------------------------------------------- eggs & fish
@@ -73,7 +80,7 @@ BaseConfig.Eggs = {
 		fish = {Angler = 40, KingFish = 60}},
 }
 
--- income = coins per second while the fish lives in a pen.
+-- income = coins per second straight into the owner's pocket.
 BaseConfig.Fish = {
 	ClownFish = {name = "Рыба-клоун", income = 3, rarity = "Обычная",
 		body = rgb(255, 128, 32), belly = rgb(255, 196, 120), stripe = rgb(255, 255, 255), fin = rgb(255, 150, 60)},
@@ -93,16 +100,10 @@ BaseConfig.RarityColors = {
 }
 
 ---------------------------------------------------------------- effects & timing
-BaseConfig.IncomeTick = 1 -- seconds between income payouts into the chest
-BaseConfig.FishSwimSpeed = 0.55 -- radians per second around the pen
-BaseConfig.AnimationDistance = 220 -- fish further than this are not animated
-
-function BaseConfig.floorTop(floor: number): number
-	return BaseConfig.GroundTop + (floor - 1) * BaseConfig.FloorHeight
-end
-
-function BaseConfig.levelForFloors(floors: number)
-	return BaseConfig.Levels[floors]
-end
+BaseConfig.IncomeTick = 1 -- seconds between payouts
+BaseConfig.FishHeight = 3.2 -- fish float this high above their cell
+BaseConfig.FishSwimRadius = 1.8
+BaseConfig.FishSwimSpeed = 0.8 -- radians per second
+BaseConfig.AnimationDistance = 220
 
 return BaseConfig

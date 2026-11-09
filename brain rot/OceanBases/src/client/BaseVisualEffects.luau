@@ -1,14 +1,13 @@
 -- BaseVisualEffects (client): light, centralised decorative animation for the
--- bases — shimmering water surfaces, pulsing glow on pedestal rings and post
--- caps. Runs at 15 Hz and only touches parts near the camera.
+-- bases — pulsing glow on lamps and crystals. Runs at 15 Hz and only touches parts near the camera.
 local RunService = game:GetService("RunService")
 
 local BaseVisualEffects = {}
 local items = {}
 local connection
 
-local SHIMMER = {WaterSurface = true, EdgeGlow1 = true, EdgeGlow2 = true}
-local PULSE = {PedestalRing = true, PostGlow = true, LiftRing = true}
+local SHIMMER = {}
+local PULSE = {Lamp = true, Crystal = true}
 
 function BaseVisualEffects.collect(root: Instance)
 	table.clear(items)
@@ -35,9 +34,9 @@ end
 
 function BaseVisualEffects.start(root: Instance)
 	BaseVisualEffects.collect(root)
-	-- New floors appear after upgrades: refresh the list when the tree changes.
+	-- The yard is rebuilt on upgrades: refresh the list when it changes.
 	root.DescendantAdded:Connect(function(object)
-		if object:IsA("Model") and object.Name:match("^Floor") then
+		if object:IsA("Folder") and object.Name == "Yard" then
 			task.defer(BaseVisualEffects.collect, root)
 		end
 	end)
