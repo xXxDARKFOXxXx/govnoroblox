@@ -64,7 +64,7 @@ function FishAnimationController.step(t: number, cameraPosition: Vector3)
 			local pos = s.center + Vector3.new(math.cos(a) * s.rx, math.sin(t * 2.2 + s.phase) * 0.12, math.sin(a) * s.rz)
 			-- Face the way the fish is moving (some fly clockwise, some anticlockwise).
 			local tangent = Vector3.new(-math.sin(a) * s.rx, 0, math.cos(a) * s.rz) * (s.speed >= 0 and 1 or -1)
-			-- ForwardYaw turns imported rigs (they look along +X) to face the way they swim.
+			-- ForwardYaw turns imported rigs (they look along -X) to face the way they swim.
 			local cf = CFrame.lookAt(pos, pos + tangent) * CFrame.Angles(0, 0, math.sin(t * 3 + s.phase) * 0.07) * s.yaw
 			model:PivotTo(cf)
 			local bodyCf = s.body.CFrame

@@ -189,13 +189,19 @@ end
 
 ---------------------------------------------------------------- nests
 -- Nest spots: spread along each section, alternating sides of the channel.
+-- Only under water: a spot whose nest would stand on the dry beach by the
+-- start court is skipped (the first section then has fewer nests).
+SeabedBuilder.SurfaceY = 0
 function SeabedBuilder.nestSpots(s: number)
 	local section = Config.Sections[s]
 	local spots = {}
 	for i = 1, section.nests do
 		local z = section.fromZ + (i - 0.5) / section.nests * (section.toZ - section.fromZ)
 		local x = (i % 2 == 0 and 1 or -1) * (22 + hash(s, i) * 14)
-		table.insert(spots, Vector3.new(x, SeabedBuilder.sandTop(x, z), z))
+		local y = SeabedBuilder.sandTop(x, z)
+		if y + 1.2 < SeabedBuilder.SurfaceY - 0.5 then
+			table.insert(spots, Vector3.new(x, y, z))
+		end
 	end
 	return spots
 end

@@ -89,7 +89,7 @@ if old then old:Destroy() end
 local basesFolder = roblox.Instance.new("Folder")
 basesFolder.Name = "OceanBases"
 for id = 1, Config.BaseCount do
-	Builder.build(basesFolder, id, Builder.origin(id), Config.StartRows)
+	Builder.build(basesFolder, id, Builder.origin(id), 0)
 end
 basesFolder.Parent = workspaceService
 

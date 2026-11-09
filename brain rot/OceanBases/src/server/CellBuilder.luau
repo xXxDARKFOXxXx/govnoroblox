@@ -1,11 +1,10 @@
--- CellBuilder: one cell of the yard = one studded 8x8 floor tile. An egg can
--- be placed on any free cell; the fish that hatches flies over the yard pool
--- while its cell shows its name and income.
+-- CellBuilder: one place in the yard that holds an egg or a fish. There is no
+-- grid: a place is created where the owner puts an egg (anywhere on the yard
+-- floor) and removed again when the fish is taken out or the egg deleted.
 --
--- CellN (Model, attributes Index/Row/Column/State)
---   Tile             (walkable floor tile, checker colour)
---   EggPlacement     (invisible Part at the tile centre: eggs stand here)
---   InteractionPoint (invisible Part with the ProximityPrompt and CellInfo label)
+-- CellN (Model, attributes Index/State; PrimaryPart = EggPlacement)
+--   EggPlacement     (invisible Part on the floor: the egg stands here)
+--   InteractionPoint (invisible Part with the CellInfo label: name, timer, income)
 --   Content          (Folder: runtime egg / fish model)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("BaseConfig"))
@@ -29,37 +28,22 @@ local function label(parent, name, position, size, color)
 	return l
 end
 
-function CellBuilder.build(parent: Instance, origin: CFrame, row: number, column: number, index: number)
-	local s = Config.CellSize
-	local spot = Config.cellCenter(row, column)
-	local top = Config.FloorTop
-	local cf = origin * CFrame.new(spot.X, top, spot.Y)
+-- position = world point on the yard floor.
+function CellBuilder.build(parent: Instance, position: Vector3, index: number)
+	local cf = CFrame.new(position)
 	local cell = Pieces.model(parent, "Cell" .. index)
 	cell:SetAttribute("Index", index)
-	cell:SetAttribute("Row", row)
-	cell:SetAttribute("Column", column)
 	cell:SetAttribute("State", "Empty")
-
-	local color = (row + column) % 2 == 0 and C.TileA or C.TileB
-	cell.PrimaryPart = Pieces.solid(cell, "Tile", Vector3.new(s, 1, s), cf * CFrame.new(0, -0.5, 0), color)
-	Pieces.part(cell, "EggPlacement", Vector3.new(2, 0.2, 2), cf * CFrame.new(0, 0.1, 0), C.White, nil, {Transparency = 1})
+	cell.PrimaryPart = Pieces.part(cell, "EggPlacement", Vector3.new(2, 0.2, 2), cf * CFrame.new(0, 0.1, 0), C.White, nil, {Transparency = 1})
 	Pieces.folder(cell, "Content")
 
-	local point = Pieces.part(cell, "InteractionPoint", Vector3.new(2, 2, 2), cf * CFrame.new(0, 2, 0), C.White, nil, {Transparency = 1})
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.Name = "CellPrompt"
-	prompt.ActionText = "Поставить"
-	prompt.ObjectText = "Клетка " .. index
-	prompt.HoldDuration = 0.3
-	prompt.MaxActivationDistance = 5
-	prompt.RequiresLineOfSight = false
-	prompt.Parent = point
+	local point = Pieces.part(cell, "InteractionPoint", Vector3.new(1, 1, 1), cf * CFrame.new(0, Config.BaseEggHeight + 0.5, 0), C.White, nil, {Transparency = 1})
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "CellInfo"
 	gui.Size = UDim2.fromOffset(170, 50)
-	gui.StudsOffset = Vector3.new(0, 4.2, 0)
+	gui.StudsOffset = Vector3.new(0, 1.2, 0)
 	gui.LightInfluence = 0
-	gui.MaxDistance = 40
+	gui.MaxDistance = 45
 	gui.Enabled = false
 	gui.Parent = point
 	label(gui, "Title", UDim2.fromScale(0, 0), UDim2.fromScale(1, 0.55), C.White)

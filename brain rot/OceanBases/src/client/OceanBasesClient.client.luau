@@ -1,22 +1,28 @@
 -- OceanBasesClient (LocalScript in StarterPlayerScripts, with child modules
 -- FishAnimationController and BaseVisualEffects).
 -- * Animates fish, eggs and water.
--- * Shows base prompts only to the base owner (the server still checks rights).
--- * Tells the server which inventory item is selected in the HUD hotbar.
+-- * Shows the expansion prompt only to the base owner (the server checks rights).
+-- * Tells the server which inventory item is picked in the HUD (held in hands).
+-- * Clicking the yard floor puts the held egg / fish there (PlacementController).
+-- * Arm poses: egg over the head while carrying, item in front (CarryPoseController).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local FishAnimation = require(script:WaitForChild("FishAnimationController"))
 local Effects = require(script:WaitForChild("BaseVisualEffects"))
+local Placement = require(script:WaitForChild("PlacementController"))
+local CarryPose = require(script:WaitForChild("CarryPoseController"))
 
 local player = Players.LocalPlayer
 local basesFolder = workspace:WaitForChild("OceanBases")
 
 FishAnimation.start()
 Effects.start(basesFolder)
+CarryPose.start()
+task.spawn(Placement.start)
 
--- Owner-only prompts: cells and the expansion board.
-local OWNER_ONLY = {CellPrompt = true, UpgradePrompt = true}
+-- Owner-only prompts: the upgrade board.
+local OWNER_ONLY = {UpgradePrompt = true}
 local function baseOf(instance: Instance): Model?
 	local node = instance
 	while node and not (node:IsA("Model") and node:GetAttribute("BaseId")) do node = node.Parent end
@@ -108,7 +114,7 @@ task.spawn(function()
 	end)
 end)
 
--- Hotbar selection from the HUD → server (to know which egg is in the hand).
+-- Item picked in the HUD (hotbar slot or inventory card) → server: it goes into the hands.
 task.spawn(function()
 	local remotes = ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("Remotes", 30)
 	local selectItem = remotes and remotes:WaitForChild("SelectItem", 30)

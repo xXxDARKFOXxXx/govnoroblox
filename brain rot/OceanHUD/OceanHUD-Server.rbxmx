@@ -54,7 +54,7 @@ return OceanHUDStats
       <string name="Source"><![CDATA[-- OceanInventory (ModuleScript, ServerScriptService): server-owned inventory.
 -- Items live in Player.Inventory (replicated to that player's client), one
 -- Folder per item with attributes the HUD reads:
---   DisplayName, Category ("Eggs" | "Fish"), Icon, Count, HotbarSlot (1-8, optional)
+--   DisplayName, Category ("Eggs" | "Fish"), Icon, Count, HotbarSlot (1-10, optional)
 --
 --   local Inventory = require(game.ServerScriptService.OceanInventory)
 --   Inventory.add(player, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg"})
@@ -63,7 +63,7 @@ return OceanHUDStats
 local OceanInventory = {}
 
 OceanInventory.Categories = {Eggs = true, Fish = true}
-OceanInventory.HotbarSlots = 8
+OceanInventory.HotbarSlots = 10
 
 function OceanInventory.folder(player: Player): Folder
 	local folder = player:FindFirstChild("Inventory")
@@ -117,14 +117,15 @@ function OceanInventory.count(player: Player, id: string): number
 	return item and (item:GetAttribute("Count") or 0) or 0
 end
 
--- Puts an item into hotbar slot 1-8 (nil clears it); one item per slot.
+-- Puts an item into quick slot 1-10 (nil clears it); one item per slot. This is
+-- the starting order of the quick bar; the client then keeps recent picks first.
 function OceanInventory.setHotbar(player: Player, id: string, slot: number?)
 	local folder = OceanInventory.folder(player)
 	local item = folder:FindFirstChild(id)
 	if not item then return end
 	if slot ~= nil then
 		slot = math.floor(slot)
-		assert(slot >= 1 and slot <= OceanInventory.HotbarSlots, "Hotbar slot must be 1-8")
+		assert(slot >= 1 and slot <= OceanInventory.HotbarSlots, "Hotbar slot must be 1-10")
 		for _, other in folder:GetChildren() do
 			if other ~= item and other:GetAttribute("HotbarSlot") == slot then
 				other:SetAttribute("HotbarSlot", nil)

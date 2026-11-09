@@ -1,12 +1,11 @@
 -- BaseBuilder: geometry of one player base — an open yard that is one big
--- shallow pool, fenced on every side, with studded 8x8 cells (like the court
--- floor) on its bottom.
--- Expanding adds a row of cells at the front and moves the front fence;
--- nothing is stacked and there is no roof.
+-- shallow pool, fenced on every side. Eggs and fish are put anywhere on its
+-- studded floor (no cells). The yard comes in three sizes (it grows towards
+-- the front at base upgrades 5 and 10); nothing is stacked, there is no roof.
 --
 -- BaseN (Model, PrimaryPart = Root at the centre of the yard's back edge)
 --   Root
---   Cells/CellN           (see CellBuilder)
+--   Cells/CellN           (places with an egg or a fish, see CellBuilder)
 --   Pool                  (rim under the fence, steps, water over the whole
 --                          yard, plants; FishZone = where fish fly; rebuilt
 --                          with the yard)
@@ -164,11 +163,13 @@ end
 local function upgradeBoard(yard, origin: CFrame, depth: number)
 	local board = Pieces.model(yard, "UpgradeBoard")
 	local cf = at(origin, 16, 0, depth + 3.4) -- outside the fence, right of the entrance
-	for _, x in {-1.8, 1.8} do
-		Pieces.solid(board, "BoardPost", Vector3.new(0.8, 4.2, 0.8), cf * CFrame.new(x, 2.1, 0), C.WoodDark)
+	-- Posts stand beside the face, never in front of the text.
+	local faceW = 5.6
+	for _, side in {-1, 1} do
+		Pieces.solid(board, "BoardPost", Vector3.new(0.8, 5.0, 0.8), cf * CFrame.new(side * (faceW / 2 + 0.4), 2.5, 0), C.WoodDark)
 	end
-	local face = Pieces.part(board, "BoardFace", Vector3.new(5, 2.8, 0.6), cf * CFrame.new(0, 3.3, 0), C.WoodLight)
-	Pieces.part(board, "BoardTop", Vector3.new(5.6, 0.6, 1.0), cf * CFrame.new(0, 5.0, 0), C.Red)
+	local face = Pieces.part(board, "BoardFace", Vector3.new(faceW, 3.0, 0.5), cf * CFrame.new(0, 3.3, 0), C.WoodLight)
+	Pieces.part(board, "BoardTop", Vector3.new(faceW + 2.2, 0.6, 1.0), cf * CFrame.new(0, 5.1, 0), C.Red)
 	-- Text on both faces: readable from the court and from inside the yard.
 	-- The server writes to UpgradeLabel; UpgradeLabelBack mirrors it.
 	for _, data in {{"UpgradeLabel", Enum.NormalId.Back}, {"UpgradeLabelBack", Enum.NormalId.Front}} do
@@ -202,25 +203,20 @@ local function upgradeBoard(yard, origin: CFrame, depth: number)
 	return board
 end
 
--- Everything whose position depends on the number of rows.
-function BaseBuilder.buildYard(base: Model, origin: CFrame, rows: number)
+-- Everything whose position depends on the yard size (rebuilt when it grows).
+function BaseBuilder.buildYard(base: Model, origin: CFrame, size: number)
 	local old = base:FindFirstChild("Yard")
 	if old then old:Destroy() end
 	local yard = Pieces.folder(base, "Yard")
-	local depth = Config.depth(rows)
-	local cellsEnd = Config.Margin + Config.PoolZone + rows * Config.CellSize
+	local depth = Config.depth(size)
+	base:SetAttribute("YardSize", size)
+	base:SetAttribute("YardDepth", depth)
 	local top = Config.FloorTop
 
-	-- Floor around the cells: back strip, side strips, front walkway, and a darker skirt.
+	-- One studded floor under the whole pool, and a darker skirt.
 	local floor = Pieces.folder(yard, "Floor")
-	Pieces.solid(floor, "BackStrip", Vector3.new(W, 1, Config.Margin), at(origin, 0, top - 0.5, Config.Margin / 2), C.Border)
-	for _, side in {-1, 1} do
-		Pieces.solid(floor, "SideStrip", Vector3.new(Config.Margin, 1, depth), at(origin, side * (W / 2 - Config.Margin / 2), top - 0.5, depth / 2), C.Border)
-	end
-	Pieces.solid(floor, "Walkway", Vector3.new(W - Config.Margin * 2, 1, depth - cellsEnd), at(origin, 0, top - 0.5, (cellsEnd + depth) / 2), C.BorderLight)
+	Pieces.solid(floor, "PoolFloor", Vector3.new(W, 1, depth), at(origin, 0, top - 0.5, depth / 2), C.TileA)
 	Pieces.part(floor, "Skirt", Vector3.new(W + 0.4, 0.6, depth + 0.4), at(origin, 0, 0.3 - 0.01, depth / 2), C.Border)
-	-- Back strip without cells: sandy pool floor.
-	Pieces.solid(floor, "PoolFloor", Vector3.new(W - Config.Margin * 2, 1, Config.PoolZone), at(origin, 0, top - 0.5, Config.Margin + Config.PoolZone / 2), C.PoolBottom)
 
 	-- Fence: back, sides and the front with an entrance gap.
 	local fence = Pieces.folder(yard, "Fence")
@@ -259,27 +255,18 @@ function BaseBuilder.buildYard(base: Model, origin: CFrame, rows: number)
 	return yard
 end
 
-function BaseBuilder.buildRow(base: Model, origin: CFrame, row: number)
-	local cells = base:FindFirstChild("Cells") or Pieces.folder(base, "Cells")
-	local built = {}
-	for column = 1, Config.Columns do
-		local index = (row - 1) * Config.Columns + column
-		table.insert(built, CellBuilder.build(cells, origin, row, column, index))
-	end
-	return built
-end
-
-function BaseBuilder.build(parent: Instance, id: number, origin: CFrame, rows: number)
+function BaseBuilder.build(parent: Instance, id: number, origin: CFrame, level: number?)
 	local base = Pieces.model(parent, "Base" .. id)
 	base:SetAttribute("BaseId", id)
 	base:SetAttribute("OwnerUserId", 0)
 	base:SetAttribute("OwnerName", "")
-	base:SetAttribute("Rows", rows)
+	level = level or 0
+	base:SetAttribute("Level", level)
+	base:SetAttribute("Capacity", Config.capacity(level))
 	local root = Pieces.part(base, "Root", Vector3.new(2, 1, 2), origin, C.White, nil, {Transparency = 1})
 	base.PrimaryPart = root
 	Pieces.folder(base, "Cells")
-	for row = 1, rows do BaseBuilder.buildRow(base, origin, row) end
-	BaseBuilder.buildYard(base, origin, rows)
+	BaseBuilder.buildYard(base, origin, Config.yardSize(level))
 	return base
 end
 

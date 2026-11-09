@@ -6,8 +6,8 @@ local luau = require("@lune/luau")
 
 local Env = {}
 
-Env.SERVER_MODULES = {"BasePieces", "CellBuilder", "BaseBuilder", "SeabedBuilder", "CreatureModels", "BaseOwnershipService", "FishPenController", "BaseUpgradeService", "NestService", "PredatorService", "SwimSpeedService"}
-Env.CLIENT_MODULES = {"FishAnimationController", "BaseVisualEffects"}
+Env.SERVER_MODULES = {"BasePieces", "CellBuilder", "BaseBuilder", "SeabedBuilder", "CreatureModels", "BaseOwnershipService", "FishPenController", "BaseUpgradeService", "NestService", "PredatorService", "SwimSpeedService", "HeldItemService"}
+Env.CLIENT_MODULES = {"FishAnimationController", "BaseVisualEffects", "PlacementController", "CarryPoseController"}
 
 -- WaitForChild does not exist offline; behave like a strict FindFirstChild.
 roblox.implementMethod("Instance", "WaitForChild", function(object, name)

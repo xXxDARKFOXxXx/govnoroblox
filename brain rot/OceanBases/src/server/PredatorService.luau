@@ -31,11 +31,19 @@ local function clampToSection(guard, pos: Vector3): Vector3
 	return Vector3.new(x, y, z)
 end
 
-local function place(guard, pos: Vector3, direction: Vector3)
+-- Turns the guard towards `direction` (quickly while chasing, so it always
+-- swims head first at the player) and moves it to `pos`.
+local function place(guard, pos: Vector3, direction: Vector3, turn: number?)
 	local flat = Vector3.new(direction.X, direction.Y * 0.4, direction.Z)
 	if flat.Magnitude < 1e-3 then flat = guard.heading end
-	guard.heading = guard.heading:Lerp(flat.Unit, 0.2)
-	if guard.heading.Magnitude < 1e-3 then guard.heading = Vector3.new(0, 0, 1) end
+	local goal = flat.Unit
+	local heading = guard.heading:Lerp(goal, turn or 0.2)
+	-- Turning right round: Lerp would pass through zero; swing sideways instead.
+	if heading.Magnitude < 0.35 then
+		local side = Vector3.new(-goal.Z, 0, goal.X)
+		heading = (side.Magnitude > 1e-3 and side or Vector3.new(1, 0, 0)) + goal * 0.5
+	end
+	guard.heading = heading.Unit
 	local cf = CFrame.lookAt(pos, pos + guard.heading) * CFrame.Angles(0, math.rad(guard.model:GetAttribute("ForwardYaw") or 0), 0)
 	guard.model:PivotTo(cf)
 	guard.pos = pos
@@ -96,7 +104,7 @@ function PredatorService.step(dt: number, t: number)
 			local delta = goal - guard.pos
 			local step = math.min(delta.Magnitude, section.chase * dt)
 			local pos = clampToSection(guard, guard.pos + (delta.Magnitude > 0 and delta.Unit * step or Vector3.zero))
-			place(guard, pos, delta)
+			place(guard, pos, delta, 0.45)
 			-- The head is at the front of the model.
 			local head = guard.pos + guard.heading * guard.size * 0.35
 			if (head - goal).Magnitude < Config.CatchRadius + guard.size * 0.1 or (guard.pos - goal).Magnitude < Config.CatchRadius then

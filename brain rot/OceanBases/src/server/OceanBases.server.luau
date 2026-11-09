@@ -14,13 +14,14 @@ local Seabed = require(folder:WaitForChild("SeabedBuilder"))
 local Nests = require(folder:WaitForChild("NestService"))
 local Predators = require(folder:WaitForChild("PredatorService"))
 local SwimSpeed = require(folder:WaitForChild("SwimSpeedService"))
+local Held = require(folder:WaitForChild("HeldItemService"))
 
 local basesFolder = workspace:FindFirstChild("OceanBases")
 if not basesFolder then
 	basesFolder = Instance.new("Folder")
 	basesFolder.Name = "OceanBases"
 	for id = 1, Config.BaseCount do
-		Builder.build(basesFolder, id, Builder.origin(id), Config.StartRows)
+		Builder.build(basesFolder, id, Builder.origin(id), 0)
 	end
 	basesFolder.Parent = workspace
 end
@@ -51,6 +52,19 @@ selectItem.OnServerEvent:Connect(function(player, itemId)
 	end
 end)
 
+-- Click on the yard floor while holding an egg or a fish: put it there.
+local placeItem = remotes:FindFirstChild("PlaceItem") or Instance.new("RemoteEvent")
+placeItem.Name = "PlaceItem"
+placeItem.Parent = remotes
+local lastPlace = {}
+placeItem.OnServerEvent:Connect(function(player, position)
+	local t = os.clock()
+	if lastPlace[player] and t - lastPlace[player] < 0.25 then return end -- rate limit
+	lastPlace[player] = t
+	Pens.placeAt(player, position)
+end)
+game:GetService("Players").PlayerRemoving:Connect(function(player) lastPlace[player] = nil end)
+
 -- Pen actions from the HUD menus (validated on the server).
 local penAction = remotes:FindFirstChild("PenAction") or Instance.new("RemoteEvent")
 penAction.Name = "PenAction"
@@ -66,6 +80,7 @@ notifyRemote.Parent = remotes
 Nests.notify = function(player, text, kind)
 	notifyRemote:FireClient(player, {text = text, kind = kind})
 end
+Pens.notify = Nests.notify
 Predators.knock = function(player, velocity)
 	notifyRemote:FireClient(player, {knock = velocity})
 end
@@ -80,28 +95,21 @@ Upgrades.init(bases)
 -- models and the Рыбы / Яйца menus can be seen right away in a play test.
 if game:GetService("RunService"):IsStudio() then
 	table.insert(Ownership.onAssigned, function(_, base)
-		local cells = Pens.cells(base)
-		for i, data in {{"RegalTang", 1}, {"Salmon", 3}, {"SeaTurtle", 2}, {"Lobster", 5}, {"Butterflyfish", 1}} do
-			if cells[i] and cells[i]:GetAttribute("State") == "Empty" then
-				cells[i]:SetAttribute("EggType", "TideEgg")
-				Pens.hatch(cells[i], data[1])
-				for _ = 2, data[2] do
-					cells[i]:SetAttribute("FishLevel", cells[i]:GetAttribute("FishLevel") + 1)
-				end
-				cells[i]:SetAttribute("Income", Config.fishIncome(data[1], data[2]))
-				Pens.refreshCell(cells[i])
-			end
+		if #Pens.cells(base) > 0 then return end
+		local origin = base.PrimaryPart.CFrame
+		for _, data in {{"RegalTang", 1}, {"Salmon", 3}, {"SeaTurtle", 2}, {"Lobster", 5}, {"Butterflyfish", 1}} do
+			local cell = Pens.createCell(base, origin:PointToWorldSpace(Vector3.new(0, Config.FloorTop, 20)))
+			cell:SetAttribute("EggType", "TideEgg")
+			Pens.hatch(cell, data[1])
+			cell:SetAttribute("FishLevel", data[2])
+			cell:SetAttribute("Income", Config.fishIncome(data[1], data[2]))
+			Pens.refreshCell(cell)
 		end
-		for i, eggType in {[7] = "CoralEgg", [8] = "OceanCrownEgg"} do
-			local cell = cells[i]
-			if cell and cell:GetAttribute("State") == "Empty" then
-				cell:SetAttribute("State", "Egg")
-				cell:SetAttribute("EggType", eggType)
-				cell:SetAttribute("HatchAt", workspace:GetServerTimeNow() + Config.Eggs[eggType].hatch)
-				require(folder:WaitForChild("CreatureModels")).egg(cell.Content, eggType, CFrame.new(cell.EggPlacement.CFrame.Position + Vector3.new(0, 0.1, 0)))
-				Pens.refreshCell(cell)
-			end
+		for i, eggType in {"CoralEgg", "OceanCrownEgg"} do
+			local spot = Pens.spotFor(base, origin:PointToWorldSpace(Vector3.new(-12 + (i - 1) * 24, Config.FloorTop, 26)))
+			if spot then Pens.setEgg(Pens.createCell(base, spot), eggType) end
 		end
+		Pens.updateIncome(base)
 	end)
 end
 
@@ -109,3 +117,4 @@ Ownership.init(bases)
 Nests.init(seabed)
 Predators.init(seabed)
 SwimSpeed.init()
+Held.init()

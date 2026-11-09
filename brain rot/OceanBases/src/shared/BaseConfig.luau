@@ -19,50 +19,65 @@ BaseConfig.Origins = {
 }
 BaseConfig.Facing = 0 -- yards open towards +Z (the court and the ocean corridor)
 
----------------------------------------------------------------- yard & cells
-BaseConfig.CellSize = 8 -- one cell = one 8x8 floor tile (same grid as the court)
-BaseConfig.Columns = 6
+---------------------------------------------------------------- yard, places & upgrades
+-- The yard is one shallow pool. There are no cells: the owner holds an egg
+-- (or a fish from the inventory) and clicks anywhere on the yard floor to put
+-- it there. A base holds a limited number of fish and eggs (its capacity).
+BaseConfig.YardWidth = 52
 BaseConfig.FloorTop = 1 -- the yard floor is one stud above the court
-BaseConfig.Margin = 2 -- between the fence and the cells
-BaseConfig.FrontWalk = 7 -- walkway between the last row and the front fence
--- Pool at the back of the yard (fish fly in the air above its water).
-BaseConfig.PoolZone = 16 -- depth of the strip that holds the pool
-BaseConfig.PoolSize = Vector2.new(32, 12) -- inner water area
+BaseConfig.Margin = 2 -- back strip of the yard (plants, coral)
+BaseConfig.PoolZone = 16 -- back part of the pool where plants grow
 BaseConfig.PoolDepth = 1.8 -- about a third of a character's height
-BaseConfig.PoolRim = 1.2
-BaseConfig.StartRows = 2
-BaseConfig.MaxRows = 4
--- Upgrade to N rows: cells and price.
-BaseConfig.Levels = {
-	[2] = {cells = 12, price = 0},
-	[3] = {cells = 18, price = 5000},
-	[4] = {cells = 24, price = 25000},
-}
 BaseConfig.EntranceWidth = 10
+-- Placing: eggs stand at least this far apart and this far from the rim.
+BaseConfig.PlaceSpacing = 6
+BaseConfig.PlaceMargin = 3.5
+BaseConfig.BaseEggHeight = 5.5 -- eggs in a yard are as tall as a character
+
+-- Base upgrades: start with room for 10 fish, +1 per upgrade, up to 20.
+-- Every upgrade costs more. The yard itself grows at upgrades 5 and 10.
+BaseConfig.StartCapacity = 10
+BaseConfig.MaxBaseLevel = 10
+BaseConfig.YardDepths = {41, 49, 57} -- yard sizes 1, 2, 3 (back fence to front fence)
+BaseConfig.YardGrowsAt = {[5] = 2, [10] = 3} -- upgrade level → yard size
+
+function BaseConfig.capacity(level: number): number
+	return BaseConfig.StartCapacity + level
+end
+-- Price of the upgrade from `level` to `level + 1`.
+function BaseConfig.basePrice(level: number): number
+	return math.floor(1000 * 1.4 ^ level / 50 + 0.5) * 50
+end
+function BaseConfig.yardSize(level: number): number
+	local size = 1
+	for at, s in BaseConfig.YardGrowsAt do
+		if level >= at and s > size then size = s end
+	end
+	return size
+end
 
 function BaseConfig.width(): number
-	return BaseConfig.Columns * BaseConfig.CellSize + BaseConfig.Margin * 2
+	return BaseConfig.YardWidth
 end
 
--- Depth of the yard (back fence to front fence) for a number of rows.
-function BaseConfig.depth(rows: number): number
-	return BaseConfig.Margin + BaseConfig.PoolZone + rows * BaseConfig.CellSize + BaseConfig.FrontWalk
+-- Depth of the yard (back fence to front fence) for a yard size (1-3).
+function BaseConfig.depth(size: number): number
+	return BaseConfig.YardDepths[math.clamp(size, 1, #BaseConfig.YardDepths)]
 end
 
--- Local centre (X, Z) of the pool and the height of its water surface.
-function BaseConfig.poolCenter(): Vector2
-	return Vector2.new(0, BaseConfig.Margin + BaseConfig.PoolZone / 2)
-end
 function BaseConfig.waterTop(): number
 	return BaseConfig.FloorTop + BaseConfig.PoolDepth
 end
 
--- Local centre (X, Z) of a cell; rows count from the back.
-function BaseConfig.cellCenter(row: number, column: number): Vector2
-	local s = BaseConfig.CellSize
-	local x = (column - (BaseConfig.Columns + 1) / 2) * s
-	local z = BaseConfig.Margin + BaseConfig.PoolZone + (row - 0.5) * s
-	return Vector2.new(x, z)
+-- Is a local (x, z) point of the yard a valid place for an egg? (inside the
+-- rim, clear of the entrance steps). depth = current yard depth.
+function BaseConfig.insideYard(x: number, z: number, depth: number): boolean
+	local m = BaseConfig.PlaceMargin
+	if math.abs(x) > BaseConfig.YardWidth / 2 - 1.2 - m + 1 then return false end
+	if z < 1.2 + m - 1 or z > depth - 1.2 - m + 1 then return false end
+	-- Inner steps at the entrance.
+	if math.abs(x) < BaseConfig.EntranceWidth / 2 + 2 and z > depth - 1.2 - 2.4 - m then return false end
+	return true
 end
 
 ---------------------------------------------------------------- palette

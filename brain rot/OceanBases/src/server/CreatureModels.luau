@@ -7,7 +7,7 @@
 -- parts are used, so the game always works.
 --
 -- Attributes on every creature model: ForwardYaw (degrees to turn the model so
--- it faces its direction of travel; imported GLB rigs look along +X).
+-- it faces its direction of travel; imported GLB rigs look along -X).
 -- Tags: OceanFish / OceanEgg / OceanPredator.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("BaseConfig"))
@@ -61,7 +61,7 @@ function CreatureModels.imported(category: string, name: string): Model?
 		clone:Destroy()
 		return nil
 	end
-	clone:SetAttribute("ForwardYaw", 90) -- GLB rigs look along +X
+	clone:SetAttribute("ForwardYaw", -90) -- GLB rigs look along -X (head at -X, tail at +X)
 	clone:SetAttribute("Imported", true)
 	return clone
 end
@@ -102,15 +102,18 @@ local function builtEgg(parent: Instance, eggType: string, cf: CFrame, scale: nu
 	return m
 end
 
--- Egg standing on `cf` (its bottom at cf.Position). Imported models keep the
--- size they have in the StudEggs files; built ones get the same height.
-function CreatureModels.egg(parent: Instance, eggType: string, cf: CFrame)
+-- Egg standing on `cf` (its bottom at cf.Position). Without `height` the egg
+-- keeps the size it has in the StudEggs files (nests, hands); in a yard it is
+-- scaled up to `height` (as tall as a character).
+function CreatureModels.egg(parent: Instance, eggType: string, cf: CFrame, height: number?)
 	local info = Config.Eggs[eggType]
 	assert(info, "Unknown egg " .. tostring(eggType))
-	local height = info.size and info.size.Y or 3.5
+	local original = info.size and info.size.Y or 3.5
+	height = height or original
 	local m = CreatureModels.imported("Eggs", info.model)
 	if m then
 		m.Name = "Egg"
+		if math.abs(height - original) > 0.05 then m:ScaleTo(m:GetScale() * height / original) end
 		m.Parent = parent
 		standOn(m, cf.Position)
 	else

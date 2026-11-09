@@ -4,7 +4,7 @@
 --
 -- Layout follows the 1648x928 reference: four candy buttons top-left,
 -- coins + speed bottom-left, fish/eggs buttons bottom-right, backpack [G]
--- bottom-centre (opens the inventory with hotbar 1-8). The ScreenGui is built
+-- bottom-centre with 5 quick slots (opens the inventory, 10 quick slots). The ScreenGui is built
 -- once; data changes only update text, fills and animations.
 local Players = game:GetService("Players")
 
@@ -213,7 +213,10 @@ local function layout()
 	local navTop = math.floor(math.max(8, math.min(top, navFloor - 18 - NAV_H * ns)))
 	navigation.Position = UDim2.fromOffset(math.floor(side), navTop)
 	local navRight = side + S.ButtonW * ns
-	local closedFitsBottom = w / 2 - slot * hs / 2 >= leftLimit and w / 2 + slot * hs / 2 <= rightLimit
+	-- Closed: the backpack and 5 quick slots, centred (so the backpack sits a bit left of the middle).
+	local closedW = InventoryController.ClosedRowW * hs
+	local closedX = math.clamp(w / 2 - closedW / 2, wide and leftLimit or side, math.max(side, (wide and rightLimit or (w - side)) - closedW))
+	local closedFitsBottom = closedX >= leftLimit and closedX + closedW <= rightLimit
 	local closedY = closedFitsBottom and (h - bottom - slot * hs) or rowY
 	-- Window above the row, clear of the left buttons and of the bottom groups.
 	local x0 = wide and math.max(leftLimit, navRight + 12) or (navRight + 12)
@@ -223,7 +226,8 @@ local function layout()
 	local panelW, panelH = InventoryController.PanelW * panelScale, InventoryController.PanelH * panelScale
 	inventory:applyLayout({
 		scale = hs,
-		backpackClosed = UDim2.fromOffset(math.floor(w / 2 - slot * hs / 2), math.floor(closedY)),
+		backpackClosed = UDim2.fromOffset(math.floor(closedX), math.floor(closedY)),
+		hotbarClosed = UDim2.fromOffset(math.floor(closedX + (slot + InventoryController.Gap) * hs), math.floor(closedY)),
 		backpackOpen = UDim2.fromOffset(math.floor(rowX), math.floor(rowY)),
 		hotbar = UDim2.fromOffset(math.floor(rowX + (slot + InventoryController.Gap) * hs), math.floor(rowY)),
 		panel = UDim2.fromOffset(math.floor(x0 + (x1 - x0 - panelW) / 2), math.floor(y1 - panelH)),

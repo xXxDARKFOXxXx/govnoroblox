@@ -1,21 +1,25 @@
--- FishPenController (server): the yard's cells — placing eggs on any free cell,
--- hatching, fish, and paying fish income straight into the owner's coins.
--- Every action checks on the server that the player owns the base.
+-- FishPenController (server): what lives in a yard — eggs put anywhere on the
+-- floor, hatching, fish, and fish income paid straight into the owner's coins.
+-- There is no grid: the owner holds an egg (or a fish) from the inventory and
+-- clicks a spot of the yard floor (remote PlaceItem). The server checks the
+-- owner, the spot (inside the pool, not too close to another egg) and the
+-- base capacity (10 + base level). Each egg / fish gets a "place" (CellN).
 --
--- Cell attributes: State ("Empty" | "Egg" | "Fish"), EggType, HatchAt (server
--- time), FishType, FishLevel, Income. Base attribute: Income (coins per second).
--- Pen actions (from the HUD menus): remove a fish to the inventory, upgrade a
--- fish (cost grows with the level), delete an egg. Fish taken to the inventory
--- can be put back on any free cell with their level.
+-- Place attributes: Index, State ("Egg" | "Fish"), EggType, HatchAt (server
+-- time), FishType, FishLevel, Income. Base attributes: Income (coins per
+-- second), Capacity. Pen actions (HUD menus): remove a fish to the inventory,
+-- upgrade a fish (cost grows with the level), delete an egg.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local Config = require(ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("BaseConfig"))
 local Ownership = require(script.Parent:WaitForChild("BaseOwnershipService"))
 local Creatures = require(script.Parent:WaitForChild("CreatureModels"))
+local CellBuilder = require(script.Parent:WaitForChild("CellBuilder"))
 
 local FishPenController = {}
 FishPenController.random = Random.new()
+FishPenController.notify = nil -- function(player, text, kind)
 
 local Stats, Inventory
 local remainder = {} -- [base] = fractional coins not paid yet
@@ -54,7 +58,6 @@ end
 function FishPenController.refreshCell(cell: Model)
 	local point = cell.InteractionPoint
 	local gui = point.CellInfo
-	local prompt = point.CellPrompt
 	local state = cell:GetAttribute("State")
 	if state == "Egg" then
 		local egg = Config.Eggs[cell:GetAttribute("EggType")]
@@ -62,31 +65,64 @@ function FishPenController.refreshCell(cell: Model)
 		gui.Title.TextColor3 = Config.Colors.White
 		gui.Line.Text = "Вылупится через " .. clock((cell:GetAttribute("HatchAt") or 0) - now())
 		gui.Enabled = true
-		prompt:SetAttribute("Active", false)
 	elseif state == "Fish" then
 		local fish = Config.Fish[cell:GetAttribute("FishType")]
 		gui.Title.Text = fish and fish.name or "Рыба"
 		gui.Title.TextColor3 = fish and Config.RarityColors[fish.rarity] or Config.Colors.White
 		gui.Line.Text = "Ур. " .. (cell:GetAttribute("FishLevel") or 1) .. " · +" .. format(cell:GetAttribute("Income") or 0) .. " / сек"
 		gui.Enabled = true
-		prompt:SetAttribute("Active", false)
 	else
 		gui.Enabled = false
-		prompt:SetAttribute("Active", true)
 	end
 end
 
+-- Removes a place (its egg or fish goes away with it).
 function FishPenController.clearCell(cell: Model)
-	cell.Content:ClearAllChildren()
-	cell:SetAttribute("State", "Empty")
-	cell:SetAttribute("EggType", nil)
-	cell:SetAttribute("HatchAt", nil)
-	cell:SetAttribute("FishType", nil)
-	cell:SetAttribute("FishLevel", nil)
-	cell:SetAttribute("Income", nil)
-	FishPenController.refreshCell(cell)
 	local base = Ownership.baseFrom(cell)
+	cell:Destroy()
 	if base then FishPenController.updateIncome(base) end
+end
+
+---------------------------------------------------------------- places
+function FishPenController.capacity(base: Model): number
+	return base:GetAttribute("Capacity") or Config.StartCapacity
+end
+
+local function nextIndex(base: Model): number
+	local used = {}
+	for _, cell in FishPenController.cells(base) do used[cell:GetAttribute("Index")] = true end
+	local i = 1
+	while used[i] do i += 1 end
+	return i
+end
+
+-- World point on the yard floor under `position`, or nil + reason when an
+-- egg cannot go there: base full, outside the pool, too close to an egg.
+function FishPenController.spotFor(base: Model, position: Vector3): (Vector3?, string?)
+	if #FishPenController.cells(base) >= FishPenController.capacity(base) then return nil, "full" end
+	local origin = base.PrimaryPart.CFrame
+	local lp = origin:PointToObjectSpace(position)
+	local depth = base:GetAttribute("YardDepth") or Config.depth(1)
+	if not Config.insideYard(lp.X, lp.Z, depth) then return nil, "outside" end
+	local spot = origin:PointToWorldSpace(Vector3.new(lp.X, Config.FloorTop, lp.Z))
+	for _, cell in FishPenController.cells(base) do
+		if cell:GetAttribute("State") == "Egg" then
+			local other = cell.EggPlacement.CFrame.Position
+			if Vector2.new(other.X - spot.X, other.Z - spot.Z).Magnitude < Config.PlaceSpacing then return nil, "busy" end
+		end
+	end
+	return spot, nil
+end
+
+-- A new empty place at a floor point (no checks: see spotFor / placeAt).
+function FishPenController.createCell(base: Model, spot: Vector3): Model
+	local cells = base:FindFirstChild("Cells")
+	if not cells then
+		cells = Instance.new("Folder")
+		cells.Name = "Cells"
+		cells.Parent = base
+	end
+	return CellBuilder.build(cells, spot, nextIndex(base))
 end
 
 -- Fish fly in the air above the pool water, each on its own oval and height,
@@ -118,6 +154,11 @@ local function spawnFish(cell: Model, fishType: string)
 	fish:SetAttribute("RadiusZ", rz)
 	fish:SetAttribute("Phase", phase)
 	fish:SetAttribute("Speed", Config.FishSwimSpeed * (0.8 + rng:NextNumber() * 0.4) * (rng:NextNumber() < 0.5 and -1 or 1))
+	-- The name / level / income label flies with the fish.
+	local gui = cell.InteractionPoint.CellInfo
+	gui.Adornee = fish.PrimaryPart
+	local info = Config.Fish[fishType]
+	gui.StudsOffset = Vector3.new(0, (info and info.length or 4) * 0.35 + 1.5, 0)
 	return fish
 end
 
@@ -174,7 +215,14 @@ local function fishItem(player: Player, itemId: string)
 	return nil
 end
 
--- Puts a fish from the inventory onto a free cell (keeps its level).
+-- After the last one of the held item is used, the hand is empty.
+local function releaseHand(player: Player, itemId: string)
+	if Inventory and Inventory.count(player, itemId) <= 0 and player:GetAttribute("HeldItem") == itemId then
+		player:SetAttribute("HeldItem", nil)
+	end
+end
+
+-- Puts a fish from the inventory into the yard (keeps its level).
 function FishPenController.placeFish(player: Player, cell: Model, itemId: string): boolean
 	local base = Ownership.baseFrom(cell)
 	if not Ownership.isOwner(player, base) or cell:GetAttribute("State") ~= "Empty" then return false end
@@ -183,16 +231,38 @@ function FishPenController.placeFish(player: Player, cell: Model, itemId: string
 	local fishType, level = item:GetAttribute("FishType"), item:GetAttribute("Level") or 1
 	if not Inventory.remove(player, itemId, 1) then return false end
 	setFish(cell, fishType, math.clamp(math.floor(level), 1, Config.MaxFishLevel))
+	releaseHand(player, itemId)
 	return true
 end
 
--- What the cell prompt places: the item in the hand (egg or fish), else any egg.
-function FishPenController.placeHeld(player: Player, cell: Model): boolean
+-- Server-validated: put the held item (egg or fish; else any egg) on the yard
+-- floor at `position` (from the client's click). Returns true when placed.
+function FishPenController.placeAt(player: Player, position: any): boolean
+	if typeof(position) ~= "Vector3" or position.X ~= position.X or position.Z ~= position.Z then return false end
+	local base = Ownership.baseOf(player)
+	if not base then return false end
 	local held = player:GetAttribute("HeldItem")
-	if type(held) == "string" and fishItem(player, held) then
-		return FishPenController.placeFish(player, cell, held)
+	local isFish = type(held) == "string" and fishItem(player, held) ~= nil
+	if not isFish and not FishPenController.chooseEgg(player) then return false end
+	local spot, reason = FishPenController.spotFor(base, position)
+	if not spot then
+		if FishPenController.notify then
+			local text = reason == "full" and "База заполнена! Улучши её, чтобы ставить больше рыб."
+				or reason == "busy" and "Слишком близко к другому яйцу."
+				or "Ставь внутри своего вольера."
+			FishPenController.notify(player, text, "bad")
+		end
+		return false
 	end
-	return FishPenController.placeEgg(player, cell)
+	local cell = FishPenController.createCell(base, spot)
+	local ok
+	if isFish then
+		ok = FishPenController.placeFish(player, cell, held)
+	else
+		ok = FishPenController.placeEgg(player, cell)
+	end
+	if not ok then cell:Destroy() end
+	return ok
 end
 
 ---------------------------------------------------------------- pen actions (HUD menus)
@@ -249,7 +319,17 @@ function FishPenController.action(player: Player, action: any, index: any): bool
 	return false
 end
 
--- Places an egg on a free cell; returns true on success. Server-side only.
+-- An egg as tall as a character on a place, with its hatch timer.
+function FishPenController.setEgg(cell: Model, eggType: string)
+	cell.Content:ClearAllChildren()
+	cell:SetAttribute("State", "Egg")
+	cell:SetAttribute("EggType", eggType)
+	cell:SetAttribute("HatchAt", now() + Config.Eggs[eggType].hatch)
+	Creatures.egg(cell.Content, eggType, CFrame.new(cell.EggPlacement.CFrame.Position + Vector3.new(0, 0.1, 0)), Config.BaseEggHeight)
+	FishPenController.refreshCell(cell)
+end
+
+-- Places an egg on an empty place; returns true on success. Server-side only.
 function FishPenController.placeEgg(player: Player, cell: Model, eggType: string?): boolean
 	local base = Ownership.baseFrom(cell)
 	if not Ownership.isOwner(player, base) then return false end
@@ -257,11 +337,8 @@ function FishPenController.placeEgg(player: Player, cell: Model, eggType: string
 	eggType = eggType or FishPenController.chooseEgg(player)
 	if not eggType or not Config.Eggs[eggType] then return false end
 	if Inventory and not Inventory.remove(player, eggType, 1) then return false end
-	cell:SetAttribute("State", "Egg")
-	cell:SetAttribute("EggType", eggType)
-	cell:SetAttribute("HatchAt", now() + Config.Eggs[eggType].hatch)
-	Creatures.egg(cell.Content, eggType, CFrame.new(cell.EggPlacement.CFrame.Position + Vector3.new(0, 0.1, 0)))
-	FishPenController.refreshCell(cell)
+	FishPenController.setEgg(cell, eggType)
+	releaseHand(player, eggType)
 	return true
 end
 
@@ -306,20 +383,11 @@ function FishPenController.resetBase(base: Model)
 	remainder[base] = nil
 end
 
-function FishPenController.bindCell(cell: Model)
-	if cell:GetAttribute("Bound") then return end
-	cell:SetAttribute("Bound", true)
-	cell.InteractionPoint.CellPrompt.Triggered:Connect(function(player)
-		FishPenController.placeHeld(player, cell)
-	end)
-	FishPenController.refreshCell(cell)
-end
-
 function FishPenController.init(bases: {Model})
 	Stats = optional("OceanHUDStats")
 	Inventory = optional("OceanInventory")
 	for _, base in bases do
-		for _, cell in FishPenController.cells(base) do FishPenController.bindCell(cell) end
+		for _, cell in FishPenController.cells(base) do cell:Destroy() end
 		base:SetAttribute("Income", 0)
 	end
 	table.insert(Ownership.onReleased, FishPenController.resetBase)

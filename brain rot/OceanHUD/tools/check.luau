@@ -218,17 +218,26 @@ local hotbar = root.Hotbar
 local panel = root.InventoryPanel
 local main = panel.Main
 check(backpack.Button.Key.Text == "[G]" and backpack.Button.Icon.Image:find("Backpack"), "Closed inventory: backpack with [G]")
-check(not panel.Visible and not hotbar.Visible, "Closed: no window, no hotbar")
+check(not panel.Visible and hotbar.Visible, "Closed: no window, quick bar visible")
+local shownSlots = 0
+for i = 1, 10 do if hotbar["Slot" .. i].Visible then shownSlots += 1 end end
+check(shownSlots == 5, "Closed: 5 quick slots")
+check(backpack.Position.X.Offset + 46 < 824, "Closed backpack sits left of the screen middle")
+local sc = backpack.UIScale.Scale
+check(math.abs(hotbar.Position.X.Offset + 6 * sc - (backpack.Position.X.Offset + 100 * sc)) <= 2 and math.abs(hotbar.Position.Y.Offset + 6 * sc - backpack.Position.Y.Offset) <= 2, "Quick slots right next to the backpack")
 check(main.Empty.Visible and main.Empty.Text == "Здесь пока ничего нет", "Empty inventory message")
 local tabNames = {}
 for _, spec in {"All", "Eggs", "Fish"} do tabNames[#tabNames + 1] = panel[spec .. "Tab"].Caption.Text end
 check(table.concat(tabNames, ",") == "Все,Яйца,Рыбы" and panel:FindFirstChild("FoodTab") == nil, "Tabs Все / Яйца / Рыбы, no Еда")
 check(panel.FishTab.Icon.Image:find("SharkFin") and panel.AllTab.Icon.Image:find("Backpack"), "Tab icons")
 check(main.Search.PlaceholderText == "Поиск", "Search box")
-for i = 1, 8 do assert(hotbar["Slot" .. i].Number.Text == tostring(i)) end
-check(true, "Hotbar slots numbered 1-8")
+for i = 1, 10 do assert(hotbar["Slot" .. i].Number.Text == tostring(i % 10)) end
+check(hotbar:FindFirstChild("Slot11") == nil, "Quick slots numbered 1-9, 0")
 key(r.Enum.KeyCode.G)
 check(panel.Visible and panel.GroupTransparency == 0 and hotbar.Visible, "G opens the inventory")
+shownSlots = 0
+for i = 1, 10 do if hotbar["Slot" .. i].Visible then shownSlots += 1 end end
+check(shownSlots == 10, "Open: the quick bar widens to 10 slots")
 check(backpack.Button.UIStroke.Color == r.Color3.new(1, 1, 1), "Open backpack slot is outlined white")
 check(backpack.Position.X.Offset < hotbar.Position.X.Offset, "Backpack moves to the start of the hotbar")
 -- CanvasGroups clip their contents: every outlined tile must keep its whole
@@ -263,13 +272,13 @@ local apple = item("GoldEgg", "Золотое яйцо", "Eggs", "Egg", 5, 2)
 event(folder, "ChildAdded"):Fire()
 local function cards()
 	local n = 0
-	for _, child in main.Grid:GetChildren() do if child:IsA("Frame") then n += 1 end end
+	for _, child in main.Grid:GetChildren() do if child:IsA("GuiButton") then n += 1 end end
 	return n
 end
 check(cards() == 3 and not main.Empty.Visible, "All tab shows every item")
 check(main.Grid.Item_BasicEgg.Count.Text == "x3" and main.Grid.Item_BasicEgg.ItemName.Text == "Обычное яйцо", "Item card with name and count")
 check(main.Grid.Item_Shark:FindFirstChild("Count") == nil, "Single items have no count badge")
-check(hotbar.Slot1.Icon.Image:find("SharkFin") and hotbar.Slot2.Icon.Image:find("Egg") and hotbar.Slot3.Icon.Image == "", "Hotbar shows assigned items")
+check(hotbar.Slot1.Icon.Image:find("SharkFin") and hotbar.Slot2.Icon.Image:find("Egg") and hotbar.Slot3.Icon.Image == "", "Quick bar starts with the server's order")
 event(panel.EggsTab, "Activated"):Fire()
 check(cards() == 2 and main.Grid:FindFirstChild("Item_BasicEgg") and main.Grid:FindFirstChild("Item_GoldEgg"), "Eggs tab filters")
 check(panel.EggsTab.UIGradient.Enabled and not panel.AllTab.UIGradient.Enabled, "Selected tab is highlighted blue")
@@ -291,8 +300,19 @@ key(r.Enum.KeyCode.One)
 check(hotbar.Slot1.UIStroke.Color == r.Color3.new(0, 0, 0) and picks[#picks] == "nil:nil", "Pressing 1 again unselects")
 event(hotbar.Slot2, "Activated"):Fire()
 check(picks[#picks] == "2:GoldEgg", "Clicking a slot selects it")
+-- Mouse: clicking an item card takes it into the hands, puts it first in the quick bar, closes the window.
+event(main.Grid.Item_BasicEgg, "Activated"):Fire()
+check(picks[#picks] == "1:BasicEgg", "Clicking an item card takes it into the hands")
+check(hotbar.Slot1.Icon.Image:find("Egg") and hotbar.Slot2.Icon.Image:find("SharkFin") and hotbar.Slot1.UIStroke.Color == r.Color3.new(1, 1, 1), "Picked item goes first in the quick bar")
+check(not panel.Visible, "Picking an item closes the window")
+key(r.Enum.KeyCode.One)
+check(picks[#picks] == "nil:nil", "Picking the held item again puts it away")
+key(r.Enum.KeyCode.Seven)
+check(picks[#picks] == "nil:nil", "Keys 6-0 work only while the inventory is open")
 key(r.Enum.KeyCode.G)
-check(not panel.Visible and not hotbar.Visible, "G closes the inventory")
+check(panel.Visible, "G opens it again")
+key(r.Enum.KeyCode.G)
+check(not panel.Visible and hotbar.Visible, "G closes the inventory, the quick bar stays")
 -- Pen menus (Рыбы / Яйца): a base owned by the player with one fish and one egg.
 local serverNow = 5000
 r.implementMethod("Workspace", "GetServerTimeNow", function() return serverNow end)
@@ -401,9 +421,11 @@ for _, d in sizes do
 	check(inside(n, w, h) and inside(c, w, h) and inside(inv, w, h), "All groups on screen at " .. tag)
 	check(apart(n, c) and apart(inv, c) and apart(inv, n), "No overlap at " .. tag)
 	local closedBag = box(root.Backpack, 92, 92)
+	local closedBar = box(root.Hotbar, root.Hotbar.Size.X.Offset, root.Hotbar.Size.Y.Offset)
 	check(inside(closedBag, w, h) and apart(closedBag, n) and apart(closedBag, c) and apart(closedBag, inv), "Closed backpack clear of other HUD at " .. tag)
+	check(inside(closedBar, w, h) and apart(closedBar, n) and apart(closedBar, c) and apart(closedBar, inv) and apart(closedBar, closedBag), "Closed quick bar clear of other HUD at " .. tag)
 	key(r.Enum.KeyCode.G)
-	local bag, bar, win = box(root.Backpack, 92, 92), box(root.Hotbar, 804, 104), box(root.InventoryPanel, 1012, 512)
+	local bag, bar, win = box(root.Backpack, 92, 92), box(root.Hotbar, root.Hotbar.Size.X.Offset, root.Hotbar.Size.Y.Offset), box(root.InventoryPanel, 1012, 512)
 	local ok = inside(bag, w, h) and inside(bar, w, h) and inside(win, w, h) and apart(bag, bar) and apart(bar, win) and apart(bag, win)
 	for _, other in {n, c, inv} do ok = ok and apart(bag, other) and apart(bar, other) and apart(win, other) end
 	check(ok, "Open inventory clear of other HUD at " .. tag)
@@ -416,7 +438,7 @@ screen = r.Vector2.new(1648, 928); root.AbsoluteSize = screen; event(root, "prop
 check(nav.Position.X.Offset == 35 and counters.Position.X.Offset == 35, "Reference left margin 35 px")
 check(math.abs(nav.UIScale.Scale - 1) < 0.06 and counters.UIScale.Scale == 1, "Reference size at 1648x928")
 check(root.Collection.Position.Y.Offset + 106 <= 928 and root.Collection.Position.X.Offset > 1300, "Fish/Eggs buttons bottom-right at reference size")
-check(math.abs(root.Backpack.Position.X.Offset + 46 - 824) <= 2 and root.Backpack.Position.Y.Offset > 780, "Closed backpack bottom-centre at reference size")
+check(math.abs(root.Backpack.Position.X.Offset + 592 * root.Backpack.UIScale.Scale / 2 - 824) <= 2 and root.Backpack.Position.Y.Offset > 780, "Closed backpack + 5 quick slots centred at the bottom (backpack left of the middle)")
 
 -- Cleanup
 event(gui, "Destroying"):Fire()
@@ -450,7 +472,7 @@ check(not pcall(invModule.add, p, "Apple", {Name = "Яблоко", Category = "F
 invModule.setHotbar(p, "Shark", 1)
 invModule.setHotbar(p, "GoldEgg", 1)
 check(p.Inventory.GoldEgg:GetAttribute("HotbarSlot") == 1 and p.Inventory.Shark:GetAttribute("HotbarSlot") == nil, "Server: one item per hotbar slot")
-check(not pcall(invModule.setHotbar, p, "GoldEgg", 9), "Server: hotbar slot must be 1-8")
+check(not pcall(invModule.setHotbar, p, "GoldEgg", 11), "Server: quick slot must be 1-10")
 
 fs.writeFile(rootPath .. "test-report.json", serde.encode("json", {passed = true, count = #tests, tests = tests, layout = layoutReport, studioPlayTest = false}, true))
 print("PASS: " .. #tests .. " checks")
