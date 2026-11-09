@@ -76,6 +76,14 @@ r.implementMethod("Model", "PivotTo", function(model, target)
 		if part:IsA("BasePart") then part.CFrame = delta * part.CFrame end
 	end
 end)
+r.implementMethod("Model", "GetBoundingBox", function(m)
+	local p = m:FindFirstChildWhichIsA("BasePart", true)
+	return p.CFrame, p.Size
+end)
+r.implementMethod("Model", "GetScale", function() return 1 end)
+r.implementMethod("Model", "ScaleTo", function(m, s)
+	for _, p in m:GetDescendants() do if p:IsA("BasePart") then p.Size = p.Size * s end end
+end)
 r.implementProperty("Attachment", "WorldPosition", function(a) return (a.Parent.CFrame * a.CFrame).Position end)
 r.implementProperty("BasePart", "Position", function(p) return p.CFrame.Position end)
 
@@ -173,6 +181,21 @@ for id, base in bases do
 	assert(not pool.Water.CanCollide)
 end
 check(true, "Every yard has a shallow pool (about a third of a character tall)")
+do
+	local base = bases[1]
+	local water, fenceMinX, fenceMaxX, fenceMaxZ = base.Pool.Water, math.huge, -math.huge, -math.huge
+	local fenceLow = math.huge
+	for _, part in base.Yard.Fence:GetChildren() do
+		local p = part.CFrame.Position
+		fenceMinX, fenceMaxX, fenceMaxZ = math.min(fenceMinX, p.X), math.max(fenceMaxX, p.X), math.max(fenceMaxZ, p.Z)
+		if part.Name == "FencePost" then fenceLow = math.min(fenceLow, p.Y - part.Size.Y / 2) end
+	end
+	local w = water.CFrame.Position
+	check(water.Size.X >= (fenceMaxX - fenceMinX) - 1.5 and water.Size.Z >= Config.depth(Config.StartRows) - 3
+		and math.abs(w.Z - Config.depth(Config.StartRows) / 2 - Config.Origins[1].Z) < 0.5, "Pool water fills the whole yard")
+	check(fenceLow >= w.Y + water.Size.Y / 2 - 0.01, "Fence stands on the pool rim on every side")
+	check(base.Pool:FindFirstChild("EntranceStep") and base.Pool:FindFirstChild("InnerStep"), "Steps lead over the rim into the pool")
+end
 check(studded, "Plastic blocks have studs, like the court floor and walls")
 check(total / 5 < 400, "Light bases (" .. math.floor(total / 5) .. " parts each)")
 local anchored = true
@@ -227,7 +250,7 @@ event(cells[7].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 check(first:GetAttribute("State") == "Egg" and last:GetAttribute("State") == "Egg" and cells[7]:GetAttribute("State") == "Egg", "Eggs go on any cell of the yard")
 check(Inventory.count(alice, "TideEgg") == 0 and Inventory.count(alice, "OceanCrownEgg") == 1, "Placed eggs leave the inventory")
 local egg = first.Content:FindFirstChild("Egg")
-check(egg and math.abs(egg.Shell.CFrame.Position.Y - (first.Tile.CFrame.Position.Y + 0.5 + 1.4)) < 0.3, "Egg stands on the cell tile")
+check(egg and math.abs(egg.Shell.CFrame.Position.Y - (first.Tile.CFrame.Position.Y + 0.6 + Config.Eggs.TideEgg.size.Y / 2)) < 0.3, "Egg stands on the cell tile")
 check(math.abs(egg.Shell.CFrame.Position.X - first.Tile.CFrame.Position.X) < 1e-3 and math.abs(egg.Shell.CFrame.Position.Z - first.Tile.CFrame.Position.Z) < 1e-3, "Egg is centred on its cell")
 check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == false and first.InteractionPoint.CellInfo.Enabled, "Busy cell hides its prompt and shows a label")
 -- Hand-held egg via the hotbar remote.
@@ -290,7 +313,7 @@ local topBefore, topAfter = -math.huge, -math.huge
 for _, part in baseA:GetDescendants() do
 	if part:IsA("BasePart") and part.Transparency < 1 and not part:FindFirstAncestor("Content") then topAfter = math.max(topAfter, part.CFrame.Position.Y) end
 end
-check(topAfter < Config.Origins[1].Y + 9, "Expansion adds no floors (stays one level)")
+check(topAfter < Config.Origins[1].Y + 12, "Expansion adds no floors (stays one level)")
 check(first:GetAttribute("State") == "Fish" and first.Content:FindFirstChildWhichIsA("Model"), "Fish stay in place when the yard grows")
 local newCell = Pens.cells(baseA)[15]
 Inventory.add(alice, "CoralEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg"})
@@ -415,6 +438,19 @@ for _, nest in seabed.Nests:GetChildren() do
 	assert(z >= Config.Sections[s].fromZ and z <= Config.Sections[s].toZ, "nest inside its section")
 end
 check(nestsBySection[1] == 4 and nestsBySection[5] == 4, "Four nests in every section with that section's eggs")
+do
+	local fits = true
+	for _, nest in seabed.Nests:GetChildren() do
+		local size = Config.Eggs[nest:GetAttribute("EggType")].size
+		local glow = nest.NestGlow.Size.Z -- cylinder diameter
+		fits = fits and glow >= math.max(size.X, size.Z) and glow <= math.max(size.X, size.Z) + 2
+	end
+	local small, big = seabed.Nests.Nest_1_1.Mound.Size.X, nil
+	for _, nest in seabed.Nests:GetChildren() do
+		if nest:GetAttribute("EggType") == "OceanCrownEgg" then big = nest.Mound.Size.X end
+	end
+	check(fits and big and big > small, "Nests are sized to their eggs (bigger egg, bigger nest)")
+end
 
 ---------------------------------------------------------------- nests: take, carry, deliver
 local Nests = load(tree.server.NestService)
@@ -435,6 +471,7 @@ check(nestState.available, "Taking needs to be close to the nest")
 event(nest.EggSpot.TakePrompt, "Triggered"):Fire(diver)
 check(not nestState.available and diver:GetAttribute("CarryEgg") == nest:GetAttribute("EggType") and diver:GetAttribute("CarrySection") == 1, "Taking the egg: the diver carries it")
 check(diver.Character:FindFirstChild("CarriedEgg") and not nest:FindFirstChild("Egg") and not nest.EggSpot.TakePrompt.Enabled, "Egg moves from the nest to above the diver's head")
+check(not diver.Character.CarriedEgg:HasTag("OceanEgg") and diver.Character.CarriedEgg:GetAttribute("Carried"), "Carried egg is not rocked in place by the client (the diver can move)")
 local nest2 = seabed.Nests:FindFirstChild("Nest_1_2")
 diverRoot.CFrame = r.CFrame.new(nest2.EggSpot.CFrame.Position + r.Vector3.new(0, 3, 0))
 event(nest2.EggSpot.TakePrompt, "Triggered"):Fire(diver)
@@ -532,19 +569,11 @@ for _, data in {{"Fish", "Clown"}, {"Predators", "01_Barracuda"}, {"Eggs", "01_T
 	local mesh = r.Instance.new("MeshPart"); mesh.Name = data[2] .. "_Body"; mesh.Size = r.Vector3.new(4, 2, 2); mesh.Parent = m
 	m.Parent = folder
 end
-r.implementMethod("Model", "GetBoundingBox", function(m)
-	local p = m:FindFirstChildWhichIsA("BasePart", true)
-	return p.CFrame, p.Size
-end)
-r.implementMethod("Model", "GetScale", function() return 1 end)
-r.implementMethod("Model", "ScaleTo", function(m, s)
-	for _, p in m:GetDescendants() do if p:IsA("BasePart") then p.Size = p.Size * s end end
-end)
-local importedFish = Creatures.fish(scratch, "Clown", r.CFrame.new(0, 10, 0), 6)
+local importedFish = Creatures.fish(scratch, "Clown", r.CFrame.new(0, 10, 0))
 check(importedFish:GetAttribute("Imported") and importedFish:GetAttribute("ForwardYaw") == 90 and importedFish:FindFirstChild("Clown_Body"), "Imported fish model is used (turned to face forward)")
 local importedPredator = Creatures.predator(scratch, "01_Barracuda", r.CFrame.new())
 check(importedPredator:GetAttribute("Imported") and importedPredator["01_Barracuda_Body"]:GetAttribute("PatrolRadius") == 0, "Imported predator: its runtime only animates, the server moves it")
-local importedEgg = Creatures.egg(scratch, "TideEgg", r.CFrame.new(0, 0, 0), 3)
+local importedEgg = Creatures.egg(scratch, "TideEgg", r.CFrame.new(0, 0, 0))
 check(importedEgg:GetAttribute("Imported") and not importedEgg:FindFirstChild("Shell"), "Imported egg model is used")
 check(not Creatures.fish(scratch, "Whale", r.CFrame.new()):GetAttribute("Imported"), "Missing models fall back to built ones")
 

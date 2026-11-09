@@ -209,19 +209,31 @@ local function buildNests(root)
 			nest:SetAttribute("NestIndex", i)
 			nest:SetAttribute("EggType", section.eggs[(i - 1) % #section.eggs + 1])
 			local cf = CFrame.new(spot)
-			-- Mound of sand and a ring of rocks and sticks, like a big bird nest.
-			Pieces.solid(nest, "Mound", Vector3.new(7, 1.2, 7), cf * CFrame.new(0, 0.6, 0), section.sand[1]:Lerp(Color3.new(1, 1, 1), 0.15))
-			for k = 0, 9 do
-				local a = k / 10 * math.pi * 2
+			-- Sized to the egg it holds (original StudEggs size): the egg sits in a
+			-- bowl of sand ringed by rocks and sticks, like a big bird nest.
+			local eggInfo = Config.Eggs[nest:GetAttribute("EggType")]
+			local eggSize = eggInfo.size or Vector3.new(2.6, 3.5, 2.6)
+			local inner = math.max(eggSize.X, eggSize.Z) / 2 + 0.6 -- bowl radius
+			local ring = inner + 0.9 -- ring of sticks
+			local rimH = math.max(1.4, eggSize.Y * 0.38)
+			local moundH = 1.2
+			Pieces.solid(nest, "Mound", Vector3.new(ring * 2 + 2, moundH, ring * 2 + 2), cf * CFrame.new(0, moundH / 2, 0), section.sand[1]:Lerp(Color3.new(1, 1, 1), 0.15))
+			local sticks = math.max(10, math.floor(ring * 2 * math.pi / 1.7))
+			for k = 0, sticks - 1 do
+				local a = k / sticks * math.pi * 2
 				local stick = (k % 2 == 0) and C.WoodDark or rockColor(section, s * 50 + k)
-				Pieces.solid(nest, "NestRim", Vector3.new(1.4, 1.2 + (k % 3) * 0.4, 2.6),
-					cf * CFrame.Angles(0, -a, 0) * CFrame.new(0, 1.5, -3.4) * CFrame.Angles(math.rad(-12), 0, 0), stick)
+				local h = rimH * (0.8 + (k % 3) * 0.15)
+				Pieces.solid(nest, "NestRim", Vector3.new(1.4, h, 2.2 + ring * 0.25),
+					cf * CFrame.Angles(0, -a, 0) * CFrame.new(0, moundH + h / 2 - 0.3, -ring) * CFrame.Angles(math.rad(-14), 0, 0), stick)
 			end
-			Pieces.kelp(nest, cf * CFrame.new(3.8, 0, 3.2), 4, s + i)
-			Pieces.coral(nest, cf * CFrame.new(-3.9, 0, 3.0), (i % 2 == 0) and C.CoralPink or C.CoralPurple, 1.0)
-			local glow = Pieces.cylinder(nest, "NestGlow", 0.15, 5.4, cf * CFrame.new(0, 1.25, 0), Config.Eggs[nest:GetAttribute("EggType")].spots, Enum.Material.Neon, {Transparency = 0.45})
+			Pieces.kelp(nest, cf * CFrame.new(ring + 1.5, 0, ring * 0.8), 4 + eggSize.Y * 0.4, s + i)
+			Pieces.coral(nest, cf * CFrame.new(-ring - 1.4, 0, ring * 0.7), (i % 2 == 0) and C.CoralPink or C.CoralPurple, 1.0 + eggSize.Y * 0.08)
+			local glow = Pieces.cylinder(nest, "NestGlow", 0.15, inner * 2, cf * CFrame.new(0, moundH + 0.05, 0), eggInfo.spots, Enum.Material.Neon, {Transparency = 0.45})
 			glow.CastShadow = false
-			local eggSpot = Pieces.part(nest, "EggSpot", Vector3.new(2, 1, 2), cf * CFrame.new(0, 1.3, 0), C.White, nil, {Transparency = 1})
+			-- EggSpot: bottom of the egg on the mound, prompt at the egg's middle.
+			local eggSpot = Pieces.part(nest, "EggSpot", Vector3.new(inner * 2, eggSize.Y, inner * 2), cf * CFrame.new(0, moundH + 0.3, 0), C.White, nil, {Transparency = 1})
+			eggSpot.CanCollide = false
+			nest:SetAttribute("EggBottom", spot.Y + moundH)
 			local prompt = Instance.new("ProximityPrompt")
 			prompt.Name = "TakePrompt"
 			prompt.ActionText = "Взять яйцо"

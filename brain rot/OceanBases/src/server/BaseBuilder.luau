@@ -1,12 +1,15 @@
--- BaseBuilder: geometry of one player base — an open fenced yard with a pool
--- at the back and studded 8x8 cells (like the court floor) in front of it.
+-- BaseBuilder: geometry of one player base — an open yard that is one big
+-- shallow pool, fenced on every side, with studded 8x8 cells (like the court
+-- floor) on its bottom.
 -- Expanding adds a row of cells at the front and moves the front fence;
 -- nothing is stacked and there is no roof.
 --
 -- BaseN (Model, PrimaryPart = Root at the centre of the yard's back edge)
 --   Root
 --   Cells/CellN           (see CellBuilder)
---   Pool                  (deck, rim, water, plants; FishZone = where fish fly)
+--   Pool                  (rim under the fence, steps, water over the whole
+--                          yard, plants; FishZone = where fish fly; rebuilt
+--                          with the yard)
 --   Yard                  (rebuilt on expansion: floor border, fence, entrance,
 --                          upgrade board outside the fence, spawn point,
 --                          floating owner name, front decor)
@@ -21,6 +24,10 @@ local BaseBuilder = {}
 local W = Config.width()
 local HX = W / 2 - 0.6 -- fence post line (sides)
 local POST_H = 4.2
+local RIM = 1.2 -- pool rim thickness, centred on the fence line
+local function rimTop(): number
+	return Config.FloorTop + Config.PoolDepth + 0.2
+end
 
 local function at(origin: CFrame, x: number, y: number, z: number, yaw: number?)
 	return origin * CFrame.new(x, y, z) * CFrame.Angles(0, math.rad(yaw or 0), 0)
@@ -49,11 +56,86 @@ local function fenceLine(folder, origin, x1, z1, x2, z2, lampEnds)
 	local previous
 	for i = 0, spans do
 		local t = i / spans
-		local cf = at(origin, x1 + (x2 - x1) * t, Config.FloorTop, z1 + (z2 - z1) * t)
+		local cf = at(origin, x1 + (x2 - x1) * t, rimTop() + 0.3, z1 + (z2 - z1) * t)
 		post(folder, cf, lampEnds and (i == 0 or i == spans))
 		if previous then span(folder, previous, cf) end
 		previous = cf
 	end
+end
+
+---------------------------------------------------------------- pool
+-- The whole yard is a shallow pool: a studded rim (about a third of a
+-- character tall) runs under the fence on every side, the water covers the
+-- floor and the cells, and the fish fly in the air above it. Rebuilt with the
+-- yard on every expansion, so the pool always fills the whole base.
+
+local function buildPool(base: Model, origin: CFrame, depth: number)
+	local old = base:FindFirstChild("Pool")
+	if old then old:Destroy() end
+	local pool = Pieces.model(base, "Pool")
+	local top = Config.FloorTop
+	local rimH = rimTop()
+	local inX, inZ = W - RIM * 2, depth - RIM * 2 -- water area
+	-- Rim walls from the court floor up, with a light cap.
+	for _, data in {
+		{Vector3.new(W, rimH, RIM), Vector3.new(0, 0, RIM / 2)},
+		{Vector3.new(W, rimH, RIM), Vector3.new(0, 0, depth - RIM / 2)},
+		{Vector3.new(RIM, rimH, inZ), Vector3.new(-W / 2 + RIM / 2, 0, depth / 2)},
+		{Vector3.new(RIM, rimH, inZ), Vector3.new(W / 2 - RIM / 2, 0, depth / 2)},
+	} do
+		local cf = at(origin, data[2].X, 0, data[2].Z)
+		Pieces.solid(pool, "Rim", data[1], cf * CFrame.new(0, rimH / 2, 0), C.PoolRim)
+		Pieces.part(pool, "RimCap", Vector3.new(data[1].X + 0.2, 0.3, data[1].Z + 0.2), cf * CFrame.new(0, rimH + 0.15, 0), C.PoolRimTop)
+	end
+	-- Steps over the front rim at the entrance: up from the court, down into the water.
+	local stepW = Config.EntranceWidth
+	for k = 1, 3 do
+		local h = rimH - k * rimH / 4
+		Pieces.solid(pool, "EntranceStep", Vector3.new(stepW, h, 1.2), at(origin, 0, h / 2, depth + (k - 0.5) * 1.2), C.BorderLight)
+	end
+	for k = 1, 2 do
+		local h = rimH - k * (rimH - top) / 3
+		Pieces.solid(pool, "InnerStep", Vector3.new(stepW, h, 1.2), at(origin, 0, h / 2, depth - RIM - (k - 0.5) * 1.2), C.BorderLight)
+	end
+	-- Water over the whole floor: the cells and the sand show through it.
+	Pieces.part(pool, "PoolBottom", Vector3.new(inX, 0.1, inZ), at(origin, 0, top + 0.05, depth / 2), C.PoolBottom, nil, {Transparency = 1, CanCollide = false, CanQuery = false})
+	Pieces.part(pool, "Water", Vector3.new(inX, Config.PoolDepth, inZ), at(origin, 0, top + Config.PoolDepth / 2, depth / 2), C.Water,
+		Enum.Material.SmoothPlastic, {Transparency = 0.45, Reflectance = 0.04, CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false})
+	-- Thin glowing foam line along the inside of the rim.
+	for i, data in {
+		{Vector3.new(inX, 0.08, 0.3), Vector3.new(0, 0, RIM + 0.15)}, {Vector3.new(inX, 0.08, 0.3), Vector3.new(0, 0, depth - RIM - 0.15)},
+		{Vector3.new(0.3, 0.08, inZ), Vector3.new(-inX / 2 + 0.15, 0, depth / 2)}, {Vector3.new(0.3, 0.08, inZ), Vector3.new(inX / 2 - 0.15, 0, depth / 2)},
+	} do
+		Pieces.part(pool, "WaterEdge" .. i, data[1], at(origin, data[2].X, top + Config.PoolDepth + 0.02, data[2].Z), C.Foam, Enum.Material.Neon, {Transparency = 0.5, CastShadow = false, CanCollide = false})
+	end
+	-- Plants and sea life along the back of the pool (the strip without cells).
+	local backZ = Config.Margin + Config.PoolZone / 2
+	for i, spot in {{-21, -5}, {-15, 5}, {-6, -6}, {7, -5.5}, {16, 5}, {21, -4}} do
+		Pieces.kelp(pool, at(origin, spot[1], top, backZ + spot[2]), 2.6 + (i % 3) * 0.7, i)
+	end
+	Pieces.coral(pool, at(origin, -21, top, backZ + 4), C.CoralPink, 1.2)
+	Pieces.coral(pool, at(origin, 21, top, backZ + 3, 40), C.CoralPurple, 1.1)
+	Pieces.crystals(pool, at(origin, -22, top, depth - 6), 1.0)
+	Pieces.crystals(pool, at(origin, 22, top, depth - 6), 1.0)
+	Pieces.pebbles(pool, at(origin, 9, top, backZ - 3), 3, 2)
+	Pieces.shell(pool, at(origin, -9, top, backZ + 3), 1.0)
+	Pieces.starfish(pool, at(origin, -W / 2 + RIM / 2, rimH + 0.3, depth / 2), 1.0)
+	local source = Pieces.part(pool, "BubbleSource", Vector3.new(inX - 4, 0.2, inZ - 4), at(origin, 0, top + 0.3, depth / 2), C.Water, nil, {Transparency = 1, CanCollide = false, CanQuery = false})
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Name = "Bubbles"
+	bubbles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	bubbles.Color = ColorSequence.new(C.Foam)
+	bubbles.LightEmission = 0.6
+	bubbles.Size = NumberSequence.new(0.2, 0.35)
+	bubbles.Transparency = NumberSequence.new(0.2, 1)
+	bubbles.Lifetime = NumberRange.new(1.0, 1.6)
+	bubbles.Rate = 14
+	bubbles.Speed = NumberRange.new(1, 1.5)
+	bubbles.EmissionDirection = Enum.NormalId.Top
+	bubbles.Parent = source
+	-- Where fish fly: the air above the whole pool (invisible).
+	Pieces.part(pool, "FishZone", Vector3.new(inX - 6, 1, inZ - 6), at(origin, 0, top + Config.PoolDepth, depth / 2), C.White, nil, {Transparency = 1, CanCollide = false, CanQuery = false})
+	return pool
 end
 
 ---------------------------------------------------------------- yard
@@ -137,7 +219,8 @@ function BaseBuilder.buildYard(base: Model, origin: CFrame, rows: number)
 	end
 	Pieces.solid(floor, "Walkway", Vector3.new(W - Config.Margin * 2, 1, depth - cellsEnd), at(origin, 0, top - 0.5, (cellsEnd + depth) / 2), C.BorderLight)
 	Pieces.part(floor, "Skirt", Vector3.new(W + 0.4, 0.6, depth + 0.4), at(origin, 0, 0.3 - 0.01, depth / 2), C.Border)
-	Pieces.solid(floor, "EntranceStep", Vector3.new(Config.EntranceWidth, 0.5, 2), at(origin, 0, 0.25, depth + 1), C.BorderLight)
+	-- Back strip without cells: sandy pool floor.
+	Pieces.solid(floor, "PoolFloor", Vector3.new(W - Config.Margin * 2, 1, Config.PoolZone), at(origin, 0, top - 0.5, Config.Margin + Config.PoolZone / 2), C.PoolBottom)
 
 	-- Fence: back, sides and the front with an entrance gap.
 	local fence = Pieces.folder(yard, "Fence")
@@ -151,7 +234,7 @@ function BaseBuilder.buildYard(base: Model, origin: CFrame, rows: number)
 
 	-- Entrance posts: taller, with the only real lights of the base.
 	for _, side in {-1, 1} do
-		local cf = at(origin, side * gap, top, fz)
+		local cf = at(origin, side * gap, rimTop() + 0.3, fz)
 		Pieces.solid(yard, "EntrancePost", Vector3.new(1.8, 6, 1.8), cf * CFrame.new(0, 3, 0), C.WoodDark)
 		Pieces.part(yard, "EntranceCap", Vector3.new(2.2, 0.6, 2.2), cf * CFrame.new(0, 6.3, 0), C.Wood)
 		Pieces.lamp(yard, cf * CFrame.new(0, 6.6, 0), true)
@@ -169,9 +252,10 @@ function BaseBuilder.buildYard(base: Model, origin: CFrame, rows: number)
 	Pieces.crate(decor, at(origin, -15, 0, depth + 2.4, 20), 1.6)
 
 	upgradeBoard(yard, origin, depth)
-	local spawn = Pieces.part(yard, "SpawnPoint", Vector3.new(2, 1, 2), at(origin, 0, top + 0.5, depth - 3.5), C.White, nil, {Transparency = 1})
+	local spawn = Pieces.part(yard, "SpawnPoint", Vector3.new(2, 1, 2), at(origin, 0, top + 0.5, depth - 6), C.White, nil, {Transparency = 1})
 	spawn.CanCollide = false
 	ownerTag(yard, origin, depth)
+	buildPool(base, origin, depth)
 	return yard
 end
 
@@ -185,69 +269,6 @@ function BaseBuilder.buildRow(base: Model, origin: CFrame, row: number)
 	return built
 end
 
--- Pool at the back of the yard: a deck, a studded rim about a third of a
--- character tall, transparent water, plants and bubbles. Fish fly above it.
-local function buildPool(base: Model, origin: CFrame)
-	local pool = Pieces.model(base, "Pool")
-	local pc = Config.poolCenter()
-	local size = Config.PoolSize
-	local top = Config.FloorTop
-	local rimH = Config.PoolDepth + 0.2
-	local r = Config.PoolRim
-	local center = at(origin, pc.X, top, pc.Y)
-	-- Deck: the floor of the whole pool strip.
-	Pieces.solid(pool, "Deck", Vector3.new(W - Config.Margin * 2, 1, Config.PoolZone), center * CFrame.new(0, -0.5, 0), C.BorderLight)
-	-- Rim (walkable top), with a light cap.
-	local hx, hz = size.X / 2 + r / 2, size.Y / 2 + r / 2
-	for _, data in {
-		{Vector3.new(size.X + r * 2, rimH, r), Vector3.new(0, 0, -hz)}, {Vector3.new(size.X + r * 2, rimH, r), Vector3.new(0, 0, hz)},
-		{Vector3.new(r, rimH, size.Y), Vector3.new(-hx, 0, 0)}, {Vector3.new(r, rimH, size.Y), Vector3.new(hx, 0, 0)},
-	} do
-		Pieces.solid(pool, "Rim", data[1], center * CFrame.new(data[2].X, rimH / 2, data[2].Z), C.PoolRim)
-		Pieces.part(pool, "RimCap", Vector3.new(data[1].X + 0.2, 0.3, data[1].Z + 0.2), center * CFrame.new(data[2].X, rimH + 0.15, data[2].Z), C.PoolRimTop)
-	end
-	-- Water: sandy bottom, transparent body, glowing surface.
-	Pieces.part(pool, "PoolBottom", Vector3.new(size.X, 0.2, size.Y), center * CFrame.new(0, 0.1, 0), C.PoolBottom)
-	-- Saturated blue water; the sand bottom shows through it.
-	Pieces.part(pool, "Water", Vector3.new(size.X, Config.PoolDepth - 0.2, size.Y), center * CFrame.new(0, 0.2 + (Config.PoolDepth - 0.2) / 2, 0), C.Water,
-		Enum.Material.SmoothPlastic, {Transparency = 0.25, Reflectance = 0.04, CastShadow = false})
-	-- Thin glowing edge along the rim instead of a pale surface sheet.
-	for i, data in {{Vector3.new(size.X, 0.08, 0.3), Vector3.new(0, 0, -size.Y / 2 + 0.15)}, {Vector3.new(size.X, 0.08, 0.3), Vector3.new(0, 0, size.Y / 2 - 0.15)}} do
-		Pieces.part(pool, "WaterEdge" .. i, data[1], center * CFrame.new(data[2].X, Config.PoolDepth + 0.02, data[2].Z), C.Foam, Enum.Material.Neon, {Transparency = 0.5, CastShadow = false})
-	end
-	-- Plants and sea life in the water.
-	for i, spot in {{-12, -3.5}, {-9, 3.2}, {11, -3.2}, {13, 2.8}, {2, -4}} do
-		Pieces.kelp(pool, center * CFrame.new(spot[1], 0.2, spot[2]), 2.6 + (i % 3) * 0.6, i)
-	end
-	Pieces.coral(pool, center * CFrame.new(-4, 0.2, 3.5), C.CoralPink, 0.9)
-	Pieces.coral(pool, center * CFrame.new(6, 0.2, 3.2) * CFrame.Angles(0, math.rad(40), 0), C.CoralPurple, 0.8)
-	Pieces.pebbles(pool, center * CFrame.new(8, 0.2, -3.6), 3, 2)
-	Pieces.shell(pool, center * CFrame.new(-6.5, 0.2, -3.8), 1.0)
-	Pieces.starfish(pool, center * CFrame.new(-hx, rimH + 0.3, 0), 1.0)
-	local source = Pieces.part(pool, "BubbleSource", Vector3.new(size.X - 4, 0.2, size.Y - 4), center * CFrame.new(0, 0.4, 0), C.Water, nil, {Transparency = 1})
-	local bubbles = Instance.new("ParticleEmitter")
-	bubbles.Name = "Bubbles"
-	bubbles.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-	bubbles.Color = ColorSequence.new(C.Foam)
-	bubbles.LightEmission = 0.6
-	bubbles.Size = NumberSequence.new(0.2, 0.35)
-	bubbles.Transparency = NumberSequence.new(0.2, 1)
-	bubbles.Lifetime = NumberRange.new(1.0, 1.6)
-	bubbles.Rate = 6
-	bubbles.Speed = NumberRange.new(1, 1.5)
-	bubbles.EmissionDirection = Enum.NormalId.Top
-	bubbles.Parent = source
-	-- Corner decor on the deck, beside the pool.
-	for _, side in {-1, 1} do
-		local x = side * (hx + r / 2 + 3.2)
-		Pieces.coral(pool, center * CFrame.new(x, 0, -3.5), side < 0 and C.CoralPurple or C.CoralPink, 1.3)
-		Pieces.crystals(pool, center * CFrame.new(x, 0, 3.0), 1.1)
-	end
-	-- Where fish fly: the air above the water (invisible).
-	Pieces.part(pool, "FishZone", Vector3.new(size.X - 2, 1, size.Y - 2), center * CFrame.new(0, Config.PoolDepth, 0), C.White, nil, {Transparency = 1})
-	return pool
-end
-
 function BaseBuilder.build(parent: Instance, id: number, origin: CFrame, rows: number)
 	local base = Pieces.model(parent, "Base" .. id)
 	base:SetAttribute("BaseId", id)
@@ -259,7 +280,6 @@ function BaseBuilder.build(parent: Instance, id: number, origin: CFrame, rows: n
 	Pieces.folder(base, "Cells")
 	for row = 1, rows do BaseBuilder.buildRow(base, origin, row) end
 	BaseBuilder.buildYard(base, origin, rows)
-	buildPool(base, origin)
 	return base
 end
 

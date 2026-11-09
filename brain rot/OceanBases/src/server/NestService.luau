@@ -18,7 +18,6 @@ NestService.notify = nil -- function(player, text, kind)
 NestService.safeZ = -2 -- z below this = start court (safe, delivers the egg)
 
 local Inventory
-local EGG_HEIGHT = 3
 
 local function prompt(nest: Model): ProximityPrompt
 	return nest.EggSpot.TakePrompt
@@ -28,7 +27,7 @@ function NestService.spawnEgg(nest: Model)
 	local state = NestService.nests[nest]
 	if state.egg then state.egg:Destroy() end
 	local eggType = nest:GetAttribute("EggType")
-	state.egg = Creatures.egg(nest, eggType, CFrame.new(nest.EggSpot.CFrame.Position - Vector3.new(0, 0.5, 0)), EGG_HEIGHT)
+	state.egg = Creatures.egg(nest, eggType, CFrame.new(nest.EggSpot.CFrame.Position.X, nest:GetAttribute("EggBottom") or (nest.EggSpot.CFrame.Position.Y - 0.3), nest.EggSpot.CFrame.Position.Z))
 	state.available = true
 	state.respawnAt = nil
 	nest:SetAttribute("Available", true)
@@ -39,8 +38,13 @@ local function attachEgg(player: Player, eggType: string)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
-	local model = Creatures.egg(character, eggType, CFrame.new(root.CFrame.Position + Vector3.new(0, 2.6, 0)), 2.2)
+	-- Bottom of the egg just above the head (the root is ~2.5 studs below the head top).
+	local model = Creatures.egg(character, eggType, CFrame.new(root.CFrame.Position + Vector3.new(0, 3.2, 0)))
 	model.Name = "CarriedEgg"
+	-- Not an "OceanEgg": the client rocks those in place with PivotTo, which
+	-- would pin the welded character to the nest.
+	model:RemoveTag("OceanEgg")
+	model:SetAttribute("Carried", true)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Anchored = false

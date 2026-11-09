@@ -73,12 +73,6 @@ local function standOn(model: Model, ground: Vector3)
 	model:PivotTo(model:GetPivot() + (ground - bottom))
 end
 
--- Scales an imported model so its longest side is `length` studs.
-local function fitLength(model: Model, length: number)
-	local _, size = model:GetBoundingBox()
-	local longest = math.max(size.X, size.Y, size.Z)
-	if longest > 0 then model:ScaleTo(model:GetScale() * length / longest) end
-end
 
 ---------------------------------------------------------------- eggs
 local function builtEgg(parent: Instance, eggType: string, cf: CFrame, scale: number)
@@ -108,16 +102,15 @@ local function builtEgg(parent: Instance, eggType: string, cf: CFrame, scale: nu
 	return m
 end
 
--- Egg standing on `cf` (its bottom at cf.Position). size = height in studs.
-function CreatureModels.egg(parent: Instance, eggType: string, cf: CFrame, height: number?)
+-- Egg standing on `cf` (its bottom at cf.Position). Imported models keep the
+-- size they have in the StudEggs files; built ones get the same height.
+function CreatureModels.egg(parent: Instance, eggType: string, cf: CFrame)
 	local info = Config.Eggs[eggType]
 	assert(info, "Unknown egg " .. tostring(eggType))
-	height = height or 2.6
+	local height = info.size and info.size.Y or 3.5
 	local m = CreatureModels.imported("Eggs", info.model)
 	if m then
 		m.Name = "Egg"
-		local _, size = m:GetBoundingBox()
-		if size.Y > 0 then m:ScaleTo(m:GetScale() * height / size.Y) end
 		m.Parent = parent
 		standOn(m, cf.Position)
 	else
@@ -177,17 +170,24 @@ local function builtFish(parent: Instance, fishType: string, cf: CFrame)
 	return m
 end
 
--- Fish centred on cf. length = longest side for imported models.
-function CreatureModels.fish(parent: Instance, fishType: string, cf: CFrame, length: number?)
+-- Fish centred on cf. Imported models keep the size they have in the files.
+function CreatureModels.fish(parent: Instance, fishType: string, cf: CFrame)
 	assert(Config.Fish[fishType], "Unknown fish " .. tostring(fishType))
 	local m = CreatureModels.imported("Fish", fishType)
 	if m then
-		fitLength(m, length or 4.5)
 		m.Parent = parent
 		local box = m:GetBoundingBox()
 		m:PivotTo(m:GetPivot() + (cf.Position - box.Position))
 	else
 		m = builtFish(parent, fishType, cf)
+		-- Same length as the fish in the Studfish files (the built one is ~3 studs).
+		local info = Config.Fish[fishType]
+		local builtLength = info.round and 2.9 or 3.6
+		if info.length and math.abs(info.length - builtLength) > 0.1 then
+			local pivot = m:GetPivot()
+			m:ScaleTo(info.length / builtLength)
+			m:PivotTo(pivot)
+		end
 	end
 	m.Name = fishType
 	m:SetAttribute("FishType", fishType)

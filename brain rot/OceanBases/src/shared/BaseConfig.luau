@@ -149,6 +149,51 @@ local FISH_TIERS = {
 	},
 }
 
+-- Original length of every fish model in studs (from the Studfish / SeaLife
+-- files). Built fallback models are scaled to it, imported ones already have it.
+local FISH_LENGTHS = {
+	Shark = 6.5,
+	Clown = 5.4,
+	Puffer = 4.9,
+	Angler = 5.8,
+	Jelly = 2.9,
+	Octopus = 5.4,
+	Kraken = 9.8,
+	Whale = 15.3,
+	Orca = 10.0,
+	Manta = 7.6,
+	Seahorse = 3.4,
+	Eel = 7.5,
+	Swordfish = 8.8,
+	Hammerhead = 8.2,
+	Goldfish = 4.7,
+	Betta = 5.4,
+	Koi = 7.5,
+	Discus = 4.4,
+	Lionfish = 5.6,
+	Tetra = 2.2,
+	Butterflyfish = 4.2,
+	Salmon = 7.2,
+	Sardine = 3.9,
+	Cuttlefish = 4.9,
+	Nautilus = 3.6,
+	MoorishIdol = 5.2,
+	SeaUrchin = 2.3,
+	Catfish = 8.0,
+	Mandarin = 3.5,
+	Starfish = 3.6,
+	RegalTang = 4.7,
+	Flounder = 4.9,
+	Parrotfish = 5.7,
+	Lobster = 7.2,
+	HermitCrab = 4.0,
+	RibbonTrout = 6.4,
+	PygmyGoby = 2.4,
+	Shrimp = 3.1,
+	SeaTurtle = 6.8,
+	Sunfish = 6.4,
+}
+
 -- income = coins per second at level 1 (straight into the owner's pocket).
 BaseConfig.Fish = {}
 BaseConfig.FishTiers = {}
@@ -161,6 +206,7 @@ for tier, list in FISH_TIERS do
 			income = math.floor(rarity.income * (1 + (i - 1) * 0.1) + 0.5),
 			body = f[3], belly = f[4], stripe = f[5], fin = f[6],
 			round = f.round, lure = f.lure, crown = f.crown, sparkle = f.sparkle or tier >= 4,
+			length = FISH_LENGTHS[f[1]] or 4.5,
 		}
 		table.insert(BaseConfig.FishTiers[tier], f[1])
 	end
@@ -193,12 +239,26 @@ local EGGS = {
 	{"VentEgg", "09_Vent", "Вулканическое яйцо", 5, 200, rgb(255, 110, 40), rgb(255, 220, 80), {[4] = 30, [5] = 70}},
 	{"OceanCrownEgg", "10_OceanCrown", "Яйцо Короны океана", 5, 240, rgb(255, 214, 70), rgb(120, 230, 255), {[5] = 100}},
 }
+-- Original sizes of the StudEggs models (studs, as imported with Scale Unit = Studs).
+local EGG_SIZES = {
+	TideEgg = Vector3.new(2.3, 3.2, 2.3),
+	LagoonEgg = Vector3.new(2.4, 3.6, 2.5),
+	CoralEgg = Vector3.new(2.5, 3.5, 2.5),
+	PearlEgg = Vector3.new(2.6, 3.5, 2.6),
+	GlacierEgg = Vector3.new(2.8, 4.1, 2.9),
+	JellyEgg = Vector3.new(3.1, 3.8, 3.1),
+	StormEgg = Vector3.new(3.4, 4.3, 3.5),
+	KrakenEgg = Vector3.new(3.8, 4.1, 3.8),
+	VentEgg = Vector3.new(3.7, 4.7, 3.8),
+	OceanCrownEgg = Vector3.new(4.1, 6.0, 5.5),
+}
 BaseConfig.Eggs = {}
 BaseConfig.EggOrder = {}
 for _, e in EGGS do
 	BaseConfig.Eggs[e[1]] = {
 		name = e[3], model = e[2], section = e[4], hatch = e[5],
 		shell = e[6], spots = e[7], tiers = e[8], glow = e[4] >= 2,
+		size = EGG_SIZES[e[1]], -- original StudEggs size in studs (X, height, Z)
 	}
 	table.insert(BaseConfig.EggOrder, e[1])
 end
@@ -244,7 +304,7 @@ BaseConfig.SpeedPerLevel = 0.5 -- swim speed per point of upgraded speed
 ---------------------------------------------------------------- effects & timing
 BaseConfig.IncomeTick = 1 -- seconds between payouts
 -- Fish fly above the pool: each one gets its own oval path and height.
-BaseConfig.FishFlyHeight = {3.0, 6.5} -- above the water surface
+BaseConfig.FishFlyHeight = {4.0, 8.0} -- above the water surface
 BaseConfig.FishSwimSpeed = 0.55 -- radians per second
 BaseConfig.AnimationDistance = 220
 

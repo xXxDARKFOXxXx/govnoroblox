@@ -36,6 +36,10 @@ local function trackFish(model: Model)
 end
 
 local function trackEgg(model: Model)
+	-- Only eggs resting in a nest or a cell rock; an egg welded to a player
+	-- must never be moved here (that would hold the player in place).
+	local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
+	if model:GetAttribute("Carried") or not primary or not primary.Anchored then return end
 	eggs[model] = {base = model:GetPivot(), phase = math.random() * 6}
 end
 
@@ -78,7 +82,7 @@ function FishAnimationController.step(t: number, cameraPosition: Vector3)
 		end
 	end
 	for model, s in eggs do
-		if not model.Parent then
+		if not model.Parent or model:GetAttribute("Carried") then
 			eggs[model] = nil
 		elseif (s.base.Position - cameraPosition).Magnitude < maxDistance then
 			local rock = math.sin(t * 2 + s.phase) * 0.06
