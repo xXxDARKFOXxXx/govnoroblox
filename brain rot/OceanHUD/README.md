@@ -1,4 +1,4 @@
-﻿# OceanHUD v3.4 — интерфейс игры
+# OceanHUD v3.5 — интерфейс игры
 
 ![HUD в Roblox Studio](OceanHUD-preview.png)
 
@@ -113,7 +113,7 @@ python tools/draw_icons.py assets
 
 `build.luau` создаёт `OceanHUD.rbxmx` (клиентский LocalScript с модулями), `OceanHUD-Server.rbxmx`
 (серверные скрипты) и `OceanMap-with-HUD.rbxl` — копию `OceanMap-v4` с интерфейсом. Сами файлы OceanMap не меняются.
-`check.luau` прогоняет 160 офлайн-проверок: данные, анимации, меню, инвентарь, раскладку и серверные модули.
+`check.luau` прогоняет 173 офлайн-проверки: данные, анимации, меню, инвентарь, раскладку и серверные модули.
 Версия 3.3 проверена вживую в Roblox Studio (скриншоты выше).
 
 Чтобы встроить интерфейс в другой плейс: вставь `OceanHUD.rbxmx` в **StarterPlayerScripts**,

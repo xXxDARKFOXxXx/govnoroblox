@@ -216,7 +216,7 @@ local function layout()
 	-- Window above the row, clear of the left buttons and of the bottom groups.
 	local x0 = wide and math.max(leftLimit, navRight + 12) or (navRight + 12)
 	local x1 = wide and rightLimit or (w - side)
-	local y1 = rowY - 10
+	local y1 = rowY - 16
 	local panelScale = math.max(0.2, math.min(1.15, (x1 - x0) / InventoryController.PanelW, (y1 - top) / InventoryController.PanelH))
 	local panelW, panelH = InventoryController.PanelW * panelScale, InventoryController.PanelH * panelScale
 	inventory:applyLayout({
@@ -881,6 +881,10 @@ InventoryController.Categories = {
 	{key = "Fish", title = "Рыбы", icon = "SharkFin"},
 }
 local SLOT, GAP, SLOTS = 92, 8, 8
+-- CanvasGroups clip everything outside their bounds, and a Border UIStroke is drawn
+-- outside its frame. This inner margin keeps every outline fully visible.
+local PAD = 6
+InventoryController.Pad = PAD
 local TAB, TAB_GAP = 100, 10
 InventoryController.Slot = SLOT
 InventoryController.Gap = GAP
@@ -973,13 +977,13 @@ function InventoryController.new(root: GuiObject, player: Player, sound: Sound?)
 
 	-- Hotbar slots 1-8 (shown while the inventory is open).
 	local hotbar = C.new("CanvasGroup", root, {
-		Name = "Hotbar", Size = UDim2.fromOffset(SLOT * SLOTS + GAP * (SLOTS - 1), SLOT),
+		Name = "Hotbar", Size = UDim2.fromOffset(SLOT * SLOTS + GAP * (SLOTS - 1) + PAD * 2, SLOT + PAD * 2),
 		BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, ZIndex = 3,
 	})
 	self.hotbar = hotbar
 	self.hotbarScale = C.new("UIScale", hotbar, {Scale = 1})
 	for i = 1, SLOTS do
-		local slot, slotStroke = tile(hotbar, "TextButton", "Slot" .. i, UDim2.fromOffset((i - 1) * (SLOT + GAP), 0), UDim2.fromOffset(SLOT, SLOT), 3)
+		local slot, slotStroke = tile(hotbar, "TextButton", "Slot" .. i, UDim2.fromOffset(PAD + (i - 1) * (SLOT + GAP), PAD), UDim2.fromOffset(SLOT, SLOT), 3)
 		plainLabel(slot, "Number", tostring(i), {
 			Position = UDim2.fromOffset(8, 4), Size = UDim2.fromOffset(30, 26), TextSize = 22,
 			TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 6,
@@ -993,13 +997,13 @@ function InventoryController.new(root: GuiObject, player: Player, sound: Sound?)
 
 	-- Inventory window: tabs on the left, search + grid on the right.
 	local panel = C.new("CanvasGroup", root, {
-		Name = "InventoryPanel", Size = UDim2.fromOffset(InventoryController.PanelW, InventoryController.PanelH),
+		Name = "InventoryPanel", Size = UDim2.fromOffset(InventoryController.PanelW + PAD * 2, InventoryController.PanelH + PAD * 2),
 		BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, ZIndex = 3,
 	})
 	self.panel = panel
 	self.panelScale = C.new("UIScale", panel, {Scale = 1})
 	for i, spec in InventoryController.Categories do
-		local tab, tabStroke = tile(panel, "TextButton", spec.key .. "Tab", UDim2.fromOffset(0, (i - 1) * (TAB + TAB_GAP)), UDim2.fromOffset(TAB, TAB), 3)
+		local tab, tabStroke = tile(panel, "TextButton", spec.key .. "Tab", UDim2.fromOffset(PAD, PAD + (i - 1) * (TAB + TAB_GAP)), UDim2.fromOffset(TAB, TAB), 3)
 		local gradient = C.gradient(tab, Color3.fromRGB(96, 196, 255), Color3.fromRGB(30, 110, 200))
 		gradient.Enabled = false
 		C.image(tab, "Icon", spec.icon, UDim2.new(0.5, -32, 0, 4), UDim2.fromOffset(64, 64), 5)
@@ -1010,7 +1014,7 @@ function InventoryController.new(root: GuiObject, player: Player, sound: Sound?)
 		end)
 		self.tabs[spec.key] = {button = tab, stroke = tabStroke, gradient = gradient}
 	end
-	local main = tile(panel, "Frame", "Main", UDim2.fromOffset(TAB + 12, 0),
+	local main = tile(panel, "Frame", "Main", UDim2.fromOffset(PAD + TAB + 12, PAD),
 		UDim2.fromOffset(InventoryController.PanelW - TAB - 12, InventoryController.PanelH), 2)
 	main.UICorner.CornerRadius = UDim.new(0, 18)
 	local search = C.new("TextBox", main, {
@@ -1031,7 +1035,8 @@ function InventoryController.new(root: GuiObject, player: Player, sound: Sound?)
 	C.new("UIGridLayout", grid, {
 		CellSize = UDim2.fromOffset(112, 126), CellPadding = UDim2.fromOffset(12, 12), SortOrder = Enum.SortOrder.LayoutOrder,
 	})
-	C.new("UIPadding", grid, {PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4)})
+	-- The grid scrolls (and clips) too, so its cards also get room for their outlines.
+	C.new("UIPadding", grid, {PaddingTop = UDim.new(0, PAD), PaddingLeft = UDim.new(0, PAD), PaddingRight = UDim.new(0, PAD), PaddingBottom = UDim.new(0, PAD)})
 	self.grid = grid
 	local empty = plainLabel(main, "Empty", "Здесь пока ничего нет", {
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.new(1, -40, 0, 60),
@@ -1182,8 +1187,8 @@ function InventoryController:applyLayout(places)
 	self.places = places
 	self.backpackScale.Scale = places.scale
 	self.hotbarScale.Scale = places.scale
-	self.hotbar.Position = places.hotbar
-	self.panel.Position = places.panel
+	self.hotbar.Position = places.hotbar - UDim2.fromOffset(PAD * places.scale, PAD * places.scale)
+	self.panel.Position = places.panel - UDim2.fromOffset(PAD * places.panelScale, PAD * places.panelScale)
 	self.panelScale.Scale = places.panelScale
 	self:placeBackpack(false)
 end

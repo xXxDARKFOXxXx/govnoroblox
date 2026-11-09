@@ -1,5 +1,5 @@
 {
-  "count": 160,
+  "count": 173,
   "layout": [
     {
       "counters": {
@@ -272,6 +272,19 @@
     "G opens the inventory",
     "Open backpack slot is outlined white",
     "Backpack moves to the start of the hotbar",
+    "Outline not clipped: Hotbar.Slot1",
+    "Outline not clipped: Hotbar.Slot2",
+    "Outline not clipped: Hotbar.Slot3",
+    "Outline not clipped: Hotbar.Slot4",
+    "Outline not clipped: Hotbar.Slot5",
+    "Outline not clipped: Hotbar.Slot6",
+    "Outline not clipped: Hotbar.Slot7",
+    "Outline not clipped: Hotbar.Slot8",
+    "Outline not clipped: InventoryPanel.AllTab",
+    "Outline not clipped: InventoryPanel.EggsTab",
+    "Outline not clipped: InventoryPanel.FishTab",
+    "Outline not clipped: InventoryPanel.Main",
+    "Item cards keep room for outlines in the scrolling grid",
     "All tab shows every item",
     "Item card with name and count",
     "Single items have no count badge",

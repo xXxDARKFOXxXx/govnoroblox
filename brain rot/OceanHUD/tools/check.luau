@@ -229,6 +229,22 @@ key(r.Enum.KeyCode.G)
 check(panel.Visible and panel.GroupTransparency == 0 and hotbar.Visible, "G opens the inventory")
 check(backpack.Button.UIStroke.Color == r.Color3.new(1, 1, 1), "Open backpack slot is outlined white")
 check(backpack.Position.X.Offset < hotbar.Position.X.Offset, "Backpack moves to the start of the hotbar")
+-- CanvasGroups clip their contents: every outlined tile must keep its whole
+-- outline (drawn outside the frame) inside the group, on all four sides.
+for _, group in {hotbar, panel} do
+	local gw, gh = group.Size.X.Offset, group.Size.Y.Offset
+	for _, child in group:GetChildren() do
+		local outline = child:IsA("GuiObject") and child:FindFirstChildOfClass("UIStroke")
+		if outline then
+			local x, y = child.Position.X.Offset, child.Position.Y.Offset
+			local t = outline.Thickness
+			local ok = x >= t and y >= t and x + child.Size.X.Offset + t <= gw and y + child.Size.Y.Offset + t <= gh
+			check(ok, "Outline not clipped: " .. group.Name .. "." .. child.Name)
+		end
+	end
+end
+local gridPad = main.Grid.UIPadding
+check(gridPad.PaddingTop.Offset >= 3 and gridPad.PaddingLeft.Offset >= 3 and gridPad.PaddingRight.Offset >= 3 and gridPad.PaddingBottom.Offset >= 3, "Item cards keep room for outlines in the scrolling grid")
 -- Server-style items in Player.Inventory
 local folder = r.Instance.new("Folder"); folder.Name = "Inventory"; folder.Parent = player
 local function item(id, name, category, icon, count, slot)
@@ -328,7 +344,7 @@ for _, d in sizes do
 	local closedBag = box(root.Backpack, 92, 92)
 	check(inside(closedBag, w, h) and apart(closedBag, n) and apart(closedBag, c) and apart(closedBag, inv), "Closed backpack clear of other HUD at " .. tag)
 	key(r.Enum.KeyCode.G)
-	local bag, bar, win = box(root.Backpack, 92, 92), box(root.Hotbar, 792, 92), box(root.InventoryPanel, 1000, 500)
+	local bag, bar, win = box(root.Backpack, 92, 92), box(root.Hotbar, 804, 104), box(root.InventoryPanel, 1012, 512)
 	local ok = inside(bag, w, h) and inside(bar, w, h) and inside(win, w, h) and apart(bag, bar) and apart(bar, win) and apart(bag, win)
 	for _, other in {n, c, inv} do ok = ok and apart(bag, other) and apart(bar, other) and apart(win, other) end
 	check(ok, "Open inventory clear of other HUD at " .. tag)

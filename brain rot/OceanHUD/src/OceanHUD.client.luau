@@ -212,7 +212,7 @@ local function layout()
 	-- Window above the row, clear of the left buttons and of the bottom groups.
 	local x0 = wide and math.max(leftLimit, navRight + 12) or (navRight + 12)
 	local x1 = wide and rightLimit or (w - side)
-	local y1 = rowY - 10
+	local y1 = rowY - 16
 	local panelScale = math.max(0.2, math.min(1.15, (x1 - x0) / InventoryController.PanelW, (y1 - top) / InventoryController.PanelH))
 	local panelW, panelH = InventoryController.PanelW * panelScale, InventoryController.PanelH * panelScale
 	inventory:applyLayout({
