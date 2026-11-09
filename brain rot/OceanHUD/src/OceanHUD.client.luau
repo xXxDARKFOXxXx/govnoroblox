@@ -1,6 +1,6 @@
 -- OceanHUD (HUDController) | LocalScript in StarterPlayer > StarterPlayerScripts.
 -- Child ModuleScripts: UITheme, UIAssets, UIComponents, UIAnimations,
--- UIDataController, MenuController, InventoryController.
+-- UIDataController, MenuController, InventoryController, PenMenuController.
 --
 -- Layout follows the 1648x928 reference: four candy buttons top-left,
 -- coins + speed bottom-left, fish/eggs buttons bottom-right, backpack [G]
@@ -15,6 +15,7 @@ local Anim = require(script.UIAnimations)
 local Data = require(script.UIDataController)
 local MenuController = require(script.MenuController)
 local InventoryController = require(script.InventoryController)
+local PenMenuController = require(script.PenMenuController)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -40,9 +41,11 @@ local root = C.holder(gui, "SafeArea", UDim2.fromScale(0, 0), UDim2.fromScale(1,
 
 local menus = MenuController.new(root, openMenuEvent, clickSound)
 local inventory = InventoryController.new(root, player, clickSound)
--- Only one big window at a time: the inventory and the menus close each other.
-inventory.onOpen = function() menus:close() end
-connect(openMenuEvent.Event, function() inventory:close() end)
+local penMenu = PenMenuController.new(root, player, clickSound)
+-- Only one window at a time: inventory, pen menus and the big menus close each other.
+inventory.onOpen = function() menus:close(); penMenu:close() end
+penMenu.onOpen = function() menus:close(); inventory:close() end
+connect(openMenuEvent.Event, function() inventory:close(); penMenu:close() end)
 
 ---------------------------------------------------------------- left buttons
 local NAV_H = S.ButtonH * 4 + S.ButtonGap * 3
@@ -124,12 +127,12 @@ local speed = counter("Speed", "Скорость", S.CounterH + S.CounterGap, Th
 speed.value.Text = "0"
 
 ---------------------------------------------------------------- fish & eggs (bottom-right)
--- Shortcuts into the inventory, opened on the matching tab.
+-- Context menus: fish in the pen (level, remove, upgrade) and eggs waiting to hatch.
 local collection = C.holder(root, "Collection", UDim2.fromOffset(0, 0), UDim2.fromOffset(S.InventoryW, S.InventoryH))
 local collectionScale = C.new("UIScale", collection, {Scale = 1})
 for i, spec in Theme.Inventory do
 	makeSlot(collection, spec, UDim2.fromOffset((i - 1) * (S.ButtonW + S.InventoryGap), 0), 26, function()
-		inventory:toggle(spec.key)
+		penMenu:toggle(spec.key)
 	end)
 end
 
@@ -182,6 +185,9 @@ local function layout()
 	collectionScale.Scale = bs
 	local collectionTop = h - bottom - S.InventoryH * bs
 	collection.Position = UDim2.fromOffset(math.floor(w - side - S.InventoryW * bs), math.floor(collectionTop))
+	-- Pen menus open right above the Рыбы / Яйца buttons, inside the screen.
+	local menuScale = math.min(bs * 1.15, (w - 2 * side) / 482, (collectionTop - 20) / 432)
+	penMenu:place(UDim2.fromOffset(math.floor(w - side), math.floor(collectionTop - 10)), math.max(0.3, menuScale))
 	local top = math.max(8, S.Top * s)
 
 	-- Inventory: the backpack + hotbar row sits between the counters and the
@@ -237,6 +243,7 @@ connect(gui.Destroying, function()
 	data:destroy()
 	menus:destroy()
 	inventory:destroy()
+	penMenu:destroy()
 	Anim.cancelAll()
 	for _, connection in connections do connection:Disconnect() end
 	table.clear(connections)

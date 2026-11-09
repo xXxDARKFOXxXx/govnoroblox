@@ -10,6 +10,10 @@ local Builder = require(folder:WaitForChild("BaseBuilder"))
 local Ownership = require(folder:WaitForChild("BaseOwnershipService"))
 local Pens = require(folder:WaitForChild("FishPenController"))
 local Upgrades = require(folder:WaitForChild("BaseUpgradeService"))
+local Seabed = require(folder:WaitForChild("SeabedBuilder"))
+local Nests = require(folder:WaitForChild("NestService"))
+local Predators = require(folder:WaitForChild("PredatorService"))
+local SwimSpeed = require(folder:WaitForChild("SwimSpeedService"))
 
 local basesFolder = workspace:FindFirstChild("OceanBases")
 if not basesFolder then
@@ -47,6 +51,31 @@ selectItem.OnServerEvent:Connect(function(player, itemId)
 	end
 end)
 
+-- Pen actions from the HUD menus (validated on the server).
+local penAction = remotes:FindFirstChild("PenAction") or Instance.new("RemoteEvent")
+penAction.Name = "PenAction"
+penAction.Parent = remotes
+penAction.OnServerEvent:Connect(function(player, action, index)
+	Pens.action(player, action, index)
+end)
+
+-- Messages to one player (toasts) and the knock-back push when caught.
+local notifyRemote = remotes:FindFirstChild("Notify") or Instance.new("RemoteEvent")
+notifyRemote.Name = "Notify"
+notifyRemote.Parent = remotes
+Nests.notify = function(player, text, kind)
+	notifyRemote:FireClient(player, {text = text, kind = kind})
+end
+Predators.knock = function(player, velocity)
+	notifyRemote:FireClient(player, {knock = velocity})
+end
+
+-- Seabed (relief, rocks, nests) is baked by the build; build it if missing.
+local seabed = workspace:FindFirstChild("OceanSeabed") or Seabed.build(workspace)
+
 Pens.init(bases)
 Upgrades.init(bases)
 Ownership.init(bases)
+Nests.init(seabed)
+Predators.init(seabed)
+SwimSpeed.init()

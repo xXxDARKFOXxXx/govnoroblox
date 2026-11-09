@@ -7,7 +7,7 @@ local serde = require("@lune/serde")
 local process = require("@lune/process")
 local root = process.cwd:gsub("\\", "/"):gsub("/?$", "/")
 
-local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController"}
+local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController", "PenMenuController"}
 
 local function source(path)
 	local text = fs.readFile(root .. path)

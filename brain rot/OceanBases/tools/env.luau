@@ -6,7 +6,7 @@ local luau = require("@lune/luau")
 
 local Env = {}
 
-Env.SERVER_MODULES = {"BasePieces", "CellBuilder", "BaseBuilder", "CreatureModels", "BaseOwnershipService", "FishPenController", "BaseUpgradeService"}
+Env.SERVER_MODULES = {"BasePieces", "CellBuilder", "BaseBuilder", "SeabedBuilder", "CreatureModels", "BaseOwnershipService", "FishPenController", "BaseUpgradeService", "NestService", "PredatorService", "SwimSpeedService"}
 Env.CLIENT_MODULES = {"FishAnimationController", "BaseVisualEffects"}
 
 -- WaitForChild does not exist offline; behave like a strict FindFirstChild.

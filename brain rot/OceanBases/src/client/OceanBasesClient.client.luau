@@ -49,6 +49,65 @@ for _, base in basesFolder:GetChildren() do
 	end)
 end
 
+-- Toasts from the server (egg taken / delivered / stolen back) and the push
+-- a predator gives when it catches you.
+local toastGui = Instance.new("ScreenGui")
+toastGui.Name = "OceanToasts"
+toastGui.ResetOnSpawn = false
+toastGui.DisplayOrder = 40
+toastGui.Parent = player:WaitForChild("PlayerGui")
+local toast = Instance.new("TextLabel")
+toast.Name = "Toast"
+toast.AnchorPoint = Vector2.new(0.5, 0)
+toast.Position = UDim2.new(0.5, 0, 0, 70)
+toast.Size = UDim2.fromOffset(620, 54)
+toast.BackgroundColor3 = Color3.fromRGB(20, 26, 40)
+toast.BackgroundTransparency = 0.2
+toast.FontFace = Font.fromEnum(Enum.Font.FredokaOne)
+toast.TextScaled = true
+toast.TextColor3 = Color3.new(1, 1, 1)
+toast.TextStrokeTransparency = 0.3
+toast.Visible = false
+toast.Parent = toastGui
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 14)
+corner.Parent = toast
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 3
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = toast
+local padding = Instance.new("UIPadding")
+padding.PaddingLeft = UDim.new(0, 16)
+padding.PaddingRight = UDim.new(0, 16)
+padding.PaddingTop = UDim.new(0, 6)
+padding.PaddingBottom = UDim.new(0, 6)
+padding.Parent = toast
+local TOAST_COLORS = {good = Color3.fromRGB(110, 230, 120), bad = Color3.fromRGB(255, 90, 90), warn = Color3.fromRGB(255, 200, 60)}
+local toastToken = 0
+local function showToast(text: string, kind: string?)
+	toastToken += 1
+	local token = toastToken
+	toast.Text = text
+	stroke.Color = TOAST_COLORS[kind or ""] or Color3.fromRGB(110, 200, 255)
+	toast.Visible = true
+	task.delay(3.5, function()
+		if toastToken == token then toast.Visible = false end
+	end)
+end
+task.spawn(function()
+	local remotes = ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("Remotes", 30)
+	local notify = remotes and remotes:WaitForChild("Notify", 30)
+	if not notify then return end
+	notify.OnClientEvent:Connect(function(message)
+		if type(message) ~= "table" then return end
+		if type(message.text) == "string" then showToast(message.text, message.kind) end
+		if typeof(message.knock) == "Vector3" then
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if root then root.AssemblyLinearVelocity = message.knock end
+		end
+	end)
+end)
+
 -- Hotbar selection from the HUD → server (to know which egg is in the hand).
 task.spawn(function()
 	local remotes = ReplicatedStorage:WaitForChild("OceanBases"):WaitForChild("Remotes", 30)

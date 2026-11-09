@@ -1,5 +1,5 @@
 {
-  "count": 173,
+  "count": 186,
   "layout": [
     {
       "counters": {
@@ -299,9 +299,22 @@
     "Pressing 1 again unselects",
     "Clicking a slot selects it",
     "G closes the inventory",
-    "Fish button opens the inventory on Рыбы",
-    "Eggs button switches to Яйца",
-    "Eggs button again closes the inventory",
+    "Рыбы opens the fish list (not the inventory)",
+    "Fish list shows the fish in the pen",
+    "Fish row: name, level and income",
+    "Upgrade price grows with the level",
+    "Upgrade is disabled without enough coins",
+    "Upgrade asks the server",
+    "Убрать asks the server to move the fish to the inventory",
+    "List updates live",
+    "Яйца shows eggs waiting to hatch",
+    "Egg row: name and time left",
+    "Удалить asks to confirm first",
+    "Second press deletes the egg",
+    "Pressing Яйца again closes the menu",
+    "Inventory and pen menu close each other",
+    "Empty pen shows a hint",
+    "Close button closes the menu",
     "Clicking the backpack opens the inventory",
     "Opening a menu closes the inventory",
     "Opening the inventory closes the menu",

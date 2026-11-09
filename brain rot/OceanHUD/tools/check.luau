@@ -66,13 +66,14 @@ local screen = r.Vector2.new(1648, 928)
 local game = r.Instance.new("DataModel")
 local player = r.Instance.new("Player")
 player.Name = "HUDTest"
+player.UserId = 777
 player.Parent = game:GetService("Players")
 game:GetService("Players").LocalPlayer = player
 local playerGui = r.Instance.new("PlayerGui")
 playerGui.Parent = player
 
 -- Script tree exactly like the build: LocalScript with ModuleScript children.
-local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController"}
+local MODULES = {"UITheme", "UIAssets", "UIComponents", "UIAnimations", "UIDataController", "MenuController", "InventoryController", "PenMenuController"}
 local hudScript = r.Instance.new("LocalScript")
 hudScript.Name = "OceanHUD"
 hudScript.Source = fs.readFile(rootPath .. "src/OceanHUD.client.luau")
@@ -85,7 +86,8 @@ end
 
 local cache = {}
 local function makeEnv(scriptInstance)
-	local env = {game = game, script = scriptInstance, TweenInfo = {new = function() return {} end}}
+	local env = {game = game, script = scriptInstance, workspace = game:GetService("Workspace"), TweenInfo = {new = function() return {} end},
+		task = {spawn = function() end, wait = function() return 0 end, defer = function(f, ...) f(...) end, delay = function() end}}
 	for _, key in {"Vector2", "Vector3", "CFrame", "Color3", "UDim", "UDim2", "Enum", "ColorSequence", "NumberSequence"} do env[key] = r[key] end
 	env.Instance = {new = function(class)
 		local object = r.Instance.new(class)
@@ -291,12 +293,69 @@ event(hotbar.Slot2, "Activated"):Fire()
 check(picks[#picks] == "2:GoldEgg", "Clicking a slot selects it")
 key(r.Enum.KeyCode.G)
 check(not panel.Visible and not hotbar.Visible, "G closes the inventory")
+-- Pen menus (Рыбы / Яйца): a base owned by the player with one fish and one egg.
+local serverNow = 5000
+r.implementMethod("Workspace", "GetServerTimeNow", function() return serverNow end)
+local sent = {}
+r.implementMethod("RemoteEvent", "FireServer", function(_, ...) table.insert(sent, table.concat({...}, ":")) end)
+local shared = r.Instance.new("Folder"); shared.Name = "OceanBases"; shared.Parent = game:GetService("ReplicatedStorage")
+local configModule = r.Instance.new("ModuleScript"); configModule.Name = "BaseConfig"
+configModule.Source = fs.readFile(rootPath .. "../OceanBases/src/shared/BaseConfig.luau"); configModule.Parent = shared
+local remotes = r.Instance.new("Folder"); remotes.Name = "Remotes"; remotes.Parent = shared
+local penRemote = r.Instance.new("RemoteEvent"); penRemote.Name = "PenAction"; penRemote.Parent = remotes
+local basesFolder = r.Instance.new("Folder"); basesFolder.Name = "OceanBases"; basesFolder.Parent = game:GetService("Workspace")
+local myBase = r.Instance.new("Model"); myBase.Name = "Base1"; myBase.Parent = basesFolder
+myBase:SetAttribute("OwnerUserId", player.UserId)
+local cellsFolder = r.Instance.new("Folder"); cellsFolder.Name = "Cells"; cellsFolder.Parent = myBase
+local fishCell = r.Instance.new("Model"); fishCell.Name = "Cell3"; fishCell.Parent = cellsFolder
+for k, v in {Index = 3, State = "Fish", FishType = "Clown", FishLevel = 2, Income = 5} do fishCell:SetAttribute(k, v) end
+local eggCell = r.Instance.new("Model"); eggCell.Name = "Cell5"; eggCell.Parent = cellsFolder
+for k, v in {Index = 5, State = "Egg", EggType = "TideEgg", HatchAt = serverNow + 75} do eggCell:SetAttribute(k, v) end
+local penMenu = root.PenMenu
+local menuBody = penMenu.Body
+local function rows()
+	local list = {}
+	for _, child in menuBody.List:GetChildren() do if child:IsA("Frame") then table.insert(list, child) end end
+	return list
+end
+attr("Coins", 10)
 event(col.FishSlot.Fish, "Activated"):Fire()
-check(panel.Visible and panel.FishTab.UIGradient.Enabled and cards() == 1, "Fish button opens the inventory on Рыбы")
+check(penMenu.Visible and penMenu.GroupTransparency == 0 and not panel.Visible, "Рыбы opens the fish list (not the inventory)")
+check(menuBody.Title.Text == "Мои рыбы · 1" and #rows() == 1, "Fish list shows the fish in the pen")
+local fishRow = menuBody.List.Row3
+check(fishRow.Title.Text == "Рыба-клоун" and fishRow.Info.Text == "Ур. 2 · +5/сек", "Fish row: name, level and income")
+local cost = 5 * 30 * 1.6 -- Clown: base income 5, level 2
+check(fishRow.Upgrade.Caption.Text == "↑ " .. tostring(math.floor(cost + 0.5)), "Upgrade price grows with the level")
+event(fishRow.Upgrade, "Activated"):Fire()
+check(#sent == 0, "Upgrade is disabled without enough coins")
+attr("Coins", 100000)
+fishRow = menuBody.List.Row3
+event(fishRow.Upgrade, "Activated"):Fire()
+check(sent[#sent] == "UpgradeFish:3", "Upgrade asks the server")
+event(fishRow.Remove, "Activated"):Fire()
+check(sent[#sent] == "RemoveFish:3", "Убрать asks the server to move the fish to the inventory")
+fishCell:SetAttribute("FishLevel", 3); fishCell:SetAttribute("Income", 8)
+event(fishCell, "AttributeChanged"):Fire("FishLevel")
+check(menuBody.List.Row3.Info.Text == "Ур. 3 · +8/сек", "List updates live")
 event(col.EggsSlot.Eggs, "Activated"):Fire()
-check(panel.Visible and panel.EggsTab.UIGradient.Enabled, "Eggs button switches to Яйца")
+check(menuBody.Title.Text == "Мои яйца · 1" and menuBody.List:FindFirstChild("Row5") and not menuBody.List:FindFirstChild("Row3"), "Яйца shows eggs waiting to hatch")
+check(menuBody.List.Row5.Title.Text == "Яйцо прилива" and menuBody.List.Row5.Info.Text == "Вылупится через 1:15", "Egg row: name and time left")
+local before = #sent
+event(menuBody.List.Row5.Delete, "Activated"):Fire()
+check(#sent == before and menuBody.List.Row5.Delete.Caption.Text == "Точно?", "Удалить asks to confirm first")
+event(menuBody.List.Row5.Delete, "Activated"):Fire()
+check(sent[#sent] == "DeleteEgg:5", "Second press deletes the egg")
 event(col.EggsSlot.Eggs, "Activated"):Fire()
-check(not panel.Visible, "Eggs button again closes the inventory")
+check(not penMenu.Visible, "Pressing Яйца again closes the menu")
+event(col.FishSlot.Fish, "Activated"):Fire()
+event(backpack.Button, "Activated"):Fire()
+check(not penMenu.Visible and panel.Visible, "Inventory and pen menu close each other")
+key(r.Enum.KeyCode.G)
+fishCell:SetAttribute("State", "Empty")
+event(col.FishSlot.Fish, "Activated"):Fire()
+check(menuBody.Empty.Visible and #rows() == 0, "Empty pen shows a hint")
+event(menuBody.Close, "Activated"):Fire()
+check(not penMenu.Visible, "Close button closes the menu")
 event(backpack.Button, "Activated"):Fire()
 check(panel.Visible, "Clicking the backpack opens the inventory")
 press("Shop")

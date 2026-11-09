@@ -48,7 +48,7 @@ function CellBuilder.build(parent: Instance, origin: CFrame, row: number, column
 	local point = Pieces.part(cell, "InteractionPoint", Vector3.new(2, 2, 2), cf * CFrame.new(0, 2, 0), C.White, nil, {Transparency = 1})
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "CellPrompt"
-	prompt.ActionText = "Поставить яйцо"
+	prompt.ActionText = "Поставить"
 	prompt.ObjectText = "Клетка " .. index
 	prompt.HoldDuration = 0.3
 	prompt.MaxActivationDistance = 5

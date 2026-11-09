@@ -50,6 +50,8 @@ r.implementMethod("Instance", "GetPropertyChangedSignal", function(object, name)
 local serverTime = 1000
 r.implementMethod("Workspace", "GetServerTimeNow", function() return serverTime end)
 r.implementMethod("Players", "GetPlayers", function(players) return players:GetChildren() end)
+local notices = {}
+r.implementMethod("RemoteEvent", "FireClient", function(_, p, message) table.insert(notices, {p, message}) end)
 local tagged = {}
 local tagRoot -- set once the DataModel exists
 r.implementMethod("CollectionService", "GetTagged", function(_, tag)
@@ -211,8 +213,8 @@ check((alice.Character.HumanoidRootPart.CFrame.Position - baseA.Yard.SpawnPoint.
 check(Ownership.isOwner(alice, baseA) and not Ownership.isOwner(bob, baseA), "Ownership check")
 
 -- Eggs on any cell
-Inventory.add(alice, "BasicEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
-Inventory.add(alice, "GoldEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
+Inventory.add(alice, "TideEgg", {Name = "Обычное яйцо", Category = "Eggs", Icon = "Egg", Count = 3})
+Inventory.add(alice, "OceanCrownEgg", {Name = "Золотое яйцо", Category = "Eggs", Icon = "Egg"})
 local cells = Pens.cells(baseA)
 local first, last = cells[1], cells[12]
 check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == true and not first.InteractionPoint.CellInfo.Enabled, "Empty cell: prompt on, no label clutter")
@@ -222,26 +224,26 @@ event(first.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 event(last.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 event(cells[7].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 check(first:GetAttribute("State") == "Egg" and last:GetAttribute("State") == "Egg" and cells[7]:GetAttribute("State") == "Egg", "Eggs go on any cell of the yard")
-check(Inventory.count(alice, "BasicEgg") == 0 and Inventory.count(alice, "GoldEgg") == 1, "Placed eggs leave the inventory")
+check(Inventory.count(alice, "TideEgg") == 0 and Inventory.count(alice, "OceanCrownEgg") == 1, "Placed eggs leave the inventory")
 local egg = first.Content:FindFirstChild("Egg")
 check(egg and math.abs(egg.Shell.CFrame.Position.Y - (first.Tile.CFrame.Position.Y + 0.5 + 1.4)) < 0.3, "Egg stands on the cell tile")
 check(math.abs(egg.Shell.CFrame.Position.X - first.Tile.CFrame.Position.X) < 1e-3 and math.abs(egg.Shell.CFrame.Position.Z - first.Tile.CFrame.Position.Z) < 1e-3, "Egg is centred on its cell")
 check(first.InteractionPoint.CellPrompt:GetAttribute("Active") == false and first.InteractionPoint.CellInfo.Enabled, "Busy cell hides its prompt and shows a label")
 -- Hand-held egg via the hotbar remote.
 local selectItem = game:GetService("ReplicatedStorage").OceanBases.Remotes.SelectItem
-event(selectItem, "OnServerEvent"):Fire(alice, "GoldEgg")
-check(alice:GetAttribute("HeldItem") == "GoldEgg", "Hotbar selection reaches the server")
+event(selectItem, "OnServerEvent"):Fire(alice, "OceanCrownEgg")
+check(alice:GetAttribute("HeldItem") == "OceanCrownEgg", "Hotbar selection reaches the server")
 event(selectItem, "OnServerEvent"):Fire(alice, "NotMine")
-check(alice:GetAttribute("HeldItem") == "GoldEgg", "Server ignores items the player does not have")
+check(alice:GetAttribute("HeldItem") == "OceanCrownEgg", "Server ignores items the player does not have")
 event(cells[4].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
-check(cells[4]:GetAttribute("EggType") == "GoldEgg", "The egg in the hand is used")
+check(cells[4]:GetAttribute("EggType") == "OceanCrownEgg", "The egg in the hand is used")
 event(cells[5].InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 check(cells[5]:GetAttribute("State") == "Empty", "No eggs left: nothing is placed")
 
 -- Hatching
 Pens.tick(1)
-check(first.InteractionPoint.CellInfo.Line.Text:find("0:15") ~= nil, "Countdown above the egg")
-serverTime += 15
+check(first.InteractionPoint.CellInfo.Line.Text:find("0:20") ~= nil, "Countdown above the egg")
+serverTime += 20
 Pens.tick(1)
 check(first:GetAttribute("State") == "Fish" and last:GetAttribute("State") == "Fish", "Eggs hatch when their time is up")
 check(cells[4]:GetAttribute("State") == "Egg", "Slower eggs keep waiting")
@@ -251,7 +253,7 @@ local fp = fish.PrimaryPart.CFrame.Position
 check(fp.Y >= zone.CFrame.Position.Y + Config.FishFlyHeight[1] - 0.01 and fp.Y <= zone.CFrame.Position.Y + Config.FishFlyHeight[2] + 0.01, "Fish flies in the air above the water, not in it")
 check(math.abs(fp.X - zone.CFrame.Position.X) <= zone.Size.X / 2 and math.abs(fp.Z - zone.CFrame.Position.Z) <= zone.Size.Z / 2, "Fish is over the pool")
 check(fish:GetAttribute("FloorY") == zone.CFrame.Position.Y, "Fish ring sits on the water surface")
-check(Config.Eggs.BasicEgg.fish[first:GetAttribute("FishType")] ~= nil, "Fish comes from the egg's table")
+check(Config.Eggs.TideEgg.tiers[Config.Fish[first:GetAttribute("FishType")].tier] ~= nil, "Fish comes from the egg's tiers")
 
 -- Income straight into the pocket
 alice:SetAttribute("Coins", 0)
@@ -290,7 +292,7 @@ end
 check(topAfter < Config.Origins[1].Y + 9, "Expansion adds no floors (stays one level)")
 check(first:GetAttribute("State") == "Fish" and first.Content:FindFirstChildWhichIsA("Model"), "Fish stay in place when the yard grows")
 local newCell = Pens.cells(baseA)[15]
-Inventory.add(alice, "StarEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg"})
+Inventory.add(alice, "CoralEgg", {Name = "Звёздное яйцо", Category = "Eggs", Icon = "Egg"})
 event(newCell.InteractionPoint.CellPrompt, "Triggered"):Fire(alice)
 check(newCell:GetAttribute("State") == "Egg", "New cells work right away")
 check(baseA.Yard.OwnerTag.OwnerGui.OwnerName.Text == "Alice", "Owner name stays after expansion")
@@ -321,9 +323,9 @@ for eggType in Config.Eggs do
 	assert(e.PrimaryPart and e:GetAttribute("EggType") == eggType)
 	local rolled = {}
 	for _ = 1, 200 do rolled[Creatures.rollFish(eggType)] = true end
-	for f in rolled do assert(Config.Eggs[eggType].fish[f], "Unexpected fish " .. f) end
+	for f in rolled do assert(Config.Eggs[eggType].tiers[Config.Fish[f].tier], "Unexpected fish " .. f) end
 end
-check(true, "Every egg type builds and only rolls its own fish")
+check(true, "Every egg type builds and only rolls fish of its tiers")
 for fishType in Config.Fish do
 	local model = Creatures.fish(scratch, fishType, r.CFrame.new())
 	local tails = 0
@@ -335,8 +337,8 @@ check(true, "Every fish type builds with a body, wagging tail and floor ring")
 -- Client animation
 local Anim = load(tree.client.FishAnimationController)
 local cell = Pens.cells(baseA)[1]
-cell:SetAttribute("EggType", "BasicEgg")
-Pens.hatch(cell, "ClownFish")
+cell:SetAttribute("EggType", "TideEgg")
+Pens.hatch(cell, "Clown")
 local fishModel = cell.Content:FindFirstChildWhichIsA("Model")
 Anim.start()
 local center = fishModel:GetAttribute("Center")
@@ -362,6 +364,193 @@ local frozen = fishModel.PrimaryPart.CFrame.Position
 Anim.step(9, center + r.Vector3.new(0, 1000, 0))
 check(fishModel.PrimaryPart.CFrame.Position == frozen, "Far-away fish are not animated")
 Anim.stop()
+
+
+---------------------------------------------------------------- content: 40 fish, 10 eggs, 5 sections
+local fishCount, eggCount = 0, 0
+for _ in Config.Fish do fishCount += 1 end
+for _ in Config.Eggs do eggCount += 1 end
+check(fishCount == 40 and eggCount == 10, "40 fish (Studfish + SeaLife) and 10 eggs (StudEggs)")
+local tierIncome = {}
+for tier, list in Config.FishTiers do
+	local best = 0
+	for _, f in list do best = math.max(best, Config.Fish[f].income) end
+	tierIncome[tier] = best
+end
+check(tierIncome[1] < tierIncome[2] and tierIncome[2] < tierIncome[3] and tierIncome[3] < tierIncome[4] and tierIncome[4] < tierIncome[5], "Rarer tiers earn more")
+local better = true
+for s = 2, 5 do
+	local prev, cur = Config.Sections[s - 1], Config.Sections[s]
+	better = better and cur.chase > prev.chase and Config.Eggs[cur.eggs[1]].section > Config.Eggs[prev.eggs[1]].section
+end
+check(better, "Deeper sections: better eggs and faster predators")
+check(Config.fishIncome("Clown", 3) > Config.fishIncome("Clown", 2) and Config.upgradeCost("Clown", 3) > Config.upgradeCost("Clown", 2), "Fish level raises income and the upgrade price")
+
+---------------------------------------------------------------- seabed
+local seabed = game:GetService("Workspace"):FindFirstChild("OceanSeabed")
+check(seabed and seabed:FindFirstChild("Sand") and seabed:FindFirstChild("Walls") and seabed:FindFirstChild("Nests"), "Seabed with sand relief, wall rocks and nests")
+local heights, stalactites, stalagmites = {}, 0, 0
+for _, part in seabed.Sand:GetChildren() do heights[math.floor(part.Size.Y)] = true end
+local distinct = 0
+for _ in heights do distinct += 1 end
+check(distinct >= 5, "Sand has many different heights (" .. distinct .. ")")
+for _, part in seabed.Walls:GetChildren() do
+	if part.Name == "Stalactite" then stalactites += 1 elseif part.Name == "Stalagmite" then stalagmites += 1 end
+end
+check(stalactites > 20 and stalagmites > 20, "Stalactites and stalagmites along the walls")
+local studs = true
+for _, part in seabed:GetDescendants() do
+	if part:IsA("Part") and part.Shape == r.Enum.PartType.Block and part.Material == r.Enum.Material.Plastic then
+		studs = studs and part.TopSurface == r.Enum.SurfaceType.Studs
+	end
+end
+check(studs, "Seabed blocks are studded like the court")
+local nestsBySection = {}
+for _, nest in seabed.Nests:GetChildren() do
+	local s = nest:GetAttribute("Section")
+	nestsBySection[s] = (nestsBySection[s] or 0) + 1
+	assert(table.find(Config.Sections[s].eggs, nest:GetAttribute("EggType")), "nest egg of its section")
+	local z = nest.EggSpot.CFrame.Position.Z
+	assert(z >= Config.Sections[s].fromZ and z <= Config.Sections[s].toZ, "nest inside its section")
+end
+check(nestsBySection[1] == 4 and nestsBySection[5] == 4, "Four nests in every section with that section's eggs")
+
+---------------------------------------------------------------- nests: take, carry, deliver
+local Nests = load(tree.server.NestService)
+local Predators = load(tree.server.PredatorService)
+local SeabedB = load(tree.server.SeabedBuilder)
+local nest = seabed.Nests:FindFirstChild("Nest_1_1")
+local nestState = Nests.nests[nest]
+check(nestState and nestState.available and nest:FindFirstChild("Egg"), "Every nest holds an egg")
+local diver = makePlayer("Diver", 404)
+local diverRoot = diver.Character.HumanoidRootPart
+local humanoid = r.Instance.new("Humanoid"); humanoid.Health = 100; humanoid.Parent = diver.Character
+diverRoot.CFrame = r.CFrame.new(nest.EggSpot.CFrame.Position + r.Vector3.new(0, 3, 0))
+local farPlayer = makePlayer("Far", 505)
+farPlayer.Character.HumanoidRootPart.CFrame = r.CFrame.new(0, 0, -50)
+local farHumanoid = r.Instance.new("Humanoid"); farHumanoid.Health = 100; farHumanoid.Parent = farPlayer.Character
+event(nest.EggSpot.TakePrompt, "Triggered"):Fire(farPlayer)
+check(nestState.available, "Taking needs to be close to the nest")
+event(nest.EggSpot.TakePrompt, "Triggered"):Fire(diver)
+check(not nestState.available and diver:GetAttribute("CarryEgg") == nest:GetAttribute("EggType") and diver:GetAttribute("CarrySection") == 1, "Taking the egg: the diver carries it")
+check(diver.Character:FindFirstChild("CarriedEgg") and not nest:FindFirstChild("Egg") and not nest.EggSpot.TakePrompt.Enabled, "Egg moves from the nest to above the diver's head")
+local nest2 = seabed.Nests:FindFirstChild("Nest_1_2")
+diverRoot.CFrame = r.CFrame.new(nest2.EggSpot.CFrame.Position + r.Vector3.new(0, 3, 0))
+event(nest2.EggSpot.TakePrompt, "Triggered"):Fire(diver)
+check(Nests.nests[nest2].available, "Only one egg at a time")
+
+-- Predators: calm until an egg of their section is taken
+Predators.init(seabed)
+local guards1, guards3 = {}, {}
+for _, guard in Predators.guards do
+	if guard.section == 1 then table.insert(guards1, guard) elseif guard.section == 3 then table.insert(guards3, guard) end
+end
+check(#Predators.guards >= 10 and #guards1 >= 2, "Every section has guards (" .. #Predators.guards .. " in total)")
+check(game:GetService("Workspace"):FindFirstChild("OceanPredators") and guards1[1].model:HasTag("OceanPredator"), "Predator models in Workspace.OceanPredators")
+local victim = guards1[1]
+diverRoot.CFrame = r.CFrame.new(victim.pos + r.Vector3.new(30, 0, 0))
+Predators.step(0.1, 1)
+check(victim.state == "Chase", "Guards of the egg's section chase the carrier")
+check(guards3[1].state ~= "Chase", "Guards of other sections ignore him")
+local knocked
+Predators.knock = function(p, v) knocked = {p, v} end
+local d0 = (victim.pos - diverRoot.CFrame.Position).Magnitude
+Predators.step(0.5, 1.5)
+check((victim.pos - diverRoot.CFrame.Position).Magnitude < d0, "The chaser closes in")
+check((d0 - (victim.pos - diverRoot.CFrame.Position).Magnitude) <= Config.Sections[1].chase * 0.5 + 0.01, "Chase speed is the section's speed")
+diverRoot.CFrame = r.CFrame.new(victim.pos)
+Predators.step(0.05, 2)
+check(diver:GetAttribute("CarryEgg") == nil and nestState.available and nest:FindFirstChild("Egg"), "Caught: the egg goes back to its nest")
+check(knocked and knocked[1] == diver and knocked[2].Magnitude > 30, "Caught: the diver is pushed away")
+check(victim.state == "Return", "After the catch the guard swims back")
+-- Escape: leaving the section makes guards give up
+diverRoot.CFrame = r.CFrame.new(nest.EggSpot.CFrame.Position + r.Vector3.new(0, 3, 0))
+event(nest.EggSpot.TakePrompt, "Triggered"):Fire(diver)
+check(diver:GetAttribute("CarryEgg") ~= nil, "The egg can be taken again")
+for _, guard in guards1 do guard.cooldown = 0 end
+diverRoot.CFrame = r.CFrame.new(guards1[1].pos + r.Vector3.new(0, 0, -40))
+Predators.step(0.1, 3)
+diverRoot.CFrame = r.CFrame.new(0, -5, -1)
+for i = 1, 30 do Predators.step(0.1, 3 + i * 0.1) end
+check(guards1[1].state ~= "Chase", "Guards give up when the diver leaves their section")
+local inside = true
+for _, guard in Predators.guards do
+	local sec = Config.Sections[guard.section]
+	inside = inside and guard.pos.Z >= math.max(sec.fromZ - 10.01, 23.99) and guard.pos.Z <= sec.toZ + 10.01 and guard.pos.Y <= -1.99
+end
+check(inside, "Guards stay in their section and under water")
+-- Delivery at the court
+diverRoot.CFrame = r.CFrame.new(0, 6, -20)
+Nests.step()
+check(diver:GetAttribute("CarryEgg") == nil and Inventory.count(diver, nest:GetAttribute("EggType")) == 1, "Reaching the court puts the egg into the inventory")
+check(not nestState.available and nestState.respawnAt ~= nil, "The nest refills later")
+nestState.respawnAt = 0
+Nests.step()
+check(nestState.available and nest:FindFirstChild("Egg"), "The nest gets a new egg")
+
+---------------------------------------------------------------- fish actions from the HUD menus
+local owner = makePlayer("Owner", 606)
+local ownBase = Ownership.baseOf(owner)
+local ownCells = Pens.cells(ownBase)
+ownCells[2]:SetAttribute("EggType", "TideEgg")
+Pens.hatch(ownCells[2], "Clown")
+check(ownCells[2]:GetAttribute("FishLevel") == 1 and ownCells[2]:GetAttribute("Income") == Config.Fish.Clown.income, "Hatched fish start at level 1")
+owner:SetAttribute("Coins", 0)
+Pens.action(owner, "UpgradeFish", 2)
+check(ownCells[2]:GetAttribute("FishLevel") == 1, "Upgrade needs coins")
+local price = Config.upgradeCost("Clown", 1)
+owner:SetAttribute("Coins", price + 7)
+Pens.action(owner, "UpgradeFish", 2)
+check(ownCells[2]:GetAttribute("FishLevel") == 2 and owner:GetAttribute("Coins") == 7 and ownCells[2]:GetAttribute("Income") == Config.fishIncome("Clown", 2), "Upgrade: level up, more income, coins spent")
+check(ownCells[2].InteractionPoint.CellInfo.Line.Text:find("Ур. 2") ~= nil, "Cell label shows the level")
+Pens.action(diver, "UpgradeFish", 2)
+Pens.action(diver, "RemoveFish", 2)
+check(ownCells[2]:GetAttribute("State") == "Fish" and ownCells[2]:GetAttribute("FishLevel") == 2, "Nobody else can upgrade or take your fish")
+Pens.action(owner, "RemoveFish", 2)
+local itemId = Pens.fishItemId("Clown", 2)
+check(ownCells[2]:GetAttribute("State") == "Empty" and Inventory.count(owner, itemId) == 1, "Убрать moves the fish to the inventory")
+check(owner.Inventory[itemId]:GetAttribute("Category") == "Fish" and owner.Inventory[itemId]:GetAttribute("Level") == 2, "The fish keeps its level in the inventory")
+owner:SetAttribute("HeldItem", itemId)
+event(ownCells[6].InteractionPoint.CellPrompt, "Triggered"):Fire(owner)
+check(ownCells[6]:GetAttribute("State") == "Fish" and ownCells[6]:GetAttribute("FishLevel") == 2 and Inventory.count(owner, itemId) == 0, "A fish from the inventory goes back on a cell with its level")
+Inventory.add(owner, "TideEgg", {Name = "Яйцо прилива", Category = "Eggs", Icon = "Egg"})
+owner:SetAttribute("HeldItem", nil)
+event(ownCells[7].InteractionPoint.CellPrompt, "Triggered"):Fire(owner)
+check(ownCells[7]:GetAttribute("State") == "Egg", "Egg placed")
+Pens.action(owner, "DeleteEgg", 7)
+check(ownCells[7]:GetAttribute("State") == "Empty" and #ownCells[7].Content:GetChildren() == 0, "Удалить removes the egg")
+Pens.action(owner, "Explode", 7)
+check(true, "Unknown actions are ignored")
+
+---------------------------------------------------------------- imported GLB models are used when present
+local models = r.Instance.new("Folder"); models.Name = "OceanModels"; models.Parent = game:GetService("ReplicatedStorage")
+for _, data in {{"Fish", "Clown"}, {"Predators", "01_Barracuda"}, {"Eggs", "01_Tide"}} do
+	local folder = models:FindFirstChild(data[1]) or r.Instance.new("Folder")
+	folder.Name = data[1]; folder.Parent = models
+	local m = r.Instance.new("Model"); m.Name = data[2]
+	local mesh = r.Instance.new("MeshPart"); mesh.Name = data[2] .. "_Body"; mesh.Size = r.Vector3.new(4, 2, 2); mesh.Parent = m
+	m.Parent = folder
+end
+r.implementMethod("Model", "GetBoundingBox", function(m)
+	local p = m:FindFirstChildWhichIsA("BasePart", true)
+	return p.CFrame, p.Size
+end)
+r.implementMethod("Model", "GetScale", function() return 1 end)
+r.implementMethod("Model", "ScaleTo", function(m, s)
+	for _, p in m:GetDescendants() do if p:IsA("BasePart") then p.Size = p.Size * s end end
+end)
+local importedFish = Creatures.fish(scratch, "Clown", r.CFrame.new(0, 10, 0), 6)
+check(importedFish:GetAttribute("Imported") and importedFish:GetAttribute("ForwardYaw") == 90 and importedFish:FindFirstChild("Clown_Body"), "Imported fish model is used (turned to face forward)")
+local importedPredator = Creatures.predator(scratch, "01_Barracuda", r.CFrame.new())
+check(importedPredator:GetAttribute("Imported") and importedPredator["01_Barracuda_Body"]:GetAttribute("PatrolRadius") == 0, "Imported predator: its runtime only animates, the server moves it")
+local importedEgg = Creatures.egg(scratch, "TideEgg", r.CFrame.new(0, 0, 0), 3)
+check(importedEgg:GetAttribute("Imported") and not importedEgg:FindFirstChild("Shell"), "Imported egg model is used")
+check(not Creatures.fish(scratch, "Whale", r.CFrame.new()):GetAttribute("Imported"), "Missing models fall back to built ones")
+
+---------------------------------------------------------------- swim speed
+local SwimSpeed = load(tree.server.SwimSpeedService)
+owner:SetAttribute("SpeedLevel", 18)
+check(SwimSpeed.speedFor(owner) == Config.BaseWalkSpeed + 18 * Config.SpeedPerLevel, "Upgraded speed makes you swim faster")
 
 fs.writeFile(root .. "test-report.json", serde.encode("json", {passed = true, count = #tests, tests = tests, studioPlayTest = false}, true))
 print("PASS: " .. #tests .. " checks")

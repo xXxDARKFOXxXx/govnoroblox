@@ -22,7 +22,7 @@ function OceanInventory.folder(player: Player): Folder
 	return folder
 end
 
--- info = {Name: string, Category: string, Icon: string?, Count: number?}
+-- info = {Name: string, Category: string, Icon: string?, Count: number?, Data: {[string]: any}?}
 function OceanInventory.add(player: Player, id: string, info)
 	assert(type(id) == "string" and id ~= "", "Item id required")
 	assert(OceanInventory.Categories[info.Category], "Unknown category: " .. tostring(info.Category))
@@ -39,6 +39,7 @@ function OceanInventory.add(player: Player, id: string, info)
 	item:SetAttribute("Category", info.Category)
 	item:SetAttribute("Icon", info.Icon or "")
 	item:SetAttribute("Count", amount)
+	for key, value in pairs(info.Data or {}) do item:SetAttribute(key, value) end
 	item.Parent = folder
 	return item
 end

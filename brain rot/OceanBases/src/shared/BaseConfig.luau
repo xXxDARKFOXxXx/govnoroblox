@@ -81,37 +81,165 @@ BaseConfig.Colors = {
 	Foam = rgb(210, 250, 255), Metal = rgb(140, 150, 170),
 }
 
----------------------------------------------------------------- eggs & fish
--- Egg ids match inventory item ids (OceanInventory, Category "Eggs").
-BaseConfig.Eggs = {
-	BasicEgg = {name = "Обычное яйцо", hatch = 15, shell = rgb(250, 248, 238), spots = rgb(90, 190, 255),
-		fish = {ClownFish = 70, BlueTang = 30}},
-	StarEgg = {name = "Звёздное яйцо", hatch = 30, shell = rgb(214, 120, 255), spots = rgb(255, 214, 70), glow = true,
-		fish = {BlueTang = 40, PufferFish = 45, Angler = 15}},
-	OceanEgg = {name = "Морское яйцо", hatch = 45, shell = rgb(100, 210, 255), spots = rgb(20, 90, 200), glow = true,
-		fish = {PufferFish = 40, Angler = 50, KingFish = 10}},
-	GoldEgg = {name = "Золотое яйцо", hatch = 60, shell = rgb(255, 214, 70), spots = rgb(255, 250, 200), glow = true,
-		fish = {Angler = 40, KingFish = 60}},
+---------------------------------------------------------------- rarity
+BaseConfig.Rarities = {
+	{name = "Обычная", color = rgb(220, 230, 240), income = 3},
+	{name = "Необычная", color = rgb(120, 230, 120), income = 10},
+	{name = "Редкая", color = rgb(90, 200, 255), income = 30},
+	{name = "Эпическая", color = rgb(200, 130, 255), income = 90},
+	{name = "Легендарная", color = rgb(255, 210, 60), income = 270},
+}
+BaseConfig.RarityColors = {}
+for _, rarity in BaseConfig.Rarities do BaseConfig.RarityColors[rarity.name] = rarity.color end
+
+---------------------------------------------------------------- fish
+-- 40 fish from the Studfish and Studfish SeaLife packs, in 5 tiers. The id is
+-- the GLB file name (and the model name after import into OceanModels.Fish).
+-- body/belly/stripe/fin colour the built-in fallback model.
+local FISH_TIERS = {
+	{ -- 1 · Обычная
+		{"Sardine", "Сардина", rgb(170, 190, 210), rgb(230, 240, 250), rgb(90, 110, 150), rgb(150, 170, 200)},
+		{"PygmyGoby", "Карликовый бычок", rgb(150, 210, 90), rgb(220, 250, 170), rgb(90, 150, 50), rgb(190, 240, 110)},
+		{"Shrimp", "Креветка", rgb(255, 150, 120), rgb(255, 210, 190), rgb(230, 100, 80), rgb(255, 180, 150)},
+		{"Tetra", "Неонка", rgb(60, 140, 255), rgb(255, 90, 90), rgb(110, 240, 255), rgb(120, 180, 255)},
+		{"Goldfish", "Золотая рыбка", rgb(255, 150, 40), rgb(255, 220, 140), rgb(255, 255, 255), rgb(255, 190, 80)},
+		{"Clown", "Рыба-клоун", rgb(255, 128, 32), rgb(255, 196, 120), rgb(255, 255, 255), rgb(255, 150, 60)},
+		{"Flounder", "Камбала", rgb(200, 170, 120), rgb(240, 220, 180), rgb(150, 120, 80), rgb(220, 190, 140)},
+		{"SeaUrchin", "Морской ёж", rgb(170, 120, 230), rgb(220, 190, 255), rgb(110, 70, 180), rgb(200, 150, 255), round = true},
+	},
+	{ -- 2 · Необычная
+		{"Butterflyfish", "Рыба-бабочка", rgb(255, 220, 60), rgb(255, 250, 200), rgb(40, 40, 60), rgb(255, 180, 40)},
+		{"Mandarin", "Рыба-мандаринка", rgb(60, 160, 255), rgb(255, 150, 60), rgb(255, 90, 60), rgb(80, 220, 200)},
+		{"Betta", "Петушок", rgb(220, 40, 90), rgb(255, 140, 170), rgb(120, 20, 60), rgb(255, 80, 140)},
+		{"Discus", "Дискус", rgb(255, 120, 60), rgb(80, 200, 230), rgb(60, 120, 220), rgb(255, 160, 90), round = true},
+		{"HermitCrab", "Рак-отшельник", rgb(255, 160, 120), rgb(255, 220, 190), rgb(200, 90, 60), rgb(255, 190, 150)},
+		{"Starfish", "Морская звезда", rgb(255, 170, 60), rgb(255, 220, 140), rgb(255, 110, 80), rgb(255, 200, 100)},
+		{"Seahorse", "Морской конёк", rgb(255, 200, 80), rgb(255, 240, 170), rgb(230, 140, 40), rgb(255, 220, 120)},
+		{"Salmon", "Лосось", rgb(190, 200, 215), rgb(255, 180, 170), rgb(120, 130, 150), rgb(220, 160, 170)},
+	},
+	{ -- 3 · Редкая
+		{"RegalTang", "Королевский хирург", rgb(40, 96, 230), rgb(90, 150, 255), rgb(20, 30, 90), rgb(255, 214, 40)},
+		{"MoorishIdol", "Мавританский идол", rgb(255, 240, 200), rgb(255, 250, 230), rgb(30, 30, 40), rgb(255, 210, 60)},
+		{"Parrotfish", "Рыба-попугай", rgb(80, 220, 160), rgb(255, 150, 200), rgb(40, 150, 120), rgb(255, 120, 180)},
+		{"RibbonTrout", "Радужная форель", rgb(160, 200, 160), rgb(255, 160, 200), rgb(200, 90, 160), rgb(190, 220, 190)},
+		{"Koi", "Карп кои", rgb(255, 255, 255), rgb(255, 245, 235), rgb(240, 80, 40), rgb(255, 150, 120)},
+		{"Puffer", "Рыба-фугу", rgb(255, 214, 60), rgb(255, 246, 190), rgb(230, 150, 30), rgb(255, 170, 40), round = true},
+		{"Lionfish", "Крылатка", rgb(255, 120, 90), rgb(255, 230, 210), rgb(140, 40, 40), rgb(255, 160, 140)},
+		{"Cuttlefish", "Каракатица", rgb(120, 200, 150), rgb(200, 240, 210), rgb(140, 80, 200), rgb(150, 220, 180)},
+	},
+	{ -- 4 · Эпическая
+		{"Catfish", "Сом", rgb(120, 100, 160), rgb(200, 190, 220), rgb(70, 60, 100), rgb(150, 130, 190)},
+		{"Lobster", "Омар", rgb(220, 50, 50), rgb(255, 140, 120), rgb(150, 20, 30), rgb(255, 90, 80)},
+		{"Nautilus", "Наутилус", rgb(255, 240, 220), rgb(255, 250, 240), rgb(210, 120, 80), rgb(255, 210, 180), round = true},
+		{"SeaTurtle", "Морская черепаха", rgb(90, 190, 140), rgb(200, 240, 200), rgb(60, 130, 90), rgb(140, 220, 170)},
+		{"Sunfish", "Рыба-луна", rgb(170, 180, 210), rgb(230, 235, 250), rgb(110, 120, 160), rgb(200, 205, 230), round = true},
+		{"Eel", "Угорь", rgb(80, 160, 90), rgb(190, 230, 150), rgb(40, 100, 50), rgb(120, 200, 110)},
+		{"Jelly", "Медуза", rgb(255, 150, 230), rgb(255, 210, 245), rgb(200, 90, 200), rgb(255, 180, 240), round = true, sparkle = true},
+		{"Angler", "Удильщик", rgb(150, 80, 230), rgb(220, 170, 255), rgb(100, 40, 180), rgb(255, 120, 200), lure = true, sparkle = true},
+		{"Octopus", "Осьминог", rgb(240, 90, 120), rgb(255, 170, 190), rgb(180, 50, 80), rgb(255, 130, 160), round = true},
+	},
+	{ -- 5 · Легендарная
+		{"Manta", "Манта", rgb(40, 60, 110), rgb(230, 240, 255), rgb(20, 30, 60), rgb(70, 100, 170), sparkle = true},
+		{"Swordfish", "Рыба-меч", rgb(60, 110, 200), rgb(200, 220, 250), rgb(30, 60, 140), rgb(100, 150, 230), sparkle = true},
+		{"Hammerhead", "Рыба-молот", rgb(130, 140, 160), rgb(230, 235, 240), rgb(90, 100, 120), rgb(160, 170, 190), sparkle = true},
+		{"Shark", "Акула", rgb(110, 140, 170), rgb(235, 240, 245), rgb(70, 90, 120), rgb(140, 170, 200), sparkle = true},
+		{"Orca", "Косатка", rgb(30, 30, 40), rgb(255, 255, 255), rgb(255, 255, 255), rgb(40, 40, 50), sparkle = true},
+		{"Whale", "Кит", rgb(70, 110, 180), rgb(200, 220, 240), rgb(40, 70, 130), rgb(100, 140, 200), round = true, sparkle = true},
+		{"Kraken", "Кракен", rgb(170, 40, 70), rgb(255, 150, 170), rgb(110, 20, 50), rgb(220, 80, 120), round = true, crown = true, sparkle = true},
+	},
 }
 
--- income = coins per second straight into the owner's pocket.
-BaseConfig.Fish = {
-	ClownFish = {name = "Рыба-клоун", income = 3, rarity = "Обычная",
-		body = rgb(255, 128, 32), belly = rgb(255, 196, 120), stripe = rgb(255, 255, 255), fin = rgb(255, 150, 60)},
-	BlueTang = {name = "Синий хирург", income = 6, rarity = "Обычная",
-		body = rgb(40, 96, 230), belly = rgb(90, 150, 255), stripe = rgb(20, 30, 90), fin = rgb(255, 214, 40)},
-	PufferFish = {name = "Рыба-фугу", income = 12, rarity = "Редкая", round = true,
-		body = rgb(255, 214, 60), belly = rgb(255, 246, 190), stripe = rgb(230, 150, 30), fin = rgb(255, 170, 40)},
-	Angler = {name = "Удильщик", income = 30, rarity = "Эпическая", lure = true, sparkle = true,
-		body = rgb(150, 80, 230), belly = rgb(220, 170, 255), stripe = rgb(100, 40, 180), fin = rgb(255, 120, 200)},
-	KingFish = {name = "Королевская рыбка", income = 75, rarity = "Легендарная", crown = true, sparkle = true,
-		body = rgb(255, 200, 40), belly = rgb(255, 240, 160), stripe = rgb(240, 150, 20), fin = rgb(255, 240, 120)},
-}
+-- income = coins per second at level 1 (straight into the owner's pocket).
+BaseConfig.Fish = {}
+BaseConfig.FishTiers = {}
+for tier, list in FISH_TIERS do
+	BaseConfig.FishTiers[tier] = {}
+	local rarity = BaseConfig.Rarities[tier]
+	for i, f in list do
+		BaseConfig.Fish[f[1]] = {
+			name = f[2], tier = tier, rarity = rarity.name,
+			income = math.floor(rarity.income * (1 + (i - 1) * 0.1) + 0.5),
+			body = f[3], belly = f[4], stripe = f[5], fin = f[6],
+			round = f.round, lure = f.lure, crown = f.crown, sparkle = f.sparkle or tier >= 4,
+		}
+		table.insert(BaseConfig.FishTiers[tier], f[1])
+	end
+end
 
-BaseConfig.RarityColors = {
-	["Обычная"] = rgb(220, 230, 240), ["Редкая"] = rgb(90, 200, 255),
-	["Эпическая"] = rgb(200, 130, 255), ["Легендарная"] = rgb(255, 210, 60),
+-- Fish levels: income grows by 50% of the base per level; upgrades cost more each time.
+BaseConfig.MaxFishLevel = 25
+function BaseConfig.fishIncome(fishType: string, level: number): number
+	local base = BaseConfig.Fish[fishType].income
+	return math.floor(base * (1 + 0.5 * (level - 1)) + 0.5)
+end
+function BaseConfig.upgradeCost(fishType: string, level: number): number
+	local base = BaseConfig.Fish[fishType].income
+	return math.floor(base * 30 * 1.6 ^ (level - 1) + 0.5)
+end
+
+---------------------------------------------------------------- eggs
+-- 10 eggs from the StudEggs pack, two per ocean section. The id matches the
+-- inventory item id; model = imported model name in OceanModels.Eggs.
+-- Each egg rolls a tier (weights) and then a random fish of that tier.
+local EGGS = {
+	{"TideEgg", "01_Tide", "Яйцо прилива", 1, 20, rgb(120, 220, 255), rgb(255, 255, 255), {[1] = 85, [2] = 15}},
+	{"LagoonEgg", "02_Lagoon", "Лагунное яйцо", 1, 30, rgb(90, 230, 190), rgb(255, 240, 150), {[1] = 60, [2] = 40}},
+	{"CoralEgg", "03_Coral", "Коралловое яйцо", 2, 45, rgb(255, 130, 170), rgb(255, 230, 120), {[2] = 80, [3] = 20}},
+	{"PearlEgg", "04_Pearl", "Жемчужное яйцо", 2, 60, rgb(250, 240, 255), rgb(200, 170, 255), {[2] = 55, [3] = 45}},
+	{"GlacierEgg", "05_Glacier", "Ледниковое яйцо", 3, 80, rgb(190, 240, 255), rgb(90, 170, 255), {[3] = 80, [4] = 20}},
+	{"JellyEgg", "06_Jelly", "Медузье яйцо", 3, 100, rgb(255, 170, 240), rgb(170, 120, 255), {[3] = 55, [4] = 45}},
+	{"StormEgg", "07_Storm", "Грозовое яйцо", 4, 130, rgb(110, 120, 200), rgb(255, 240, 100), {[4] = 80, [5] = 20}},
+	{"KrakenEgg", "08_Kraken", "Яйцо кракена", 4, 160, rgb(180, 50, 90), rgb(255, 150, 200), {[4] = 55, [5] = 45}},
+	{"VentEgg", "09_Vent", "Вулканическое яйцо", 5, 200, rgb(255, 110, 40), rgb(255, 220, 80), {[4] = 30, [5] = 70}},
+	{"OceanCrownEgg", "10_OceanCrown", "Яйцо Короны океана", 5, 240, rgb(255, 214, 70), rgb(120, 230, 255), {[5] = 100}},
 }
+BaseConfig.Eggs = {}
+BaseConfig.EggOrder = {}
+for _, e in EGGS do
+	BaseConfig.Eggs[e[1]] = {
+		name = e[3], model = e[2], section = e[4], hatch = e[5],
+		shell = e[6], spots = e[7], tiers = e[8], glow = e[4] >= 2,
+	}
+	table.insert(BaseConfig.EggOrder, e[1])
+end
+
+---------------------------------------------------------------- ocean sections
+-- The corridor has 5 sections (wall colours change between them). Each has
+-- nests with its two eggs and guards: one big predator from StudPredators and
+-- scary fish from the Studfish expansion. Guards only attack an egg carrier.
+BaseConfig.Sections = {
+	{name = "Лагуна", fromZ = 0, toZ = 192, eggs = {"TideEgg", "LagoonEgg"}, nests = 4,
+		predator = "01_Barracuda", guards = {"Piranha"}, chase = 14, patrol = 6, sand = {rgb(238, 214, 150), rgb(226, 198, 132)}, rock = rgb(120, 170, 180)},
+	{name = "Риф", fromZ = 192, toZ = 384, eggs = {"CoralEgg", "PearlEgg"}, nests = 4,
+		predator = "02_TigerShark", guards = {"Moray", "Stonefish"}, chase = 18, patrol = 7, sand = {rgb(230, 200, 150), rgb(214, 182, 132)}, rock = rgb(110, 150, 175)},
+	{name = "Синева", fromZ = 384, toZ = 576, eggs = {"GlacierEgg", "JellyEgg"}, nests = 4,
+		predator = "03_Viperfish", guards = {"Wolffish", "Sawfish"}, chase = 22, patrol = 8, sand = {rgb(200, 190, 170), rgb(180, 170, 155)}, rock = rgb(90, 120, 170)},
+	{name = "Сумерки", fromZ = 576, toZ = 768, eggs = {"StormEgg", "KrakenEgg"}, nests = 4,
+		predator = "04_Reefbreaker", guards = {"GoblinShark", "Fangtooth"}, chase = 26, patrol = 9, sand = {rgb(150, 150, 170), rgb(130, 130, 155)}, rock = rgb(80, 80, 130)},
+	{name = "Бездна", fromZ = 768, toZ = 960, eggs = {"VentEgg", "OceanCrownEgg"}, nests = 4,
+		predator = "05_Leviathan", guards = {"GulperEel", "Dragonfish", "FrilledShark"}, chase = 30, patrol = 10, sand = {rgb(110, 100, 130), rgb(90, 82, 115)}, rock = rgb(60, 50, 90)},
+}
+BaseConfig.Predators = {
+	["01_Barracuda"] = {name = "Рифовая барракуда", length = 17, color = rgb(190, 200, 120)},
+	["02_TigerShark"] = {name = "Тигровая акула", length = 22, color = rgb(140, 150, 170)},
+	["03_Viperfish"] = {name = "Рыба-гадюка", length = 25, color = rgb(170, 40, 70)},
+	["04_Reefbreaker"] = {name = "Рифолом", length = 32, color = rgb(160, 120, 80)},
+	["05_Leviathan"] = {name = "Левиафан Бездны", length = 40, color = rgb(40, 50, 90)},
+	Piranha = {name = "Пиранья", length = 4.3, color = rgb(90, 180, 170)},
+	Moray = {name = "Мурена", length = 9.6, color = rgb(140, 170, 60)},
+	Stonefish = {name = "Рыба-камень", length = 5.8, color = rgb(170, 140, 100)},
+	Wolffish = {name = "Зубатка", length = 7, color = rgb(160, 180, 220)},
+	Sawfish = {name = "Рыба-пила", length = 10.3, color = rgb(120, 200, 210)},
+	GoblinShark = {name = "Акула-гоблин", length = 10, color = rgb(230, 170, 190)},
+	Fangtooth = {name = "Саблезуб", length = 6.1, color = rgb(140, 90, 200)},
+	GulperEel = {name = "Большерот", length = 9.6, color = rgb(80, 70, 140)},
+	Dragonfish = {name = "Глубоководный дракон", length = 7.8, color = rgb(50, 60, 100)},
+	FrilledShark = {name = "Плащеносная акула", length = 9.6, color = rgb(150, 120, 100)},
+}
+BaseConfig.CatchRadius = 5 -- studs from the predator's head to the player
+BaseConfig.NestRespawn = 25 -- seconds until a taken egg reappears
+BaseConfig.BaseWalkSpeed = 16
+BaseConfig.SpeedPerLevel = 0.5 -- swim speed per point of upgraded speed
 
 ---------------------------------------------------------------- effects & timing
 BaseConfig.IncomeTick = 1 -- seconds between payouts
